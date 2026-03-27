@@ -40,7 +40,7 @@ function WinnerModal({ restaurant, onClose }) {
               <span className="font-bold text-foreground">{restaurant.rating}</span>
             </span>
             <span className="flex items-center gap-1">
-              <MapPin className="w-4 h-4" /> {restaurant.distance || restaurant.address}
+              <MapPin className="w-4 h-4" /> {restaurant.address || restaurant.distance}
             </span>
             <span className="font-bold">{PRICE_MAP[restaurant.price_level]}</span>
           </div>
@@ -149,7 +149,7 @@ export default function Results() {
                   <Star className="w-3 h-3 text-secondary fill-secondary" />
                   <span className="font-bold text-foreground">{r.rating}</span>
                 </span>
-                <span>{r.distance || r.address}</span>
+                <span>{r.address || r.distance}</span>
                 <span className="font-bold">{PRICE_MAP[r.price_level]}</span>
               </div>
             </div>

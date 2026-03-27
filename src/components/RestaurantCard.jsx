@@ -126,10 +126,10 @@ export default function RestaurantCard({ restaurant, onSwipe, isTop }) {
                 {reviewCount && <span>({reviewCount})</span>}
               </span>
             )}
-            {location && (
+            {restaurant.address && (
               <span className="flex items-center gap-1">
                 <MapPin style={{ width: 14, height: 14 }} />
-                {location}
+                {restaurant.address}
               </span>
             )}
             {serviceType && (
