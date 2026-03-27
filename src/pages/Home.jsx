@@ -8,6 +8,7 @@ import FilterPanel from "../components/FilterPanel";
 export default function Home() {
   const navigate = useNavigate();
   const [location, setLocation] = useState("");
+  const [coords, setCoords] = useState(null);
   const [detecting, setDetecting] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -18,10 +19,11 @@ export default function Home() {
     navigator.geolocation.getCurrentPosition(
       async (pos) => {
         const { latitude, longitude } = pos.coords;
+        setCoords({ latitude, longitude });
         const res = await base44.integrations.Core.InvokeLLM({
-          prompt: `Given coordinates lat=${latitude}, lng=${longitude}, return just the city and state name, like "Austin, TX". Nothing else.`,
+          prompt: `Given coordinates lat=${latitude}, lng=${longitude}, return just the neighborhood/area and city name, like "South Congress, Austin, TX". Be specific to the neighborhood if possible. Nothing else.`,
         });
-        setLocation(res || `${latitude.toFixed(3)}, ${longitude.toFixed(3)}`);
+        setLocation(res || `${latitude.toFixed(5)}, ${longitude.toFixed(5)}`);
         setDetecting(false);
       },
       () => { setDetecting(false); setError("Couldn't detect location. Type it in!"); }
@@ -33,7 +35,11 @@ export default function Home() {
     setLoading(true);
     setError("");
 
-    const prompt = `Find real local restaurants near "${location}" within ${filters.radius} miles.
+    const locationContext = coords
+      ? `coordinates lat=${coords.latitude}, lng=${coords.longitude} (near "${location}")`
+      : `"${location}"`;
+
+    const prompt = `Find real local restaurants near ${locationContext} within ${filters.radius} miles.
 ${filters.cuisine ? `Cuisine type: ${filters.cuisine}.` : "Any cuisine type."}
 ${filters.service ? `Service style: ${filters.service}.` : "Any service style."}
 ${filters.openNow ? "Only include places that are currently open." : ""}
@@ -117,7 +123,7 @@ Return ONLY the JSON array, no other text.`;
               <MapPin className="w-4 h-4 text-primary shrink-0" />
               <input
                 value={location}
-                onChange={e => setLocation(e.target.value)}
+                onChange={e => { setLocation(e.target.value); setCoords(null); }}
                 placeholder="City, neighborhood, or address..."
                 className="flex-1 py-3 bg-transparent outline-none text-foreground font-semibold placeholder:text-muted-foreground text-sm"
               />
