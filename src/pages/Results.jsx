@@ -69,6 +69,11 @@ export default function Results() {
   const { state } = useLocation();
   const allRestaurants = state?.allRestaurants || [];
 
+  if (allRestaurants.length === 0 && !state) {
+    navigate("/", { replace: true });
+    return null;
+  }
+
   const [blocked, setBlocked] = useState(getBlocked());
   const [winner, setWinner] = useState(null);
   const [spinning, setSpinning] = useState(false);
