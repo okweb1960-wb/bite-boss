@@ -41,68 +41,31 @@ export default function Home() {
 
   async function startSwiping() {
     if (!location.trim()) { setError("Please enter or detect your location first!"); return; }
+    if (!coords) { setError("Please use the 📍 Detect button for accurate nearby results — typing a city name won't work with the new precision search."); return; }
     setLoading(true);
     setError("");
 
-    const locationContext = coords
-      ? `coordinates lat=${coords.latitude}, lng=${coords.longitude} (near "${location}")`
-      : `"${location}"`;
+    try {
+      const response = await base44.functions.invoke('findRestaurants', {
+        latitude: coords.latitude,
+        longitude: coords.longitude,
+        radius_miles: filters.radius,
+        cuisine: filters.cuisine,
+        service: filters.service,
+        open_now: filters.openNow,
+      });
 
-    const prompt = `Find real local restaurants near ${locationContext} within ${filters.radius} miles.
-${filters.cuisine ? `Cuisine type: ${filters.cuisine}.` : "Any cuisine type."}
-${filters.service ? `Service style: ${filters.service}.` : "Any service style."}
-${filters.openNow ? "Only include places that are currently open." : ""}
-
-Return a JSON array of 15-20 restaurants. Each restaurant object must have:
-- name (string)
-- cuisine (string, eg. "Mexican", "Italian")  
-- address (string, short street address)
-- distance (string, eg. "0.8 mi")
-- rating (number 1-5, one decimal)
-- review_count (number)
-- price_level (number 1-4)
-- open_now (boolean)
-- service_type (string, eg. "Sit-down", "Takeout", "Fast Food")
-- description (string, one short sentence about the place)
-
-Return ONLY the JSON array, no other text.`;
-
-    const res = await base44.integrations.Core.InvokeLLM({
-      prompt,
-      add_context_from_internet: true,
-      response_json_schema: {
-        type: "object",
-        properties: {
-          restaurants: {
-            type: "array",
-            items: {
-              type: "object",
-              properties: {
-                name: { type: "string" },
-                cuisine: { type: "string" },
-                address: { type: "string" },
-                distance: { type: "string" },
-                rating: { type: "number" },
-                review_count: { type: "number" },
-                price_level: { type: "number" },
-                open_now: { type: "boolean" },
-                service_type: { type: "string" },
-                description: { type: "string" },
-              }
-            }
-          }
-        }
+      const restaurants = response.data?.restaurants || [];
+      if (restaurants.length === 0) {
+        setError("No restaurants found nearby. Try increasing your radius.");
+        setLoading(false);
+        return;
       }
-    });
 
-    const restaurants = res?.restaurants || [];
-    if (restaurants.length === 0) {
-      setError("Couldn't find restaurants. Try a different location or filters.");
-      setLoading(false);
-      return;
+      navigate("/swipe", { state: { restaurants, filters, location } });
+    } catch (err) {
+      setError("Failed to find restaurants. Please try again.");
     }
-
-    navigate("/swipe", { state: { restaurants, filters, location } });
     setLoading(false);
   }
 
