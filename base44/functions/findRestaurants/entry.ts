@@ -21,19 +21,8 @@ Deno.serve(async (req) => {
     const cuisineHint = cuisine ? ` Cuisine preference: ${cuisine}.` : '';
     const serviceHint = service ? ` Service style: ${service}.` : '';
 
-    const prompt = `List up to 15 real restaurants near coordinates lat=${latitude} lon=${longitude} within ${radius} miles.${cuisineHint}${serviceHint}
-
-Each restaurant must have these fields only:
-- name (string): restaurant name
-- cuisine (string): food type like Italian or Burgers
-- street (string): street address only like "123 Main St"
-- rating (number): like 4.2
-- reviews (integer): number of reviews
-- price (integer): 1 to 4
-- open (boolean): is it currently open
-- stype (string): Sit-down or Fast Food or Cafe or Counter
-- lat (number): latitude
-- lon (number): longitude`;
+    const prompt = `List 8-10 real restaurants near lat=${latitude} lon=${longitude} within ${radius} miles.${cuisineHint}${serviceHint}
+Return JSON only. Fields per restaurant: name, cuisine, street, rating, reviews, price (1-4), open (bool), stype (Sit-down/Fast Food/Cafe/Counter), lat, lon.`;
 
     const res = await base44.integrations.Core.InvokeLLM({
       prompt,
