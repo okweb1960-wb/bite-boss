@@ -53,13 +53,12 @@ export default function RestaurantCard({ restaurant, onSwipe, isTop }) {
       className="absolute inset-0 cursor-grab active:cursor-grabbing"
       whileDrag={{ scale: 1.03 }}
     >
-      <div className="w-full h-full rounded-3xl overflow-hidden shadow-2xl bg-card">
+      <div className="w-full h-full rounded-3xl overflow-hidden shadow-2xl bg-white flex flex-col">
         {/* Image */}
-        <div className="relative h-3/5">
+        <div className="relative flex-shrink-0" style={{ height: '55%' }}>
           <img src={imgSrc} alt={restaurant.name} className="w-full h-full object-cover" />
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
 
-          {/* Swipe indicators */}
           <motion.div
             style={{ opacity: maybeOpacity }}
             className="absolute top-8 left-6 bg-green-400 text-white font-black text-3xl px-4 py-2 rounded-2xl rotate-[-15deg] border-4 border-green-300"
@@ -73,7 +72,6 @@ export default function RestaurantCard({ restaurant, onSwipe, isTop }) {
             NOPE 👎
           </motion.div>
 
-          {/* Open badge */}
           {restaurant.open_now !== undefined && (
             <div className={`absolute top-4 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full text-xs font-bold ${
               restaurant.open_now ? "bg-green-500 text-white" : "bg-red-500 text-white"
@@ -84,24 +82,27 @@ export default function RestaurantCard({ restaurant, onSwipe, isTop }) {
         </div>
 
         {/* Info */}
-        <div className="p-5 h-2/5 flex flex-col justify-between">
+        <div className="flex-1 p-5 flex flex-col justify-between bg-white">
           <div>
             <div className="flex justify-between items-start mb-1">
-              <h2 className="font-black text-2xl text-foreground leading-tight">{restaurant.name}</h2>
-              <span className="text-muted-foreground font-bold text-sm ml-2 shrink-0">{PRICE_MAP[restaurant.price_level] || ""}</span>
+              <h2 className="font-black text-2xl text-gray-900 leading-tight">{restaurant.name || "Restaurant"}</h2>
+              <span className="text-gray-500 font-bold text-sm ml-2 shrink-0">{PRICE_MAP[restaurant.price_level] || ""}</span>
             </div>
-            <p className="text-primary font-semibold text-sm mb-2">{restaurant.cuisine}</p>
+            <p className="text-orange-500 font-semibold text-sm mb-2">{restaurant.cuisine || ""}</p>
+            {restaurant.description && (
+              <p className="text-gray-500 text-sm line-clamp-2">{restaurant.description}</p>
+            )}
           </div>
 
-          <div className="flex items-center gap-4 text-sm text-muted-foreground">
+          <div className="flex items-center gap-4 text-sm text-gray-500">
             <span className="flex items-center gap-1">
-              <Star className="w-4 h-4 text-secondary fill-secondary" />
-              <span className="font-bold text-foreground">{restaurant.rating || "?"}</span>
+              <Star className="w-4 h-4 text-amber-400 fill-amber-400" />
+              <span className="font-bold text-gray-900">{restaurant.rating || "?"}</span>
               {restaurant.review_count && <span>({restaurant.review_count})</span>}
             </span>
             <span className="flex items-center gap-1">
               <MapPin className="w-4 h-4" />
-              {restaurant.distance || restaurant.address}
+              {restaurant.distance || restaurant.address || ""}
             </span>
             {restaurant.service_type && (
               <span className="flex items-center gap-1">
@@ -110,10 +111,6 @@ export default function RestaurantCard({ restaurant, onSwipe, isTop }) {
               </span>
             )}
           </div>
-
-          {restaurant.description && (
-            <p className="text-muted-foreground text-xs mt-2 line-clamp-2">{restaurant.description}</p>
-          )}
         </div>
       </div>
     </motion.div>
