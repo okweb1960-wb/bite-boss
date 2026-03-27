@@ -4,7 +4,7 @@ function distanceMiles(lat1, lon1, lat2, lon2) {
   const R = 3958.8;
   const dLat = (lat2 - lat1) * Math.PI / 180;
   const dLon = (lon2 - lon1) * Math.PI / 180;
-  const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180) * Math.cos(lat2*Math.PI/180) * Math.sin(dLon/2)**2;
+  const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2;
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
 }
 
@@ -18,33 +18,18 @@ Deno.serve(async (req) => {
     if (!latitude || !longitude) return Response.json({ error: 'Coordinates required' }, { status: 400 });
 
     const radius = radius_miles || 5;
+    const now = new Date().toLocaleString('en-US', { weekday: 'long', hour: 'numeric', minute: 'numeric', timeZone: 'America/Chicago' });
 
-    const prompt = `I am at exact GPS coordinates: latitude ${latitude}, longitude ${longitude}.
+    const cuisineHint = cuisine ? `Prefer ${cuisine} cuisine.` : '';
+    const serviceHint = service ? `Prefer ${service} style.` : '';
+    const openHint = open_now ? 'Only include restaurants open right now.' : '';
 
-Find me real, currently operating restaurants within EXACTLY ${radius} mile${radius !== 1 ? 's' : ''} of those coordinates. This is critical — do NOT include any restaurant farther than ${radius} mile${radius !== 1 ? 's' : ''} away.
+    const prompt = `Find up to 15 real restaurants within ${radius} miles of GPS coordinates lat=${latitude}, lon=${longitude}. Current time: ${now}. ${cuisineHint} ${serviceHint} ${openHint}
 
-${cuisine ? `Cuisine preference: ${cuisine}.` : 'Any cuisine.'}
-${service ? `Service style preference: ${service}.` : ''}
-${open_now ? 'Only include places that are open right now.' : ''}
+Return a JSON object with a "restaurants" array. Keep each entry SHORT - only these fields:
+name, cuisine, address, distance (e.g. "0.4 mi"), rating (number), review_count (number), price_level (1-4), open_now (boolean), service_type, description (one sentence), lat (number), lon (number).
 
-For each restaurant, calculate the actual distance in miles from lat ${latitude}, lon ${longitude} using the Haversine formula and only include it if it is ≤ ${radius} miles away.
-
-Return a JSON array of up to 20 restaurants. Each object must have:
-- name (string)
-- cuisine (string)
-- address (string, full street address)
-- distance (string, e.g. "0.3 mi" or "400 ft" — must be ≤ ${radius} mi)
-- distance_miles (number, actual calculated distance)
-- rating (number 1-5, one decimal, based on real reviews if known)
-- review_count (number)
-- price_level (number 1-4)
-- open_now (boolean)
-- service_type (string: "Sit-down", "Takeout", "Fast Food", "Café", etc.)
-- description (string, one short sentence)
-- lat (number, restaurant latitude)
-- lon (number, restaurant longitude)
-
-Sort by distance ascending. Return ONLY the JSON array.`;
+Only include real restaurants that actually exist at those coordinates. Sort by distance.`;
 
     const res = await base44.integrations.Core.InvokeLLM({
       prompt,
@@ -62,7 +47,6 @@ Sort by distance ascending. Return ONLY the JSON array.`;
                 cuisine: { type: 'string' },
                 address: { type: 'string' },
                 distance: { type: 'string' },
-                distance_miles: { type: 'number' },
                 rating: { type: 'number' },
                 review_count: { type: 'number' },
                 price_level: { type: 'number' },
@@ -80,21 +64,21 @@ Sort by distance ascending. Return ONLY the JSON array.`;
 
     let restaurants = res?.restaurants || [];
 
-    // Double-check distances using actual coordinates if provided
+    // Verify distances using coordinates where available
     restaurants = restaurants
       .map(r => {
         if (r.lat && r.lon) {
-          const actualDist = distanceMiles(latitude, longitude, r.lat, r.lon);
-          return {
-            ...r,
-            distance_miles: actualDist,
-            distance: actualDist < 0.1 ? `${Math.round(actualDist * 5280)} ft` : `${actualDist.toFixed(1)} mi`
-          };
+          const d = distanceMiles(latitude, longitude, r.lat, r.lon);
+          return { ...r, distance_miles: d, distance: d < 0.1 ? `${Math.round(d * 5280)} ft` : `${d.toFixed(1)} mi` };
         }
         return r;
       })
-      .filter(r => !r.lat || !r.lon || r.distance_miles <= radius)
+      .filter(r => !r.lat || !r.lon || (r.distance_miles || 0) <= radius + 1)
       .sort((a, b) => (a.distance_miles || 0) - (b.distance_miles || 0));
+
+    if (open_now) {
+      restaurants = restaurants.filter(r => r.open_now);
+    }
 
     return Response.json({ restaurants });
 
