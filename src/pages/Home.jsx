@@ -20,13 +20,22 @@ export default function Home() {
       async (pos) => {
         const { latitude, longitude } = pos.coords;
         setCoords({ latitude, longitude });
-        const res = await base44.integrations.Core.InvokeLLM({
-          prompt: `Given coordinates lat=${latitude}, lng=${longitude}, return just the neighborhood/area and city name, like "South Congress, Austin, TX". Be specific to the neighborhood if possible. Nothing else.`,
-        });
-        setLocation(res || `${latitude.toFixed(5)}, ${longitude.toFixed(5)}`);
+        try {
+          const res = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json`,
+            { headers: { 'Accept-Language': 'en' } }
+          );
+          const data = await res.json();
+          const a = data.address;
+          const label = [a.neighbourhood || a.suburb || a.quarter, a.city || a.town || a.village, a.state].filter(Boolean).join(', ');
+          setLocation(label || `${latitude.toFixed(5)}, ${longitude.toFixed(5)}`);
+        } catch {
+          setLocation(`${latitude.toFixed(5)}, ${longitude.toFixed(5)}`);
+        }
         setDetecting(false);
       },
-      () => { setDetecting(false); setError("Couldn't detect location. Type it in!"); }
+      () => { setDetecting(false); setError("Couldn't detect location. Type it in!"); },
+      { enableHighAccuracy: true }
     );
   }
 
