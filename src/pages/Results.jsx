@@ -45,18 +45,29 @@ function WinnerModal({ restaurant, onClose, onGoHome }) {
                 <span className="font-bold text-foreground">{restaurant.rating}</span>
               </span>
             )}
-            {restaurant.address && (
-              <span className="flex items-center gap-1">
-                <MapPin className="w-4 h-4" /> {restaurant.address}
-              </span>
-            )}
             {restaurant.price_level && <span className="font-bold">{PRICE_MAP[restaurant.price_level]}</span>}
           </div>
+          {restaurant.address && (
+            <a
+              href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(restaurant.name + ' ' + restaurant.address)}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center justify-center gap-1.5 text-blue-500 font-semibold text-sm hover:underline"
+            >
+              <MapPin className="w-4 h-4" /> {restaurant.address}
+            </a>
+          )}
           <button
-            onClick={onGoHome}
+            onClick={onClose}
             className="w-full bg-gradient-to-r from-primary to-orange-400 text-white font-black py-4 rounded-2xl mt-2 hover:opacity-90 transition-all text-lg"
           >
             Let's Go! 🚀
+          </button>
+          <button
+            onClick={onGoHome}
+            className="w-full text-muted-foreground font-semibold py-2 hover:text-foreground transition-all text-sm"
+          >
+            ← Back to Home
           </button>
         </div>
       </motion.div>
