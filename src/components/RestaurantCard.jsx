@@ -1,5 +1,5 @@
 import { motion, useMotionValue, useTransform } from "framer-motion";
-import { Star, Clock, MapPin, DollarSign } from "lucide-react";
+import { Star, MapPin, Clock } from "lucide-react";
 
 const PRICE_MAP = { 1: "$", 2: "$$", 3: "$$$", 4: "$$$$" };
 
@@ -42,71 +42,83 @@ export default function RestaurantCard({ restaurant, onSwipe, isTop }) {
     else if (info.offset.x < -100) onSwipe("nope");
   }
 
-  const imgSrc = getImage(restaurant);
-
   return (
     <motion.div
       style={{ x, rotate, opacity }}
       drag={isTop ? "x" : false}
       dragConstraints={{ left: 0, right: 0 }}
       onDragEnd={handleDragEnd}
-      className="absolute inset-0 cursor-grab active:cursor-grabbing"
+      className="absolute inset-0 cursor-grab active:cursor-grabbing select-none"
       whileDrag={{ scale: 1.03 }}
     >
-      <div className="w-full h-full rounded-3xl overflow-hidden shadow-2xl bg-white flex flex-col">
-        {/* Image */}
-        <div className="relative flex-shrink-0" style={{ height: '55%' }}>
-          <img src={imgSrc} alt={restaurant.name} className="w-full h-full object-cover" />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+      <div style={{ display: 'flex', flexDirection: 'column', width: '100%', height: '100%', borderRadius: '24px', overflow: 'hidden', boxShadow: '0 20px 60px rgba(0,0,0,0.2)', background: 'white' }}>
+        
+        {/* Image section */}
+        <div style={{ position: 'relative', flexShrink: 0, height: '55%' }}>
+          <img
+            src={getImage(restaurant)}
+            alt={restaurant.name}
+            style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+          />
+          <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.6), transparent)' }} />
 
-          <motion.div
-            style={{ opacity: maybeOpacity }}
-            className="absolute top-8 left-6 bg-green-400 text-white font-black text-3xl px-4 py-2 rounded-2xl rotate-[-15deg] border-4 border-green-300"
-          >
-            MAYBE! 🎉
+          {/* Swipe hints */}
+          <motion.div style={{ opacity: maybeOpacity, position: 'absolute', top: 24, left: 16 }}>
+            <div style={{ background: '#4ade80', color: 'white', fontWeight: 900, fontSize: 24, padding: '8px 16px', borderRadius: 16, transform: 'rotate(-15deg)', border: '4px solid #86efac' }}>
+              MAYBE! 🎉
+            </div>
           </motion.div>
-          <motion.div
-            style={{ opacity: nopeOpacity }}
-            className="absolute top-8 right-6 bg-red-400 text-white font-black text-3xl px-4 py-2 rounded-2xl rotate-[15deg] border-4 border-red-300"
-          >
-            NOPE 👎
+          <motion.div style={{ opacity: nopeOpacity, position: 'absolute', top: 24, right: 16 }}>
+            <div style={{ background: '#f87171', color: 'white', fontWeight: 900, fontSize: 24, padding: '8px 16px', borderRadius: 16, transform: 'rotate(15deg)', border: '4px solid #fca5a5' }}>
+              NOPE 👎
+            </div>
           </motion.div>
 
           {restaurant.open_now !== undefined && (
-            <div className={`absolute top-4 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full text-xs font-bold ${
-              restaurant.open_now ? "bg-green-500 text-white" : "bg-red-500 text-white"
-            }`}>
-              {restaurant.open_now ? "🟢 Open Now" : "🔴 Closed"}
+            <div style={{
+              position: 'absolute', top: 12, left: '50%', transform: 'translateX(-50%)',
+              background: restaurant.open_now ? '#22c55e' : '#ef4444',
+              color: 'white', fontWeight: 700, fontSize: 12, padding: '4px 12px', borderRadius: 999
+            }}>
+              {restaurant.open_now ? '🟢 Open Now' : '🔴 Closed'}
             </div>
           )}
         </div>
 
-        {/* Info */}
-        <div className="flex-1 p-5 flex flex-col justify-between bg-white">
+        {/* Info section */}
+        <div style={{ flex: 1, padding: '16px 20px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', background: 'white' }}>
           <div>
-            <div className="flex justify-between items-start mb-1">
-              <h2 className="font-black text-2xl text-gray-900 leading-tight">{restaurant.name || "Restaurant"}</h2>
-              <span className="text-gray-500 font-bold text-sm ml-2 shrink-0">{PRICE_MAP[restaurant.price_level] || ""}</span>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 4 }}>
+              <h2 style={{ fontWeight: 900, fontSize: 22, color: '#111827', lineHeight: 1.2, margin: 0 }}>
+                {restaurant.name}
+              </h2>
+              <span style={{ fontWeight: 700, fontSize: 14, color: '#6b7280', marginLeft: 8, flexShrink: 0 }}>
+                {PRICE_MAP[restaurant.price_level] || ''}
+              </span>
             </div>
-            <p className="text-orange-500 font-semibold text-sm mb-2">{restaurant.cuisine || ""}</p>
+            <p style={{ fontWeight: 600, fontSize: 14, color: '#f97316', margin: '0 0 8px 0' }}>
+              {restaurant.cuisine}
+            </p>
             {restaurant.description && (
-              <p className="text-gray-500 text-sm line-clamp-2">{restaurant.description}</p>
+              <p style={{ fontSize: 13, color: '#6b7280', margin: 0, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                {restaurant.description}
+              </p>
             )}
           </div>
 
-          <div className="flex items-center gap-4 text-sm text-gray-500">
-            <span className="flex items-center gap-1">
-              <Star className="w-4 h-4 text-amber-400 fill-amber-400" />
-              <span className="font-bold text-gray-900">{restaurant.rating || "?"}</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 16, fontSize: 13, color: '#6b7280', marginTop: 8 }}>
+            <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+              <Star style={{ width: 14, height: 14, color: '#fbbf24', fill: '#fbbf24' }} />
+              <span style={{ fontWeight: 700, color: '#111827' }}>{restaurant.rating || '?'}</span>
               {restaurant.review_count && <span>({restaurant.review_count})</span>}
             </span>
-            <span className="flex items-center gap-1">
-              <MapPin className="w-4 h-4" />
-              {restaurant.distance || restaurant.address || ""}
+            <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+              <MapPin style={{ width: 14, height: 14 }} />
+              {restaurant.distance || restaurant.address}
             </span>
             {restaurant.service_type && (
-              <span className="flex items-center gap-1">
-                <Clock className="w-4 h-4" />
+              <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                <Clock style={{ width: 14, height: 14 }} />
                 {restaurant.service_type}
               </span>
             )}
