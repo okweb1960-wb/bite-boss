@@ -1,15 +1,19 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, Shuffle, Star, MapPin, DollarSign } from "lucide-react";
+import { ArrowLeft, Shuffle, Star, MapPin, Ban } from "lucide-react";
 import confetti from "canvas-confetti";
 
 const PRICE_MAP = { 1: "$", 2: "$$", 3: "$$$", 4: "$$$$" };
 
+function getBlocked() {
+  try { return JSON.parse(localStorage.getItem('blockedRestaurants') || '[]'); } catch { return []; }
+}
+
 function WinnerModal({ restaurant, onClose }) {
-  useEffect(() => {
+  useState(() => {
     confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 }, colors: ["#f97316", "#fb923c", "#fbbf24", "#f43f5e"] });
-  }, []);
+  });
 
   return (
     <motion.div
@@ -35,18 +39,19 @@ function WinnerModal({ restaurant, onClose }) {
           <h3 className="font-black text-3xl text-foreground">{restaurant.name}</h3>
           <p className="text-primary font-bold">{restaurant.cuisine}</p>
           <div className="flex items-center justify-center gap-4 text-sm text-muted-foreground">
-            <span className="flex items-center gap-1">
-              <Star className="w-4 h-4 text-secondary fill-secondary" />
-              <span className="font-bold text-foreground">{restaurant.rating}</span>
-            </span>
-            <span className="flex items-center gap-1">
-              <MapPin className="w-4 h-4" /> {restaurant.address || restaurant.distance}
-            </span>
+            {restaurant.rating && (
+              <span className="flex items-center gap-1">
+                <Star className="w-4 h-4 text-secondary fill-secondary" />
+                <span className="font-bold text-foreground">{restaurant.rating}</span>
+              </span>
+            )}
+            {restaurant.address && (
+              <span className="flex items-center gap-1">
+                <MapPin className="w-4 h-4" /> {restaurant.address}
+              </span>
+            )}
             <span className="font-bold">{PRICE_MAP[restaurant.price_level]}</span>
           </div>
-          {restaurant.description && (
-            <p className="text-muted-foreground text-sm">{restaurant.description}</p>
-          )}
           <button
             onClick={onClose}
             className="w-full bg-gradient-to-r from-primary to-orange-400 text-white font-black py-4 rounded-2xl mt-2 hover:opacity-90 transition-all text-lg"
@@ -62,48 +67,54 @@ function WinnerModal({ restaurant, onClose }) {
 export default function Results() {
   const navigate = useNavigate();
   const { state } = useLocation();
-  const maybes = state?.maybes || [];
+  const allRestaurants = state?.allRestaurants || [];
 
+  const [blocked, setBlocked] = useState(getBlocked());
   const [winner, setWinner] = useState(null);
   const [spinning, setSpinning] = useState(false);
 
+  const restaurants = allRestaurants.filter(r => !blocked.includes(r.name));
+
+  function blockRestaurant(name) {
+    const updated = [...blocked, name];
+    setBlocked(updated);
+    localStorage.setItem('blockedRestaurants', JSON.stringify(updated));
+  }
+
   function pickForMe() {
-    if (maybes.length === 0) return;
+    if (restaurants.length === 0) return;
     setSpinning(true);
     let count = 0;
     const interval = setInterval(() => {
       count++;
       if (count > 15) {
         clearInterval(interval);
-        const pick = maybes[Math.floor(Math.random() * maybes.length)];
+        const pick = restaurants[Math.floor(Math.random() * restaurants.length)];
         setWinner(pick);
         setSpinning(false);
       }
     }, 80);
   }
 
-  const displayList = maybes.length > 0 ? maybes : (state?.allRestaurants || []);
-  const isEmpty = maybes.length === 0;
-
   return (
     <div className="flex flex-col min-h-screen bg-background">
       {/* Header */}
       <div className="bg-gradient-to-br from-primary via-orange-400 to-secondary px-5 pt-6 pb-8 rounded-b-[2.5rem] shadow-lg">
         <div className="flex items-center gap-3 mb-4">
-          <button onClick={() => navigate("/")} className="p-2 rounded-2xl bg-white/20 hover:bg-white/30 transition-all">
+          <button onClick={() => navigate(-1)} className="p-2 rounded-2xl bg-white/20 hover:bg-white/30 transition-all">
             <ArrowLeft className="w-5 h-5 text-white" />
           </button>
           <div>
-            <p className="text-white/70 text-xs font-semibold uppercase tracking-widest">Your Picks</p>
+            <p className="text-white/70 text-xs font-semibold uppercase tracking-widest">All Options</p>
             <h1 className="font-playfair text-2xl font-bold text-white">
-              {isEmpty ? "No maybes yet" : `${maybes.length} restaurant${maybes.length !== 1 ? "s" : ""} you liked`}
+              {restaurants.length} restaurant{restaurants.length !== 1 ? "s" : ""} nearby
             </h1>
           </div>
         </div>
 
         <button
           onClick={pickForMe}
-          disabled={spinning || displayList.length === 0}
+          disabled={spinning || restaurants.length === 0}
           className="w-full bg-white text-primary font-black text-lg py-4 rounded-2xl shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all active:scale-[0.98] flex items-center justify-center gap-3 disabled:opacity-50"
         >
           <Shuffle className={`w-5 h-5 ${spinning ? "animate-spin" : ""}`} />
@@ -113,53 +124,62 @@ export default function Results() {
 
       {/* List */}
       <div className="flex-1 px-5 py-5 overflow-y-auto space-y-3">
-        {isEmpty && (
+        {restaurants.length === 0 && (
           <div className="text-center py-10">
             <div className="text-6xl mb-4">😬</div>
-            <p className="font-bold text-foreground text-xl mb-2">No maybes saved!</p>
-            <p className="text-muted-foreground font-semibold mb-6">Go back and swipe right on places you like</p>
+            <p className="font-bold text-foreground text-xl mb-2">No restaurants left!</p>
+            <p className="text-muted-foreground font-semibold mb-6">You've blocked everything. Try again with a fresh start.</p>
             <button
-              onClick={() => navigate(-1)}
+              onClick={() => {
+                localStorage.removeItem('blockedRestaurants');
+                setBlocked([]);
+              }}
               className="bg-primary text-primary-foreground font-bold px-6 py-3 rounded-2xl hover:opacity-90 transition-all"
             >
-              Back to Swiping
+              Clear Block List
             </button>
           </div>
         )}
 
-        {displayList.map((r, i) => (
+        {restaurants.map((r, i) => (
           <motion.div
             key={i}
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: i * 0.05 }}
-            onClick={() => setWinner(r)}
-            className="bg-card rounded-2xl p-4 shadow-sm border border-border flex gap-4 cursor-pointer hover:shadow-md hover:scale-[1.01] transition-all active:scale-[0.99]"
+            transition={{ delay: i * 0.04 }}
+            className="bg-card rounded-2xl p-4 shadow-sm border border-border flex gap-4"
           >
-            <div className="w-16 h-16 rounded-xl bg-muted overflow-hidden shrink-0">
-              <div className="w-full h-full bg-gradient-to-br from-primary/20 to-secondary/20 flex items-center justify-center text-2xl">
-                🍴
-              </div>
-            </div>
-            <div className="flex-1 min-w-0">
+            <div
+              className="flex-1 min-w-0 cursor-pointer"
+              onClick={() => setWinner(r)}
+            >
               <h3 className="font-black text-foreground text-base truncate">{r.name}</h3>
               <p className="text-primary font-semibold text-sm">{r.cuisine}</p>
-              <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
-                <span className="flex items-center gap-0.5">
-                  <Star className="w-3 h-3 text-secondary fill-secondary" />
-                  <span className="font-bold text-foreground">{r.rating}</span>
-                </span>
-                <span>{r.address || r.distance}</span>
-                <span className="font-bold">{PRICE_MAP[r.price_level]}</span>
+              <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground flex-wrap">
+                {r.rating && (
+                  <span className="flex items-center gap-0.5">
+                    <Star className="w-3 h-3 text-secondary fill-secondary" />
+                    <span className="font-bold text-foreground">{r.rating}</span>
+                  </span>
+                )}
+                {r.address && <span>{r.address}</span>}
+                {r.price_level && <span className="font-bold">{PRICE_MAP[r.price_level]}</span>}
               </div>
             </div>
-            {r.open_now !== undefined && (
-              <div className={`shrink-0 text-xs font-bold px-2 py-1 rounded-full h-fit mt-1 ${
-                r.open_now ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
-              }`}>
-                {r.open_now ? "Open" : "Closed"}
-              </div>
-            )}
+            <div className="flex flex-col items-end gap-2 shrink-0">
+              {r.open_now !== undefined && (
+                <div className={`text-xs font-bold px-2 py-1 rounded-full ${r.open_now ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}>
+                  {r.open_now ? "Open" : "Closed"}
+                </div>
+              )}
+              <button
+                onClick={() => blockRestaurant(r.name)}
+                className="p-1.5 rounded-full hover:bg-red-50 transition-all"
+                title="Never show again"
+              >
+                <Ban className="w-4 h-4 text-gray-300 hover:text-red-400" />
+              </button>
+            </div>
           </motion.div>
         ))}
       </div>

@@ -1,29 +1,39 @@
 import { useState, useCallback } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Heart, List, ArrowLeft } from "lucide-react";
+import { X, ChevronRight, Ban, ArrowLeft } from "lucide-react";
 import RestaurantCard from "../components/RestaurantCard";
 
 export default function Swipe() {
   const navigate = useNavigate();
   const { state } = useLocation();
-  const restaurants = state?.restaurants || [];
+  const allRaw = state?.restaurants || [];
+  const blocked = (() => { try { return JSON.parse(localStorage.getItem('blockedRestaurants') || '[]'); } catch { return []; } })();
+  const restaurants = allRaw.filter(r => !blocked.includes(r.name));
 
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [maybes, setMaybes] = useState([]);
   const [lastAction, setLastAction] = useState(null);
+
+  function getBlocked() {
+    try { return JSON.parse(localStorage.getItem('blockedRestaurants') || '[]'); } catch { return []; }
+  }
+
+  function blockRestaurant(name) {
+    const blocked = getBlocked();
+    if (!blocked.includes(name)) {
+      localStorage.setItem('blockedRestaurants', JSON.stringify([...blocked, name]));
+    }
+    setCurrentIndex(prev => prev + 1);
+    setLastAction('block');
+    setTimeout(() => setLastAction(null), 600);
+  }
 
   const current = restaurants[currentIndex];
   const remaining = restaurants.length - currentIndex;
 
   const handleSwipe = useCallback((direction) => {
     if (!current) return;
-    if (direction === "maybe") {
-      setMaybes(prev => [...prev, current]);
-      setLastAction("maybe");
-    } else {
-      setLastAction("nope");
-    }
+    setLastAction(direction);
     setCurrentIndex(prev => prev + 1);
     setTimeout(() => setLastAction(null), 600);
   }, [current]);
@@ -42,11 +52,11 @@ export default function Swipe() {
           <p className="font-black text-foreground">{remaining} left to go</p>
         </div>
         <button
-          onClick={() => navigate("/results", { state: { maybes, allRestaurants: restaurants } })}
-          className="flex items-center gap-1.5 bg-muted px-3 py-2 rounded-2xl font-bold text-sm hover:bg-border transition-all"
+          onClick={() => navigate("/results", { state: { allRestaurants: restaurants } })}
+          className="flex items-center gap-1.5 bg-primary/10 px-3 py-2 rounded-2xl font-bold text-sm hover:bg-primary/20 transition-all text-primary"
         >
-          <List className="w-4 h-4" />
-          <span className="text-primary font-black">{maybes.length}</span>
+          See All
+          <ChevronRight className="w-4 h-4" />
         </button>
       </div>
 
@@ -118,41 +128,43 @@ export default function Swipe() {
           >
             <div className="text-7xl mb-4">🍽️</div>
             <h2 className="font-playfair text-3xl font-bold text-foreground mb-2">That's all of them!</h2>
-            <p className="text-muted-foreground font-semibold">You liked <span className="text-primary font-black">{maybes.length}</span> places.</p>
+            <p className="text-muted-foreground font-semibold">Time to pick where to eat!</p>
           </motion.div>
         )}
       </div>
 
       {/* Action buttons */}
-      <div className="px-5 py-6 flex items-center justify-center gap-6">
+      <div className="px-5 py-4 flex items-center justify-center gap-4">
         <button
-          onClick={() => handleSwipe("nope")}
+          onClick={() => handleSwipe("skip")}
           disabled={allDone}
-          className="w-16 h-16 rounded-full bg-card shadow-lg border-2 border-red-200 flex items-center justify-center hover:scale-110 hover:border-red-400 transition-all active:scale-95 disabled:opacity-30"
+          className="w-14 h-14 rounded-full bg-card shadow-lg border-2 border-red-200 flex items-center justify-center hover:scale-110 hover:border-red-400 transition-all active:scale-95 disabled:opacity-30"
+          title="Skip"
         >
-          <X className="w-7 h-7 text-red-400" />
+          <X className="w-6 h-6 text-red-400" />
         </button>
 
         <button
-          onClick={() => navigate("/results", { state: { maybes, allRestaurants: restaurants } })}
-          className="px-6 py-3 bg-gradient-to-r from-primary to-orange-400 text-white font-black rounded-2xl shadow-lg hover:shadow-xl hover:scale-105 transition-all text-sm"
+          onClick={() => navigate("/results", { state: { allRestaurants: restaurants } })}
+          className="px-5 py-3 bg-gradient-to-r from-primary to-orange-400 text-white font-black rounded-2xl shadow-lg hover:shadow-xl hover:scale-105 transition-all text-sm"
         >
-          {allDone ? "See My Picks! 🎉" : "I'm Done, Show Me"}
+          {allDone ? "Pick For Me! 🎉" : "I'm Done"}
         </button>
 
         <button
-          onClick={() => handleSwipe("maybe")}
+          onClick={() => current && blockRestaurant(current.name)}
           disabled={allDone}
-          className="w-16 h-16 rounded-full bg-card shadow-lg border-2 border-green-200 flex items-center justify-center hover:scale-110 hover:border-green-400 transition-all active:scale-95 disabled:opacity-30"
+          className="w-14 h-14 rounded-full bg-card shadow-lg border-2 border-gray-200 flex items-center justify-center hover:scale-110 hover:border-gray-400 transition-all active:scale-95 disabled:opacity-30"
+          title="Never show again"
         >
-          <Heart className="w-7 h-7 text-green-400" />
+          <Ban className="w-6 h-6 text-gray-400" />
         </button>
       </div>
 
       {/* Hint */}
       {!allDone && (
         <p className="text-center text-muted-foreground text-xs font-semibold pb-4">
-          ← Swipe left to skip &nbsp;|&nbsp; Swipe right to maybe →
+          ← Skip &nbsp;|&nbsp; 🚫 Block forever
         </p>
       )}
     </div>
