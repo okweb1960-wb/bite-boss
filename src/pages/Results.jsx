@@ -10,7 +10,7 @@ function getBlocked() {
   try { return JSON.parse(localStorage.getItem('blockedRestaurants') || '[]'); } catch { return []; }
 }
 
-function WinnerModal({ restaurant, onClose }) {
+function WinnerModal({ restaurant, onClose, onGoHome }) {
   useState(() => {
     confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 }, colors: ["#f97316", "#fb923c", "#fbbf24", "#f43f5e"] });
   });
@@ -53,7 +53,7 @@ function WinnerModal({ restaurant, onClose }) {
             {restaurant.price_level && <span className="font-bold">{PRICE_MAP[restaurant.price_level]}</span>}
           </div>
           <button
-            onClick={onClose}
+            onClick={onGoHome}
             className="w-full bg-gradient-to-r from-primary to-orange-400 text-white font-black py-4 rounded-2xl mt-2 hover:opacity-90 transition-all text-lg"
           >
             Let's Go! 🚀
@@ -98,6 +98,7 @@ function RestaurantRow({ r, onBlock, onSelect }) {
 export default function Results() {
   const navigate = useNavigate();
   const { state } = useLocation();
+
   const allRestaurants = state?.allRestaurants || [];
   const initialMaybes = state?.maybes || [];
 
@@ -217,7 +218,7 @@ export default function Results() {
       </div>
 
       <AnimatePresence>
-        {winner && <WinnerModal restaurant={winner} onClose={() => setWinner(null)} />}
+        {winner && <WinnerModal restaurant={winner} onClose={() => setWinner(null)} onGoHome={() => navigate("/")} />}
       </AnimatePresence>
     </div>
   );
