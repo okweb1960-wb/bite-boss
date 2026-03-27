@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowLeft, Shuffle, Star, MapPin, Ban, Heart } from "lucide-react";
@@ -127,10 +127,11 @@ export default function Results() {
   const [winner, setWinner] = useState(null);
   const [spinning, setSpinning] = useState(false);
 
-  if (!state) {
-    navigate("/", { replace: true });
-    return null;
-  }
+  useEffect(() => {
+    if (!state) navigate("/", { replace: true });
+  }, [state]);
+
+  if (!state) return null;
 
   const others = allRestaurants.filter(r =>
     !blocked.includes(r.name) && !maybes.find(m => m.name === r.name)
