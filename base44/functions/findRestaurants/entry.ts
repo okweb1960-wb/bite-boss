@@ -20,16 +20,25 @@ Deno.serve(async (req) => {
     const radius = radius_miles || 5;
     const now = new Date().toLocaleString('en-US', { weekday: 'long', hour: 'numeric', minute: 'numeric', timeZone: 'America/Chicago' });
 
-    const cuisineHint = cuisine ? `Prefer ${cuisine} cuisine.` : '';
-    const serviceHint = service ? `Prefer ${service} style.` : '';
-    const openHint = open_now ? 'Only include restaurants open right now.' : '';
+    const cuisineHint = cuisine ? `Cuisine: ${cuisine}.` : '';
+    const serviceHint = service ? `Style: ${service}.` : '';
+    const openHint = open_now ? 'Open now only.' : '';
 
-    const prompt = `Find up to 15 real restaurants within ${radius} miles of GPS coordinates lat=${latitude}, lon=${longitude}. Current time: ${now}. ${cuisineHint} ${serviceHint} ${openHint}
+    const prompt = `List up to 15 real restaurants within ${radius} miles of lat=${latitude}, lon=${longitude}. Time: ${now}. ${cuisineHint} ${serviceHint} ${openHint}
 
-Return a JSON object with a "restaurants" array. Keep each entry SHORT - only these fields:
-name, cuisine, address, distance (e.g. "0.4 mi"), rating (number), review_count (number), price_level (1-4), open_now (boolean), service_type, description (one sentence), lat (number), lon (number).
+Return JSON object with "restaurants" array. Each item has ONLY these fields (no extra text in values):
+- name: restaurant name
+- cuisine: food type
+- address: street address
+- rating: number like 4.2
+- review_count: integer
+- price_level: integer 1 to 4
+- open_now: true or false
+- service_type: one of Sit-down, Fast Food, Cafe, Counter service
+- lat: latitude number
+- lon: longitude number
 
-Only include real restaurants that actually exist at those coordinates. Sort by distance.`;
+Real places only. Sort by distance from the coordinates.`;
 
     const res = await base44.integrations.Core.InvokeLLM({
       prompt,
@@ -46,35 +55,32 @@ Only include real restaurants that actually exist at those coordinates. Sort by 
                 name: { type: 'string' },
                 cuisine: { type: 'string' },
                 address: { type: 'string' },
-                distance: { type: 'string' },
                 rating: { type: 'number' },
-                review_count: { type: 'number' },
-                price_level: { type: 'number' },
+                review_count: { type: 'integer' },
+                price_level: { type: 'integer' },
                 open_now: { type: 'boolean' },
                 service_type: { type: 'string' },
-                description: { type: 'string' },
                 lat: { type: 'number' },
                 lon: { type: 'number' },
-              }
+              },
+              required: ['name', 'cuisine', 'rating', 'open_now', 'lat', 'lon']
             }
           }
-        }
+        },
+        required: ['restaurants']
       }
     });
 
-    let restaurants = res?.restaurants || [];
-
-    // Verify distances using coordinates where available
-    restaurants = restaurants
-      .map(r => {
-        if (r.lat && r.lon) {
-          const d = distanceMiles(latitude, longitude, r.lat, r.lon);
-          return { ...r, distance_miles: d, distance: d < 0.1 ? `${Math.round(d * 5280)} ft` : `${d.toFixed(1)} mi` };
-        }
-        return r;
-      })
-      .filter(r => !r.lat || !r.lon || (r.distance_miles || 0) <= radius + 1)
-      .sort((a, b) => (a.distance_miles || 0) - (b.distance_miles || 0));
+    let restaurants = (res?.restaurants || []).map(r => {
+      const d = (r.lat && r.lon) ? distanceMiles(latitude, longitude, r.lat, r.lon) : null;
+      return {
+        ...r,
+        distance_miles: d,
+        distance: d === null ? '' : d < 0.1 ? `${Math.round(d * 5280)} ft` : `${d.toFixed(1)} mi`,
+      };
+    })
+    .filter(r => r.distance_miles === null || r.distance_miles <= radius + 1)
+    .sort((a, b) => (a.distance_miles || 0) - (b.distance_miles || 0));
 
     if (open_now) {
       restaurants = restaurants.filter(r => r.open_now);
