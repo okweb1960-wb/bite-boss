@@ -1,0 +1,56 @@
+{
+  "name": "Session",
+  "type": "object",
+  "properties": {
+    "location_text": {
+      "type": "string",
+      "title": "Location Text"
+    },
+    "latitude": {
+      "type": "number",
+      "title": "Latitude"
+    },
+    "longitude": {
+      "type": "number",
+      "title": "Longitude"
+    },
+    "radius_miles": {
+      "type": "number",
+      "title": "Radius (miles)"
+    },
+    "cuisine_filter": {
+      "type": "string",
+      "title": "Cuisine Filter"
+    },
+    "service_filter": {
+      "type": "string",
+      "title": "Service Filter"
+    },
+    "open_now_filter": {
+      "type": "boolean",
+      "title": "Open Now Only"
+    },
+    "restaurants": {
+      "type": "string",
+      "title": "Restaurants JSON"
+    },
+    "maybes": {
+      "type": "string",
+      "title": "Maybe List JSON"
+    },
+    "nopes": {
+      "type": "string",
+      "title": "Nope List JSON"
+    },
+    "status": {
+      "type": "string",
+      "title": "Status",
+      "enum": [
+        "setup",
+        "swiping",
+        "results"
+      ]
+    }
+  },
+  "required": []
+}

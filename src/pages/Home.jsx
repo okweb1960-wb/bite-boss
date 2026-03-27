@@ -1,0 +1,161 @@
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { MapPin, Utensils, Loader2, Zap } from "lucide-react";
+import { motion } from "framer-motion";
+import { base44 } from "@/api/base44Client";
+import FilterPanel from "../components/FilterPanel";
+
+export default function Home() {
+  const navigate = useNavigate();
+  const [location, setLocation] = useState("");
+  const [detecting, setDetecting] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [filters, setFilters] = useState({ radius: 5, cuisine: "", service: "", openNow: false });
+
+  async function detectLocation() {
+    setDetecting(true);
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        const { latitude, longitude } = pos.coords;
+        const res = await base44.integrations.Core.InvokeLLM({
+          prompt: `Given coordinates lat=${latitude}, lng=${longitude}, return just the city and state name, like "Austin, TX". Nothing else.`,
+        });
+        setLocation(res || `${latitude.toFixed(3)}, ${longitude.toFixed(3)}`);
+        setDetecting(false);
+      },
+      () => { setDetecting(false); setError("Couldn't detect location. Type it in!"); }
+    );
+  }
+
+  async function startSwiping() {
+    if (!location.trim()) { setError("Please enter or detect your location first!"); return; }
+    setLoading(true);
+    setError("");
+
+    const prompt = `Find real local restaurants near "${location}" within ${filters.radius} miles.
+${filters.cuisine ? `Cuisine type: ${filters.cuisine}.` : "Any cuisine type."}
+${filters.service ? `Service style: ${filters.service}.` : "Any service style."}
+${filters.openNow ? "Only include places that are currently open." : ""}
+
+Return a JSON array of 15-20 restaurants. Each restaurant object must have:
+- name (string)
+- cuisine (string, eg. "Mexican", "Italian")  
+- address (string, short street address)
+- distance (string, eg. "0.8 mi")
+- rating (number 1-5, one decimal)
+- review_count (number)
+- price_level (number 1-4)
+- open_now (boolean)
+- service_type (string, eg. "Sit-down", "Takeout", "Fast Food")
+- description (string, one short sentence about the place)
+
+Return ONLY the JSON array, no other text.`;
+
+    const res = await base44.integrations.Core.InvokeLLM({
+      prompt,
+      add_context_from_internet: true,
+      response_json_schema: {
+        type: "object",
+        properties: {
+          restaurants: {
+            type: "array",
+            items: {
+              type: "object",
+              properties: {
+                name: { type: "string" },
+                cuisine: { type: "string" },
+                address: { type: "string" },
+                distance: { type: "string" },
+                rating: { type: "number" },
+                review_count: { type: "number" },
+                price_level: { type: "number" },
+                open_now: { type: "boolean" },
+                service_type: { type: "string" },
+                description: { type: "string" },
+              }
+            }
+          }
+        }
+      }
+    });
+
+    const restaurants = res?.restaurants || [];
+    if (restaurants.length === 0) {
+      setError("Couldn't find restaurants. Try a different location or filters.");
+      setLoading(false);
+      return;
+    }
+
+    navigate("/swipe", { state: { restaurants, filters, location } });
+    setLoading(false);
+  }
+
+  return (
+    <div className="flex flex-col min-h-screen">
+      {/* Header */}
+      <div className="bg-gradient-to-br from-primary via-orange-400 to-secondary p-8 pb-12 rounded-b-[2.5rem] shadow-lg">
+        <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
+          <div className="flex items-center gap-2 mb-2">
+            <Utensils className="w-7 h-7 text-white" />
+            <span className="text-white/80 font-bold text-sm uppercase tracking-widest">Let's Eat</span>
+          </div>
+          <h1 className="font-playfair text-4xl font-bold text-white leading-tight">
+            Where do you<br />want to eat?
+          </h1>
+          <p className="text-white/70 mt-2 font-semibold">"I don't know... where do <em>you</em> want to go?"</p>
+        </motion.div>
+      </div>
+
+      {/* Content */}
+      <div className="flex-1 px-5 py-6 overflow-y-auto space-y-6">
+        {/* Location */}
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
+          <h3 className="font-bold text-foreground mb-3">Where are you?</h3>
+          <div className="flex gap-2">
+            <div className="flex-1 flex items-center bg-card border border-border rounded-2xl px-4 gap-2 shadow-sm">
+              <MapPin className="w-4 h-4 text-primary shrink-0" />
+              <input
+                value={location}
+                onChange={e => setLocation(e.target.value)}
+                placeholder="City, neighborhood, or address..."
+                className="flex-1 py-3 bg-transparent outline-none text-foreground font-semibold placeholder:text-muted-foreground text-sm"
+              />
+            </div>
+            <button
+              onClick={detectLocation}
+              disabled={detecting}
+              className="bg-primary text-primary-foreground px-4 rounded-2xl font-bold shadow-sm hover:opacity-90 transition-all flex items-center gap-1 text-sm"
+            >
+              {detecting ? <Loader2 className="w-4 h-4 animate-spin" /> : "📍 Detect"}
+            </button>
+          </div>
+        </motion.div>
+
+        {/* Filters */}
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
+          <FilterPanel filters={filters} onChange={setFilters} />
+        </motion.div>
+
+        {error && (
+          <div className="bg-destructive/10 text-destructive px-4 py-3 rounded-2xl font-semibold text-sm">{error}</div>
+        )}
+
+        {/* CTA Buttons */}
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="space-y-3 pb-8">
+          <button
+            onClick={startSwiping}
+            disabled={loading}
+            className="w-full bg-gradient-to-r from-primary to-orange-400 text-white font-black text-xl py-5 rounded-3xl shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all active:scale-[0.98] flex items-center justify-center gap-3"
+          >
+            {loading ? (
+              <><Loader2 className="w-6 h-6 animate-spin" /> Finding Restaurants...</>
+            ) : (
+              <><span>Start Swiping</span><span className="text-2xl">👆</span></>
+            )}
+          </button>
+        </motion.div>
+      </div>
+    </div>
+  );
+}
