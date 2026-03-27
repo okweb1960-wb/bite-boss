@@ -1,7 +1,7 @@
 import { useState, useCallback } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, ChevronRight, Ban, ArrowLeft } from "lucide-react";
+import { X, Heart, Ban, ArrowLeft } from "lucide-react";
 import RestaurantCard from "../components/RestaurantCard";
 
 export default function Swipe() {
@@ -12,6 +12,7 @@ export default function Swipe() {
   const restaurants = allRaw.filter(r => !blocked.includes(r.name));
 
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [maybes, setMaybes] = useState([]);
   const [lastAction, setLastAction] = useState(null);
 
   function getBlocked() {
@@ -33,6 +34,7 @@ export default function Swipe() {
 
   const handleSwipe = useCallback((direction) => {
     if (!current) return;
+    if (direction === "maybe") setMaybes(prev => [...prev, current]);
     setLastAction(direction);
     setCurrentIndex(prev => prev + 1);
     setTimeout(() => setLastAction(null), 600);
@@ -52,11 +54,11 @@ export default function Swipe() {
           <p className="font-black text-foreground">{remaining} left to go</p>
         </div>
         <button
-          onClick={() => navigate("/results", { state: { allRestaurants: restaurants } })}
+          onClick={() => navigate("/results", { state: { maybes, allRestaurants: restaurants } })}
           className="flex items-center gap-1.5 bg-primary/10 px-3 py-2 rounded-2xl font-bold text-sm hover:bg-primary/20 transition-all text-primary"
         >
-          See All
-          <ChevronRight className="w-4 h-4" />
+          Maybes
+          <span className="bg-primary text-white rounded-full w-5 h-5 flex items-center justify-center text-xs font-black">{maybes.length}</span>
         </button>
       </div>
 
@@ -134,37 +136,49 @@ export default function Swipe() {
       </div>
 
       {/* Action buttons */}
-      <div className="px-5 py-4 flex items-center justify-center gap-4">
+      <div className="px-5 py-4 flex items-center justify-center gap-3">
         <button
-          onClick={() => handleSwipe("skip")}
+          onClick={() => handleSwipe("nope")}
           disabled={allDone}
           className="w-14 h-14 rounded-full bg-card shadow-lg border-2 border-red-200 flex items-center justify-center hover:scale-110 hover:border-red-400 transition-all active:scale-95 disabled:opacity-30"
-          title="Skip"
+          title="Nope"
         >
           <X className="w-6 h-6 text-red-400" />
         </button>
 
         <button
-          onClick={() => navigate("/results", { state: { allRestaurants: restaurants } })}
+          onClick={() => navigate("/results", { state: { maybes, allRestaurants: restaurants } })}
           className="px-5 py-3 bg-gradient-to-r from-primary to-orange-400 text-white font-black rounded-2xl shadow-lg hover:shadow-xl hover:scale-105 transition-all text-sm"
         >
-          {allDone ? "Pick For Me! 🎉" : "I'm Done"}
+          {allDone ? "See My Picks! 🎉" : "I'm Done"}
         </button>
 
         <button
-          onClick={() => current && blockRestaurant(current.name)}
+          onClick={() => handleSwipe("maybe")}
           disabled={allDone}
-          className="w-14 h-14 rounded-full bg-card shadow-lg border-2 border-gray-200 flex items-center justify-center hover:scale-110 hover:border-gray-400 transition-all active:scale-95 disabled:opacity-30"
-          title="Never show again"
+          className="w-14 h-14 rounded-full bg-card shadow-lg border-2 border-green-200 flex items-center justify-center hover:scale-110 hover:border-green-400 transition-all active:scale-95 disabled:opacity-30"
+          title="Maybe!"
         >
-          <Ban className="w-6 h-6 text-gray-400" />
+          <Heart className="w-6 h-6 text-green-500" />
         </button>
       </div>
 
+      {/* Block forever - subtle option below */}
+      {!allDone && current && (
+        <div className="flex justify-center pb-2">
+          <button
+            onClick={() => blockRestaurant(current.name)}
+            className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-red-400 transition-all py-1 px-3"
+          >
+            <Ban className="w-3 h-3" /> Never show this place again
+          </button>
+        </div>
+      )}
+
       {/* Hint */}
       {!allDone && (
-        <p className="text-center text-muted-foreground text-xs font-semibold pb-4">
-          ← Skip &nbsp;|&nbsp; 🚫 Block forever
+        <p className="text-center text-muted-foreground text-xs font-semibold pb-2">
+          ← Nope &nbsp;|&nbsp; ❤️ Maybe →
         </p>
       )}
     </div>
