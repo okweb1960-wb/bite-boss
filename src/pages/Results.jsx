@@ -98,6 +98,15 @@ function RestaurantRow({ r, onBlock, onSelect }) {
             {r.open_now ? "Open" : "Closed"}
           </div>
         )}
+        <a
+          href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(r.name + (r.address ? ' ' + r.address : ''))}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={e => e.stopPropagation()}
+          className="text-xs text-blue-500 font-semibold hover:underline flex items-center gap-0.5"
+        >
+          <MapPin className="w-3 h-3" /> Maps
+        </a>
         <button onClick={onBlock} className="p-1.5 rounded-full hover:bg-red-50 transition-all" title="Never show again">
           <Ban className="w-4 h-4 text-gray-300 hover:text-red-400" />
         </button>

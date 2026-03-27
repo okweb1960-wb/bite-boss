@@ -1,4 +1,5 @@
 import { useState, useCallback } from "react";
+import { base44 } from "@/api/base44Client";
 import { useNavigate, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Heart, Ban, ArrowLeft } from "lucide-react";
@@ -9,14 +10,43 @@ export default function Swipe() {
   const { state } = useLocation();
   const allRaw = state?.restaurants || [];
   const blocked = (() => { try { return JSON.parse(localStorage.getItem('blockedRestaurants') || '[]'); } catch { return []; } })();
-  const restaurants = allRaw.filter(r => !blocked.includes(r.name));
+  const initialRestaurants = allRaw.filter(r => !blocked.includes(r.name));
 
+  const [restaurants, setRestaurants] = useState(initialRestaurants);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [maybes, setMaybes] = useState([]);
   const [lastAction, setLastAction] = useState(null);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [noMore, setNoMore] = useState(false);
 
   function getBlocked() {
     try { return JSON.parse(localStorage.getItem('blockedRestaurants') || '[]'); } catch { return []; }
+  }
+
+  async function loadMore() {
+    setLoadingMore(true);
+    setNoMore(false);
+    try {
+      const seenNames = restaurants.map(r => r.name);
+      const response = await base44.functions.invoke('findRestaurants', {
+        latitude: state.coords?.latitude,
+        longitude: state.coords?.longitude,
+        radius_miles: state.filters?.radius,
+        cuisine: state.filters?.cuisine,
+        service: state.filters?.service,
+        open_now: state.filters?.openNow,
+        exclude: seenNames,
+      });
+      const newOnes = (response.data?.restaurants || []).filter(r => !getBlocked().includes(r.name));
+      if (newOnes.length === 0) {
+        setNoMore(true);
+      } else {
+        setRestaurants(prev => [...prev, ...newOnes]);
+      }
+    } catch (e) {
+      setNoMore(true);
+    }
+    setLoadingMore(false);
   }
 
   function blockRestaurant(name) {
@@ -126,11 +156,24 @@ export default function Swipe() {
           <motion.div
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="h-[480px] flex flex-col items-center justify-center text-center"
+            className="h-[480px] flex flex-col items-center justify-center text-center px-4"
           >
             <div className="text-7xl mb-4">🍽️</div>
             <h2 className="font-playfair text-3xl font-bold text-foreground mb-2">That's all of them!</h2>
-            <p className="text-muted-foreground font-semibold">Time to pick where to eat!</p>
+            {noMore ? (
+              <p className="text-muted-foreground font-semibold mb-4">No more restaurants to show nearby.</p>
+            ) : (
+              <p className="text-muted-foreground font-semibold mb-4">Want to see more options?</p>
+            )}
+            {!noMore && (
+              <button
+                onClick={loadMore}
+                disabled={loadingMore}
+                className="bg-secondary text-secondary-foreground font-black px-6 py-3 rounded-2xl shadow hover:opacity-90 transition-all flex items-center gap-2 mb-3"
+              >
+                {loadingMore ? <>🔄 Loading more...</> : "🔍 Show Me More"}
+              </button>
+            )}
           </motion.div>
         )}
       </div>

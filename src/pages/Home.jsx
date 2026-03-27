@@ -62,7 +62,7 @@ export default function Home() {
         return;
       }
 
-      navigate("/swipe", { state: { restaurants, filters, location } });
+      navigate("/swipe", { state: { restaurants, filters, location, coords } });
     } catch (err) {
       setError("Failed to find restaurants. Please try again.");
     }

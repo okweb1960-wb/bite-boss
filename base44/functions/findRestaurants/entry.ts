@@ -14,14 +14,15 @@ Deno.serve(async (req) => {
     const user = await base44.auth.me();
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
-    const { latitude, longitude, radius_miles, cuisine, service, open_now } = await req.json();
+    const { latitude, longitude, radius_miles, cuisine, service, open_now, exclude } = await req.json();
     if (!latitude || !longitude) return Response.json({ error: 'Coordinates required' }, { status: 400 });
 
     const radius = radius_miles || 5;
     const cuisineHint = cuisine ? ` Cuisine preference: ${cuisine}.` : '';
     const serviceHint = service ? ` Service style: ${service}.` : '';
 
-    const prompt = `List 8-10 real restaurants near lat=${latitude} lon=${longitude} within ${radius} miles.${cuisineHint}${serviceHint}
+    const excludeHint = exclude?.length ? ` Do NOT include these places: ${exclude.join(', ')}.` : '';
+    const prompt = `List 8-10 real restaurants near lat=${latitude} lon=${longitude} within ${radius} miles.${cuisineHint}${serviceHint}${excludeHint}
 Return JSON only. Fields per restaurant: name, cuisine, street, rating, reviews, price (1-4), open (bool), stype (Sit-down/Fast Food/Cafe/Counter), lat, lon.`;
 
     const res = await base44.integrations.Core.InvokeLLM({
@@ -55,6 +56,8 @@ Return JSON only. Fields per restaurant: name, cuisine, street, rating, reviews,
       }
     });
 
+    const excludeNames = exclude?.length ? exclude.map(n => n.toLowerCase()) : [];
+
     let restaurants = (res?.restaurants || []).map(r => {
       const d = (r.lat && r.lon) ? distanceMiles(latitude, longitude, r.lat, r.lon) : null;
       return {
@@ -72,6 +75,7 @@ Return JSON only. Fields per restaurant: name, cuisine, street, rating, reviews,
         distance: d === null ? '' : d < 0.1 ? `${Math.round(d * 5280)} ft` : `${d.toFixed(1)} mi`,
       };
     })
+    .filter(r => !excludeNames.includes(r.name.toLowerCase()))
     .filter(r => r.distance_miles === null || r.distance_miles <= radius + 1)
     .sort((a, b) => (a.distance_miles || 0) - (b.distance_miles || 0));
 
