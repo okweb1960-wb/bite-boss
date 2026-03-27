@@ -27,8 +27,7 @@ Return JSON only. Fields per restaurant: name, cuisine, street, rating, reviews,
 
     const res = await base44.integrations.Core.InvokeLLM({
       prompt,
-      add_context_from_internet: true,
-      model: 'gemini_3_flash',
+      add_context_from_internet: false,
       response_json_schema: {
         type: 'object',
         properties: {
