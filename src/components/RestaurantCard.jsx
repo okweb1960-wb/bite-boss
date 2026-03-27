@@ -22,8 +22,7 @@ const FOOD_IMAGES = {
 };
 
 function getImage(restaurant) {
-  if (restaurant.photo_url) return restaurant.photo_url;
-  const cuisine = (restaurant.cuisine || "").toLowerCase();
+  const cuisine = (restaurant?.cuisine || "").toLowerCase();
   for (const key of Object.keys(FOOD_IMAGES)) {
     if (cuisine.includes(key)) return FOOD_IMAGES[key];
   }
@@ -33,7 +32,7 @@ function getImage(restaurant) {
 export default function RestaurantCard({ restaurant, onSwipe, isTop }) {
   const x = useMotionValue(0);
   const rotate = useTransform(x, [-200, 200], [-25, 25]);
-  const opacity = useTransform(x, [-200, -100, 0, 100, 200], [0, 1, 1, 1, 0]);
+  const cardOpacity = useTransform(x, [-200, -100, 0, 100, 200], [0, 1, 1, 1, 0]);
   const nopeOpacity = useTransform(x, [-100, -20, 0], [1, 0, 0]);
   const maybeOpacity = useTransform(x, [0, 20, 100], [0, 0, 1]);
 
@@ -42,84 +41,101 @@ export default function RestaurantCard({ restaurant, onSwipe, isTop }) {
     else if (info.offset.x < -100) onSwipe("nope");
   }
 
+  if (!restaurant) return null;
+
+  const imgSrc = getImage(restaurant);
+  const name = restaurant.name || "Unknown Restaurant";
+  const cuisine = restaurant.cuisine || "";
+  const rating = restaurant.rating;
+  const reviewCount = restaurant.review_count;
+  const priceLevel = PRICE_MAP[restaurant.price_level] || "";
+  const location = restaurant.distance || restaurant.address || "";
+  const serviceType = restaurant.service_type || "";
+  const description = restaurant.description || "";
+  const isOpen = restaurant.open_now;
+
   return (
     <motion.div
-      style={{ x, rotate, opacity }}
+      style={{ x, rotate, opacity: cardOpacity }}
       drag={isTop ? "x" : false}
       dragConstraints={{ left: 0, right: 0 }}
       onDragEnd={handleDragEnd}
-      className="absolute inset-0 cursor-grab active:cursor-grabbing select-none"
       whileDrag={{ scale: 1.03 }}
+      className="absolute inset-0 z-20 cursor-grab active:cursor-grabbing"
     >
-      <div style={{ display: 'flex', flexDirection: 'column', width: '100%', height: '100%', borderRadius: '24px', overflow: 'hidden', boxShadow: '0 20px 60px rgba(0,0,0,0.2)', background: 'white' }}>
-        
-        {/* Image section */}
-        <div style={{ position: 'relative', flexShrink: 0, height: '55%' }}>
-          <img
-            src={getImage(restaurant)}
-            alt={restaurant.name}
-            style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
-          />
-          <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.6), transparent)' }} />
+      {/* Card shell */}
+      <div className="w-full h-full rounded-3xl overflow-hidden shadow-2xl" style={{ background: '#ffffff' }}>
 
-          {/* Swipe hints */}
-          <motion.div style={{ opacity: maybeOpacity, position: 'absolute', top: 24, left: 16 }}>
-            <div style={{ background: '#4ade80', color: 'white', fontWeight: 900, fontSize: 24, padding: '8px 16px', borderRadius: 16, transform: 'rotate(-15deg)', border: '4px solid #86efac' }}>
+        {/* Photo */}
+        <div className="relative w-full" style={{ height: '260px' }}>
+          <img
+            src={imgSrc}
+            alt={name}
+            className="w-full h-full object-cover"
+            crossOrigin="anonymous"
+          />
+          <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.55) 0%, transparent 60%)' }} />
+
+          {/* MAYBE badge */}
+          <motion.div style={{ opacity: maybeOpacity }} className="absolute top-6 left-4">
+            <div className="px-4 py-2 rounded-2xl font-black text-2xl text-white" style={{ background: '#22c55e', transform: 'rotate(-15deg)', border: '3px solid #86efac' }}>
               MAYBE! 🎉
             </div>
           </motion.div>
-          <motion.div style={{ opacity: nopeOpacity, position: 'absolute', top: 24, right: 16 }}>
-            <div style={{ background: '#f87171', color: 'white', fontWeight: 900, fontSize: 24, padding: '8px 16px', borderRadius: 16, transform: 'rotate(15deg)', border: '4px solid #fca5a5' }}>
+
+          {/* NOPE badge */}
+          <motion.div style={{ opacity: nopeOpacity }} className="absolute top-6 right-4">
+            <div className="px-4 py-2 rounded-2xl font-black text-2xl text-white" style={{ background: '#ef4444', transform: 'rotate(15deg)', border: '3px solid #fca5a5' }}>
               NOPE 👎
             </div>
           </motion.div>
 
-          {restaurant.open_now !== undefined && (
-            <div style={{
-              position: 'absolute', top: 12, left: '50%', transform: 'translateX(-50%)',
-              background: restaurant.open_now ? '#22c55e' : '#ef4444',
-              color: 'white', fontWeight: 700, fontSize: 12, padding: '4px 12px', borderRadius: 999
-            }}>
-              {restaurant.open_now ? '🟢 Open Now' : '🔴 Closed'}
+          {/* Open/closed badge */}
+          {isOpen !== undefined && (
+            <div className="absolute top-3 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full text-xs font-bold text-white"
+              style={{ background: isOpen ? '#16a34a' : '#dc2626' }}>
+              {isOpen ? '🟢 Open Now' : '🔴 Closed'}
             </div>
           )}
         </div>
 
-        {/* Info section */}
-        <div style={{ flex: 1, padding: '16px 20px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', background: 'white' }}>
-          <div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 4 }}>
-              <h2 style={{ fontWeight: 900, fontSize: 22, color: '#111827', lineHeight: 1.2, margin: 0 }}>
-                {restaurant.name}
-              </h2>
-              <span style={{ fontWeight: 700, fontSize: 14, color: '#6b7280', marginLeft: 8, flexShrink: 0 }}>
-                {PRICE_MAP[restaurant.price_level] || ''}
-              </span>
-            </div>
-            <p style={{ fontWeight: 600, fontSize: 14, color: '#f97316', margin: '0 0 8px 0' }}>
-              {restaurant.cuisine}
-            </p>
-            {restaurant.description && (
-              <p style={{ fontSize: 13, color: '#6b7280', margin: 0, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
-                {restaurant.description}
-              </p>
-            )}
+        {/* Info */}
+        <div className="p-5" style={{ background: '#ffffff' }}>
+          {/* Name + price */}
+          <div className="flex items-start justify-between mb-1">
+            <h2 className="font-black leading-tight" style={{ fontSize: '22px', color: '#111827', margin: 0 }}>{name}</h2>
+            {priceLevel && <span className="font-bold ml-2 shrink-0" style={{ color: '#6b7280', fontSize: '14px' }}>{priceLevel}</span>}
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: 16, fontSize: 13, color: '#6b7280', marginTop: 8 }}>
-            <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-              <Star style={{ width: 14, height: 14, color: '#fbbf24', fill: '#fbbf24' }} />
-              <span style={{ fontWeight: 700, color: '#111827' }}>{restaurant.rating || '?'}</span>
-              {restaurant.review_count && <span>({restaurant.review_count})</span>}
-            </span>
-            <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-              <MapPin style={{ width: 14, height: 14 }} />
-              {restaurant.distance || restaurant.address}
-            </span>
-            {restaurant.service_type && (
-              <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+          {/* Cuisine */}
+          {cuisine && <p className="font-semibold mb-2" style={{ color: '#f97316', fontSize: '14px', margin: '4px 0 8px' }}>{cuisine}</p>}
+
+          {/* Description */}
+          {description && (
+            <p style={{ color: '#6b7280', fontSize: '13px', margin: '0 0 10px', lineHeight: 1.4, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+              {description}
+            </p>
+          )}
+
+          {/* Stats row */}
+          <div className="flex items-center gap-4" style={{ color: '#6b7280', fontSize: '13px' }}>
+            {rating && (
+              <span className="flex items-center gap-1">
+                <Star style={{ width: 14, height: 14, color: '#f59e0b', fill: '#f59e0b' }} />
+                <span style={{ fontWeight: 700, color: '#111827' }}>{rating}</span>
+                {reviewCount && <span>({reviewCount})</span>}
+              </span>
+            )}
+            {location && (
+              <span className="flex items-center gap-1">
+                <MapPin style={{ width: 14, height: 14 }} />
+                {location}
+              </span>
+            )}
+            {serviceType && (
+              <span className="flex items-center gap-1">
                 <Clock style={{ width: 14, height: 14 }} />
-                {restaurant.service_type}
+                {serviceType}
               </span>
             )}
           </div>

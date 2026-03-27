@@ -64,7 +64,7 @@ export default function Swipe() {
       <div className="flex-1 px-5 relative">
         {!allDone ? (
           <>
-            <div className="relative h-[480px]">
+            <div className="relative" style={{ height: '480px' }}>
               {/* Stack preview cards */}
               {[2, 1].map(offset => {
                 const idx = currentIndex + offset;
@@ -72,7 +72,7 @@ export default function Swipe() {
                 return (
                   <div
                     key={idx}
-                    className="absolute inset-0 rounded-3xl bg-card shadow-lg"
+                    className="absolute inset-0 rounded-3xl shadow-lg" style={{ background: 'white', zIndex: 10 - offset }}
                     style={{
                       transform: `scale(${1 - offset * 0.04}) translateY(${offset * 8}px)`,
                       zIndex: 10 - offset,
