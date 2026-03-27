@@ -1,5 +1,5 @@
 import { motion, useMotionValue, useTransform } from "framer-motion";
-import { Star, MapPin, Clock } from "lucide-react";
+import { Star, MapPin, Clock, ExternalLink } from "lucide-react";
 
 const PRICE_MAP = { 1: "$", 2: "$$", 3: "$$$", 4: "$$$$" };
 
@@ -139,6 +139,19 @@ export default function RestaurantCard({ restaurant, onSwipe, isTop }) {
               </span>
             )}
           </div>
+
+          {/* Google Maps link */}
+          <a
+            href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(name + ' ' + location)}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={e => e.stopPropagation()}
+            className="flex items-center gap-1.5 mt-3 font-semibold"
+            style={{ color: '#4285F4', fontSize: '13px', textDecoration: 'none' }}
+          >
+            <ExternalLink style={{ width: 13, height: 13 }} />
+            View on Google Maps
+          </a>
         </div>
       </div>
     </motion.div>
