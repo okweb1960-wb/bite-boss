@@ -122,15 +122,15 @@ export default function Results() {
   const allRestaurants = state?.allRestaurants || [];
   const initialMaybes = state?.maybes || [];
 
-  if (!state) {
-    navigate("/", { replace: true });
-    return null;
-  }
-
   const [blocked, setBlocked] = useState(getBlocked());
   const [maybes, setMaybes] = useState(initialMaybes.filter(r => !getBlocked().includes(r.name)));
   const [winner, setWinner] = useState(null);
   const [spinning, setSpinning] = useState(false);
+
+  if (!state) {
+    navigate("/", { replace: true });
+    return null;
+  }
 
   const others = allRestaurants.filter(r =>
     !blocked.includes(r.name) && !maybes.find(m => m.name === r.name)
