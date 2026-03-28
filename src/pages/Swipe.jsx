@@ -4,6 +4,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowLeft, RotateCcw } from "lucide-react";
 import RestaurantCard from "../components/RestaurantCard";
+import { haptics } from "@/utils/haptics";
 
 export default function Swipe() {
   const navigate = useNavigate();
@@ -65,8 +66,12 @@ export default function Swipe() {
 
   const handleSwipe = useCallback((direction) => {
     if (!current) return;
-    if (navigator.vibrate) navigator.vibrate(50);
-    if (direction === "maybe") setMaybes(prev => [...prev, current]);
+    if (direction === "maybe") {
+      haptics.maybe();
+      setMaybes(prev => [...prev, current]);
+    } else {
+      haptics.nope();
+    }
     setLastSwiped({ restaurant: current, direction });
     setLastAction(direction);
     setCurrentIndex(prev => prev + 1);
@@ -75,6 +80,7 @@ export default function Swipe() {
 
   const handleUndo = useCallback(() => {
     if (!lastSwiped) return;
+    haptics.undo();
     if (lastSwiped.direction === "maybe") {
       setMaybes(prev => prev.filter(r => r.name !== lastSwiped.restaurant.name));
     }

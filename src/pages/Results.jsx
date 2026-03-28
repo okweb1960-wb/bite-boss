@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, ChevronUp, Star, MapPin, Clock, ExternalLink, RotateCcw } from "lucide-react";
+import WinnerModal from "../components/WinnerModal";
+import { haptics } from "@/utils/haptics";
 
 const PRICE_MAP = { 1: "$", 2: "$$", 3: "$$$", 4: "$$$$" };
 
@@ -69,7 +71,6 @@ export default function Results() {
   const { state } = useLocation();
   const navigate = useNavigate();
   
-  // Redirect to home if no state (e.g., on page refresh)
   if (!state?.maybes) {
     navigate("/", { replace: true });
     return null;
@@ -81,6 +82,9 @@ export default function Results() {
   
   const [showUnseen, setShowUnseen] = useState(maybes.length === 0);
   const [dragStart, setDragStart] = useState(null);
+  const [winner, setWinner] = useState(null);
+  const [lastWinner, setLastWinner] = useState(null);
+  const [isShuffling, setIsShuffling] = useState(false);
   
   function handleBottomIndicatorDrag(e) {
     if (!e.touches) return;
@@ -96,6 +100,32 @@ export default function Results() {
   
   function handleTouchEnd() {
     setDragStart(null);
+  }
+
+  function pickWinner() {
+    haptics.pickForUs();
+    setIsShuffling(true);
+    
+    setTimeout(() => {
+      let selected = maybes[0];
+      let attempts = 0;
+      while (attempts < 10 && selected.name === lastWinner?.name) {
+        const weighted = maybes.map(r => ({
+          ...r,
+          weight: (r.rating || 3) * Math.random(),
+        }));
+        selected = weighted.sort((a, b) => b.weight - a.weight)[0];
+        attempts++;
+      }
+      setLastWinner(selected);
+      setWinner(selected);
+      setIsShuffling(false);
+    }, 1000);
+  }
+
+  function handlePickAgain() {
+    setWinner(null);
+    setTimeout(() => pickWinner(), 300);
   }
   
   const showEmptyState = maybes.length === 0;
@@ -124,6 +154,23 @@ export default function Results() {
                 <RotateCcw className="w-5 h-5 text-teal-600" />
               </button>
             </div>
+
+            {/* Pick For Us Button */}
+            {maybes.length >= 2 && !showEmptyState && (
+              <motion.div
+                className="px-5 py-4"
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+              >
+                <button
+                  onClick={pickWinner}
+                  disabled={isShuffling}
+                  className="w-full px-6 py-4 bg-orange-500 text-white font-black rounded-2xl shadow-lg hover:shadow-xl transition-all text-lg disabled:opacity-60"
+                >
+                  🎲 Pick For Us
+                </button>
+              </motion.div>
+            )}
             
             {/* Content */}
             {showEmptyState ? (
@@ -218,6 +265,16 @@ export default function Results() {
           </>
         )}
       </AnimatePresence>
+
+      {/* Winner Modal */}
+      {winner && (
+        <WinnerModal
+          restaurant={winner}
+          maybes={maybes}
+          onClose={() => setWinner(null)}
+          onPickAgain={handlePickAgain}
+        />
+      )}
     </div>
   );
 }
