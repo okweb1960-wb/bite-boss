@@ -10,53 +10,62 @@ function distanceMiles(lat1, lon1, lat2, lon2) {
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
 }
 
-async function fetchPlaces(latitude, longitude, radiusMeters, keyword, pagetoken) {
-  let url = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${latitude},${longitude}&radius=${radiusMeters}&type=restaurant&key=${GMAPS_KEY}`;
-  if (keyword) url += `&keyword=${encodeURIComponent(keyword)}`;
-  if (pagetoken) url += `&pagetoken=${encodeURIComponent(pagetoken)}`;
-  const res = await fetch(url);
-  const data = await res.json();
-  console.log('Google status:', data.status, 'count:', data.results?.length, 'error:', data.error_message);
-  return data;
-}
-
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me();
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
-    const { latitude, longitude, radius_miles, cuisine, service, open_now, exclude } = await req.json();
+    const payload = await req.json();
+    console.log('Payload received:', JSON.stringify(payload));
+    const { latitude, longitude, radius_miles, cuisine, service, open_now, exclude } = payload;
     if (!latitude || !longitude) return Response.json({ error: 'Coordinates required' }, { status: 400 });
 
     const radiusMeters = Math.round((radius_miles || 5) * 1609.34);
-    const keyword = [cuisine, service].filter(Boolean).join(' ') || undefined;
     const excludeNames = (exclude || []).map(n => n.toLowerCase());
 
-    const data = await fetchPlaces(latitude, longitude, radiusMeters, keyword);
-    let places = data.results || [];
+    const body = {
+      includedTypes: ['restaurant'],
+      maxResultCount: 20,
+      locationRestriction: {
+        circle: {
+          center: { latitude, longitude },
+          radius: radiusMeters,
+        }
+      },
+    };
 
-    if (data.next_page_token && places.length < 30) {
-      await new Promise(r => setTimeout(r, 2000));
-      const data2 = await fetchPlaces(latitude, longitude, radiusMeters, keyword, data.next_page_token);
-      places = [...places, ...(data2.results || [])];
+    if (cuisine || service) {
+      body.textQuery = [cuisine, service].filter(Boolean).join(' ');
     }
 
-    let restaurants = places
-      .filter(p => !excludeNames.includes(p.name.toLowerCase()))
+    const res = await fetch('https://places.googleapis.com/v1/places:searchNearby', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Goog-Api-Key': GMAPS_KEY,
+        'X-Goog-FieldMask': 'places.displayName,places.formattedAddress,places.rating,places.userRatingCount,places.priceLevel,places.currentOpeningHours,places.location,places.types,places.primaryTypeDisplayName',
+      },
+      body: JSON.stringify(body),
+    });
+
+    const data = await res.json();
+    console.log('Places API response:', JSON.stringify(data).slice(0, 500));
+
+    let restaurants = (data.places || [])
+      .filter(p => !excludeNames.includes(p.displayName?.text?.toLowerCase()))
       .map(p => {
-        const lat = p.geometry?.location?.lat;
-        const lon = p.geometry?.location?.lng;
+        const lat = p.location?.latitude;
+        const lon = p.location?.longitude;
         const d = (lat && lon) ? distanceMiles(latitude, longitude, lat, lon) : null;
-        const isOpen = p.opening_hours?.open_now;
         return {
-          name: p.name,
-          cuisine: p.types?.find(t => !['restaurant','food','point_of_interest','establishment'].includes(t))?.replace(/_/g, ' ') || 'Restaurant',
-          address: p.vicinity || '',
+          name: p.displayName?.text || 'Unknown',
+          cuisine: p.primaryTypeDisplayName?.text || p.types?.find(t => !['restaurant','food','point_of_interest','establishment'].includes(t))?.replace(/_/g, ' ') || 'Restaurant',
+          address: p.formattedAddress || '',
           rating: p.rating,
-          review_count: p.user_ratings_total,
-          price_level: p.price_level,
-          open_now: isOpen,
+          review_count: p.userRatingCount,
+          price_level: p.priceLevel ? { 'PRICE_LEVEL_FREE': 1, 'PRICE_LEVEL_INEXPENSIVE': 1, 'PRICE_LEVEL_MODERATE': 2, 'PRICE_LEVEL_EXPENSIVE': 3, 'PRICE_LEVEL_VERY_EXPENSIVE': 4 }[p.priceLevel] : undefined,
+          open_now: p.currentOpeningHours?.openNow,
           lat,
           lon,
           distance_miles: d,
@@ -70,7 +79,7 @@ Deno.serve(async (req) => {
 
     restaurants.sort((a, b) => (a.distance_miles || 0) - (b.distance_miles || 0));
 
-    return Response.json({ restaurants, status: data.status });
+    return Response.json({ restaurants, _debug: { status: res?.status, error: data?.error, places_count: data?.places?.length } });
 
   } catch (error) {
     console.error('Error:', error.message);
