@@ -86,14 +86,14 @@ export default function FilterPanel({ filters, onChange, availableCuisines = [],
                 key={c}
                 onClick={() => !isDisabled && toggleCuisine(c)}
                 disabled={isDisabled}
-                className={`px-3 py-1.5 rounded-full font-semibold text-sm transition-all ${
-                  isLoading ? "animate-shimmer" : ""
-                } ${
-                  isDisabled
-                    ? "opacity-50 cursor-not-allowed bg-muted text-muted-foreground"
+                className={`px-3 py-1.5 rounded-full font-semibold text-sm transition-opacity ${
+                  isLoading
+                    ? "animate-shimmer bg-muted text-muted-foreground"
+                    : isDisabled
+                    ? "opacity-50 pointer-events-none bg-gray-300 text-gray-600"
                     : selected
-                    ? "bg-secondary text-secondary-foreground shadow-md scale-105"
-                    : "bg-muted text-muted-foreground hover:bg-secondary/20"
+                    ? "opacity-100 bg-secondary text-secondary-foreground shadow-md scale-105"
+                    : "opacity-100 bg-muted text-muted-foreground hover:bg-secondary/20"
                 }`}
               >
                 {c}
@@ -102,8 +102,6 @@ export default function FilterPanel({ filters, onChange, availableCuisines = [],
           })}
         </div>
       </div>
-
-      {/* Service Type - multi-select */}
       <div>
         <h3 className="font-bold text-foreground mb-1">How do you want to eat?</h3>
         <p className="text-xs text-muted-foreground mb-3">Pick one or more</p>

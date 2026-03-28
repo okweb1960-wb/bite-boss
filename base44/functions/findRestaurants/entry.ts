@@ -34,13 +34,49 @@ const CUISINE_KEYWORDS = {
 
 const PRICE_MAP = { PRICE_LEVEL_FREE: 1, PRICE_LEVEL_INEXPENSIVE: 1, PRICE_LEVEL_MODERATE: 2, PRICE_LEVEL_EXPENSIVE: 3, PRICE_LEVEL_VERY_EXPENSIVE: 4 };
 
+const VALID_FOOD_TYPES = new Set([
+  'restaurant', 'fast_food_restaurant', 'cafe', 'bakery', 'meal_takeaway', 'meal_delivery',
+  'sandwich_shop', 'pizza_restaurant', 'hamburger_restaurant', 'mexican_restaurant',
+  'chinese_restaurant', 'japanese_restaurant', 'thai_restaurant', 'indian_restaurant',
+  'italian_restaurant', 'seafood_restaurant', 'steak_house', 'sushi_restaurant',
+  'ramen_restaurant', 'barbecue_restaurant', 'breakfast_restaurant', 'brunch_restaurant',
+  'ice_cream_shop', 'dessert_shop', 'vegan_restaurant', 'vegetarian_restaurant',
+  'mediterranean_restaurant', 'greek_restaurant', 'american_restaurant', 'middle_eastern_restaurant'
+]);
+
+const INVALID_TYPES = new Set([
+  'miniature_golf', 'amusement_center', 'bowling_alley', 'movie_theater', 'night_club',
+  'bar', 'stadium', 'sports_club', 'gym', 'shopping_mall', 'grocery_store',
+  'convenience_store', 'gas_station', 'hotel', 'lodging'
+]);
+
+const EXCLUDED_KEYWORDS = /putt|golf|bowling|cinema|theater|theatre|arcade|trampoline|escape room|laser tag|axe throwing|mini golf|go kart|water park|amusement/i;
+
 const FIELD_MASK = [
   'places.displayName', 'places.formattedAddress', 'places.location', 'places.rating',
   'places.userRatingCount', 'places.priceLevel', 'places.currentOpeningHours',
-  'places.types', 'places.editorialSummary', 'places.businessStatus',
+  'places.types', 'places.editorialSummary', 'places.businessStatus', 'places.photos',
   'places.delivery', 'places.takeout', 'places.dineIn',
   'places.servesWine', 'places.servesBeer', 'places.servesCocktails',
 ].join(',');
+
+function isValidRestaurant(place) {
+  const types = place.types || [];
+  const hasValidType = types.some(t => VALID_FOOD_TYPES.has(t));
+  const hasInvalidType = types.some(t => INVALID_TYPES.has(t));
+  const name = (place.displayName?.text || '').toLowerCase();
+  
+  if (!hasValidType) return false;
+  if (hasInvalidType && !hasValidType) return false;
+  if (EXCLUDED_KEYWORDS.test(name)) return false;
+  
+  const rating = place.rating || 0;
+  const reviewCount = place.userRatingCount || 0;
+  const hasDescription = !!(place.editorialSummary?.text);
+  if (rating === 0 && reviewCount < 5 && !hasDescription) return false;
+  
+  return true;
+}
 
 Deno.serve(async (req) => {
   try {
@@ -106,6 +142,12 @@ Deno.serve(async (req) => {
         }
       }
 
+      let photoUrl = null;
+      if (p.photos && p.photos.length > 0) {
+        const photoName = p.photos[0].name;
+        photoUrl = `https://places.googleapis.com/v1/${photoName}/media?maxWidthPx=800&key=${GMAPS_KEY}`;
+      }
+
       return {
         name: p.displayName?.text || 'Unknown Restaurant',
         cuisine: cuisineLabel,
@@ -117,12 +159,14 @@ Deno.serve(async (req) => {
         description: p.editorialSummary?.text || '',
         distance_miles: d,
         distance: d === null ? '' : d < 0.1 ? `${Math.round(d * 5280)} ft` : `${d.toFixed(1)} mi`,
+        photo_url: photoUrl,
       };
     }
 
     // STEP 2: Process broad results
     const allRestaurants = (broadData.places || [])
       .filter(p => p.businessStatus !== 'CLOSED_PERMANENTLY')
+      .filter(p => isValidRestaurant(p))
       .filter(p => !excludeNames.includes(p.displayName?.text?.toLowerCase()))
       .map(mapPlaceToRestaurant)
       .filter(r => r.distance_miles !== null && r.distance_miles <= (radius_miles || 5));
