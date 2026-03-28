@@ -11,8 +11,7 @@ function distanceMiles(lat1, lon1, lat2, lon2) {
 }
 
 const CUISINE_KEYWORDS = {
-  'american':      { words: ['american', 'burger', 'diner', 'bbq', 'barbecue', 'steakhouse', 'wings'], types: ['american_restaurant', 'hamburger_restaurant', 'steak_house', 'fast_food_restaurant'] },
-  'mexican':       { words: ['mexican', 'taco', 'burrito', 'tex-mex', 'tamale', 'quesadilla'], types: ['mexican_restaurant'] },
+  'mexican':       { words: ['mexican', 'taco', 'burrito', 'tex-mex', 'tamale', 'quesadilla', 'enchilada', 'tortilla', 'salsa', 'chipotle', 'guacamole', 'nacho', 'taqueria', 'cantina'], types: ['mexican_restaurant'] },
   'italian':       { words: ['italian', 'pizza', 'pasta', 'trattoria'], types: ['italian_restaurant', 'pizza_restaurant'] },
   'pizza':         { words: ['pizza', 'pizzeria'], types: ['pizza_restaurant'] },
   'chinese':       { words: ['chinese', 'dim sum', 'cantonese', 'szechuan'], types: ['chinese_restaurant'] },
@@ -30,6 +29,7 @@ const CUISINE_KEYWORDS = {
   'desserts':      { words: ['dessert', 'ice cream', 'bakery', 'cake', 'pastry', 'donut', 'yogurt'], types: ['ice_cream_shop', 'bakery', 'dessert_shop'] },
   'vegetarian':    { words: ['vegetarian', 'vegan', 'plant-based'], types: ['vegan_restaurant', 'vegetarian_restaurant'] },
   'vegan':         { words: ['vegan', 'plant-based'], types: ['vegan_restaurant'] },
+  'american':      { words: ['american grill', 'american cuisine', 'american kitchen', 'american food'], types: ['american_restaurant', 'hamburger_restaurant', 'steak_house', 'fast_food_restaurant'] },
 };
 
 const PRICE_MAP = { PRICE_LEVEL_FREE: 1, PRICE_LEVEL_INEXPENSIVE: 1, PRICE_LEVEL_MODERATE: 2, PRICE_LEVEL_EXPENSIVE: 3, PRICE_LEVEL_VERY_EXPENSIVE: 4 };
@@ -165,7 +165,7 @@ Deno.serve(async (req) => {
       const nameLower = (p.displayName?.text || '').toLowerCase();
       const descLower = (p.editorialSummary?.text || '').toLowerCase();
       const typesArr = p.types || [];
-      let cuisineLabel = 'American';
+      let cuisineLabel = 'Restaurant';
 
       // First pass: match by specific Google place types
       for (const [key, val] of Object.entries(CUISINE_KEYWORDS)) {
@@ -175,8 +175,8 @@ Deno.serve(async (req) => {
         }
       }
 
-      // Second pass: if still American, check name AND description
-      if (cuisineLabel === 'American') {
+      // Second pass: if still Restaurant, check name AND description
+      if (cuisineLabel === 'Restaurant') {
         const haystack = nameLower + ' ' + descLower;
         for (const [key, val] of Object.entries(CUISINE_KEYWORDS)) {
           if (val.words.some(w => haystack.includes(w))) {
@@ -229,11 +229,11 @@ Deno.serve(async (req) => {
       cuisineCounts[r.cuisine] = (cuisineCounts[r.cuisine] || 0) + 1;
     });
 
-    // STEP 7 & 8: availableCuisines with American always included
+    // STEP 7 & 8: availableCuisines with Restaurant always included
     const availableCuisines = [
-      'American',
+      'Restaurant',
       ...Object.keys(cuisineCounts)
-        .filter(c => c !== 'American' && cuisineCounts[c] >= 1)
+        .filter(c => c !== 'Restaurant' && cuisineCounts[c] >= 1)
     ].sort();
 
     console.log('Total unique places fetched:', broadData.places.length);
