@@ -105,47 +105,81 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Invalid coordinates' }, { status: 400 });
     }
 
-    // STEP 1: Make broad API call with no cuisine filters
-    const includedTypes = cuisineList.length > 0
-      ? cuisineList.flatMap(c => 
-          CUISINE_KEYWORDS[c.toLowerCase()]?.types || []
-        ).filter(Boolean)
-      : null;
+    // STEP 1: Check cuisine availability with parallel queries
+    const cuisineQueries = [
+      { label: 'Mexican', query: 'mexican restaurant tacos' },
+      { label: 'Italian', query: 'italian restaurant pizza pasta' },
+      { label: 'Chinese', query: 'chinese restaurant' },
+      { label: 'Japanese', query: 'japanese restaurant sushi ramen' },
+      { label: 'Thai', query: 'thai restaurant' },
+      { label: 'Indian', query: 'indian restaurant curry' },
+      { label: 'Mediterranean', query: 'mediterranean greek restaurant' },
+      { label: 'Burgers', query: 'burger hamburger restaurant' },
+      { label: 'Sandwiches', query: 'sandwich deli sub shop' },
+      { label: 'BBQ', query: 'bbq barbecue restaurant' },
+      { label: 'Seafood', query: 'seafood fish restaurant' },
+      { label: 'Breakfast', query: 'breakfast brunch restaurant' },
+      { label: 'Desserts', query: 'dessert ice cream bakery' },
+      { label: 'Vegetarian', query: 'vegetarian vegan restaurant' },
+    ];
 
-    // Use searchText for broad discovery (returns more diverse results)
-    // Use searchNearby only when specific cuisines are selected
-    const useSearchText = !includedTypes;
-
-    let broadRequestBody, broadEndpoint;
-    if (useSearchText) {
-      broadRequestBody = {
-        textQuery: 'restaurant food dining',
-        maxResultCount: 20,
-        locationBias: {
-          circle: {
-            center: { latitude: lat, longitude: lng },
-            radius: radiusMeters
+    const availabilityResults = await Promise.all(
+      cuisineQueries.map(async ({ label, query }) => {
+        const body = {
+          textQuery: query,
+          maxResultCount: 5,
+          locationBias: {
+            circle: {
+              center: { latitude: lat, longitude: lng },
+              radius: radiusMeters
+            }
+          },
+          ...(open_now ? { openNow: true } : {}),
+        };
+        const res = await fetch(
+          'https://places.googleapis.com/v1/places:searchText',
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'X-Goog-Api-Key': GMAPS_KEY || '',
+              'X-Goog-FieldMask': 'places.displayName,places.location',
+            },
+            body: JSON.stringify(body),
           }
-        },
-        ...(open_now ? { openNow: true } : {}),
-      };
-      broadEndpoint = 'https://places.googleapis.com/v1/places:searchText';
-    } else {
-      broadRequestBody = {
-        maxResultCount: 20,
-        locationRestriction: {
-          circle: {
-            center: { latitude: lat, longitude: lng },
-            radius: radiusMeters
-          }
-        },
-        includedTypes,
-        ...(open_now ? { openNow: true } : {}),
-      };
-      broadEndpoint = 'https://places.googleapis.com/v1/places:searchNearby';
-    }
+        );
+        const data = await res.json();
+        const count = (data.places || []).filter(p => {
+          if (!p.location) return false;
+          const d = distanceMiles(
+            lat, lng,
+            p.location.latitude,
+            p.location.longitude
+          );
+          return d <= (radius_miles || 5);
+        }).length;
+        return { label, count };
+      })
+    );
 
-    const broadRes = await fetch(broadEndpoint, {
+    const availableCuisinesFromQuery = availabilityResults
+      .filter(r => r.count >= 1)
+      .map(r => r.label);
+
+    // STEP 1b: Fetch all restaurants with general query
+    const broadRequestBody = {
+      textQuery: 'restaurant',
+      maxResultCount: 20,
+      locationBias: {
+        circle: {
+          center: { latitude: lat, longitude: lng },
+          radius: radiusMeters
+        }
+      },
+      ...(open_now ? { openNow: true } : {}),
+    };
+
+    const broadRes = await fetch('https://places.googleapis.com/v1/places:searchText', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -237,16 +271,17 @@ Deno.serve(async (req) => {
     allRestaurants.forEach(r => {
       cuisineCounts[r.cuisine] = (cuisineCounts[r.cuisine] || 0) + 1;
     });
-    const availableCuisines = Object.keys(cuisineCounts).filter(c => cuisineCounts[c] >= 1).sort();
 
     console.log('Cuisine counts:', cuisineCounts);
-    console.log('Available cuisines:', availableCuisines);
+    console.log('Available cuisines from parallel queries:', availableCuisinesFromQuery);
     console.log('Restaurant cuisine mapping:', 
       allRestaurants.map(r => ({
         name: r.name,
         cuisine: r.cuisine
       }))
     );
+
+    const availableCuisines = ['American', ...availableCuisinesFromQuery].sort();
 
     // STEP 3: Filter results based on user selections
     let filteredRestaurants = allRestaurants;
