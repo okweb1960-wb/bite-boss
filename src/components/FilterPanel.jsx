@@ -127,7 +127,9 @@ export default function FilterPanel({ filters, onChange, availableCuisines = [],
                 {s.label}
               </button>
             );
-          })
+          })}
+        </div>
+      </div>
       <div className="flex items-center justify-between bg-teal-50 rounded-2xl px-4 py-3">
         <div>
           <p className="font-bold text-foreground">Open right now</p>

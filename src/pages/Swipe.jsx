@@ -98,7 +98,6 @@ export default function Swipe() {
           >
             Maybe
           </button>
-        </div>
           <p className="text-muted-foreground text-xs font-semibold">{remaining} left</p>
         </div>
       </div>
@@ -194,6 +193,9 @@ export default function Swipe() {
           onClick={() => navigate("/results", { state: { maybes, allRestaurants: restaurants } })}
           className="px-5 py-3 bg-orange-500 text-white font-black rounded-2xl shadow-lg hover:shadow-xl hover:scale-105 transition-all text-sm"
         >
+          View Results
+        </button>
+      </div>
     </div>
   );
 }
