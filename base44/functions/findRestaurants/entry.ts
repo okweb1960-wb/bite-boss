@@ -113,8 +113,8 @@ Deno.serve(async (req) => {
       placesApiEndpoint = 'https://places.googleapis.com/v1/places:searchText';
       requestBody = {
         textQuery: `Best ${cuisineList[0]} restaurants`,
-        maxResultCount: 60,
-        locationRestriction: {
+        maxResultCount: 20,
+        locationBias: {
           circle: {
             center: { latitude, longitude },
             radius: radiusMeters,
