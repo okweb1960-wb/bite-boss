@@ -29,10 +29,6 @@ export default function Home() {
         } catch {
           setLocation(`${latitude.toFixed(5)}, ${longitude.toFixed(5)}`);
         }
-        // Trigger availability check when location is detected
-        await checkCuisineAvailability(latitude, longitude, filters.radius, filters.openNow);
-        setLastCheckedRadius(filters.radius);
-        setLastCheckedOpenNow(filters.openNow);
         setDetecting(false);
       },
       () => { setDetecting(false); setError("Couldn't detect location. Type it in!"); },

@@ -38,9 +38,7 @@ export default function FilterPanel({ filters, onChange }) {
           {RADIUS_OPTIONS.map(r => (
             <button
               key={r}
-              onClick={() => {
-                if (onRadiusChange) onRadiusChange(r);
-                onChange({ ...filters, radius: r });
+              onClick={() => onChange({ ...filters, radius: r })}
               }}
               className={`px-4 py-2 rounded-full font-semibold text-sm transition-all ${
                 filters.radius === r
