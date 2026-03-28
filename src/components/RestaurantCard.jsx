@@ -89,7 +89,7 @@ export default function RestaurantCard({ restaurant, onSwipe, onBlock, isTop }) 
 
           {/* Open Now badge — overlapping bottom-left */}
           {isOpen === true && (
-            <div className="absolute" style={{ bottom: '-14px', left: '16px' }}>
+            <div className="absolute" style={{ bottom: '-14px', left: '16px', zIndex: 10 }}>
               <div className="px-3 py-1.5 rounded-full text-xs font-bold text-white bg-green-500 border-2 border-white" style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
                 🟢 Open Now
               </div>
