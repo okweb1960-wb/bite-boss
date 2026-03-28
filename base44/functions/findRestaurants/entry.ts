@@ -35,7 +35,7 @@ const CUISINE_KEYWORDS = {
 
 // Service filter → post-fetch checks against raw place data
 const SERVICE_FIELD_MAP = {
-  'fast food': (p) => p.types?.some(t => ['fast_food_restaurant', 'meal_takeaway'].includes(t)),
+  'fast food': (p) => p.types?.some(t => t === 'fast_food_restaurant') && !p.servesBeer && !p.servesWine && !p.servesCocktails,
   'sit-down':  (p) => p.dineIn === true || p.servesDinner === true || p.servesLunch === true,
   'takeout':   (p) => p.takeout === true || p.types?.some(t => ['meal_takeaway', 'fast_food_restaurant'].includes(t)),
   'delivery':  (p) => p.delivery === true || p.types?.includes('meal_delivery'),
