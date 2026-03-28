@@ -22,16 +22,21 @@ export default function Home() {
   async function checkCuisineAvailability(lat, lng, radius, openNow) {
     console.log('Availability check triggered');
     console.log('Radius:', radius);
+    console.log('Coordinates received:', { lat, lng });
+    
+    const availabilityPayload = {
+      latitude: lat,
+      longitude: lng,
+      radius_miles: radius,
+      cuisine: [],
+      service: [],
+      open_now: openNow
+    };
+    console.log('Sending availability payload:', JSON.stringify(availabilityPayload));
+    
     setLoadingAvailability(true);
     try {
-      const response = await base44.functions.invoke('findRestaurants', {
-        latitude: lat,
-        longitude: lng,
-        radius_miles: radius,
-        cuisine: [],
-        service: [],
-        open_now: openNow,
-      });
+      const response = await base44.functions.invoke('findRestaurants', availabilityPayload);
       console.log('Full API response:', response);
       
       const restaurants = response.data?.restaurants || [];
