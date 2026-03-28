@@ -106,7 +106,7 @@ Deno.serve(async (req) => {
       : null;
 
     const broadRequestBody = {
-      maxResultCount: 50,
+      maxResultCount: 20,
       locationRestriction: {
         circle: {
           center: { latitude: lat, longitude: lng },
