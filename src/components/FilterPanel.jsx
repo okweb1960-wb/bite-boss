@@ -79,20 +79,38 @@ export default function FilterPanel({ filters, onChange, availableCuisines = [],
             const isLoading = loadingAvailability && availableCuisines.length === 0;
             const isDisabled = !available && availableCuisines.length > 0;
 
+            if (isLoading) {
+              return (
+                <button key={c} className="px-3 py-1.5 rounded-full font-semibold text-sm animate-shimmer bg-teal-100 text-teal-600" disabled />
+              );
+            }
+
+            if (isDisabled) {
+              return (
+                <button
+                  key={c}
+                  disabled
+                  className="px-3 py-1.5 rounded-full font-semibold text-sm opacity-50 cursor-not-allowed"
+                  style={{ background: '#D1D5DB', color: '#9CA3AF' }}
+                >
+                  {c}
+                </button>
+              );
+            }
+
             return (
               <button
                 key={c}
-                onClick={() => !isDisabled && toggleCuisine(c)}
-                disabled={isDisabled}
-                className={`px-3 py-1.5 rounded-full font-semibold text-sm transition-opacity ${
-                  isLoading
-                    ? "animate-shimmer bg-teal-100 text-teal-600"
-                    : isDisabled
-                    ? "opacity-50 pointer-events-none bg-gray-300 text-gray-600"
-                    : selected
-                    ? "opacity-100 bg-teal-600 text-white shadow-md scale-105"
-                    : "opacity-100 bg-teal-100 text-teal-600 hover:bg-teal-200"
+                onClick={() => toggleCuisine(c)}
+                className={`px-3 py-1.5 rounded-full font-semibold text-sm transition-all ${
+                  selected
+                    ? "shadow-md scale-105"
+                    : "border border-teal-600 hover:shadow-sm"
                 }`}
+                style={{
+                  background: selected ? '#0D9488' : '#CCFBF1',
+                  color: selected ? 'white' : '#0D9488',
+                }}
               >
                 {c}
               </button>
