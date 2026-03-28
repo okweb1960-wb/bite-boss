@@ -20,6 +20,8 @@ export default function Home() {
   const [lastCheckedOpenNow, setLastCheckedOpenNow] = useState(true);
 
   async function checkCuisineAvailability(lat, lng, radius, openNow) {
+    console.log('Availability check triggered');
+    console.log('Radius:', radius);
     setLoadingAvailability(true);
     try {
       const response = await base44.functions.invoke('findRestaurants', {
@@ -30,7 +32,44 @@ export default function Home() {
         service: [],
         open_now: openNow,
       });
-      const available = response.data?.availableCuisines || [];
+      console.log('Full API response:', response);
+      
+      const restaurants = response.data?.restaurants || [];
+      console.log('Results count:', restaurants.length);
+      
+      // Count restaurants by cuisine
+      const CUISINE_KEYWORDS = {
+        'American': { words: ['american', 'burger', 'diner', 'bbq', 'barbecue', 'steakhouse', 'wings'] },
+        'Mexican': { words: ['mexican', 'taco', 'burrito', 'tex-mex', 'tamale', 'quesadilla'] },
+        'Italian': { words: ['italian', 'pizza', 'pasta', 'trattoria'] },
+        'Pizza': { words: ['pizza', 'pizzeria'] },
+        'Chinese': { words: ['chinese', 'dim sum', 'cantonese', 'szechuan'] },
+        'Japanese': { words: ['japanese', 'sushi', 'ramen', 'teriyaki', 'hibachi'] },
+        'Sushi': { words: ['sushi'] },
+        'Thai': { words: ['thai'] },
+        'Indian': { words: ['indian', 'curry'] },
+        'Mediterranean': { words: ['mediterranean', 'greek', 'falafel', 'kebab', 'gyro'] },
+        'Burgers': { words: ['burger', 'hamburger'] },
+        'Sandwiches': { words: ['sandwich', 'sub', 'deli', 'hoagie'] },
+        'BBQ': { words: ['bbq', 'barbecue'] },
+        'Seafood': { words: ['seafood', 'fish'] },
+        'Breakfast': { words: ['breakfast', 'brunch', 'pancake', 'waffle'] },
+        'Desserts': { words: ['dessert', 'ice cream', 'bakery', 'cake'] },
+        'Vegetarian': { words: ['vegetarian'] },
+        'Vegan': { words: ['vegan'] },
+      };
+      
+      const cuisineCounts = {};
+      restaurants.forEach(r => {
+        const cuisine = r.cuisine || 'Restaurant';
+        cuisineCounts[cuisine] = (cuisineCounts[cuisine] || 0) + 1;
+      });
+      console.log('Cuisine counts:', cuisineCounts);
+      
+      // A cuisine is available if count >= 2
+      const available = Object.keys(cuisineCounts).filter(c => cuisineCounts[c] >= 2);
+      console.log('Available cuisines:', available);
+      
       setAvailableCuisines(available);
       
       // If user's selected cuisine is no longer available, reset to "All"
@@ -56,16 +95,13 @@ export default function Home() {
         try {
           const res = await base44.functions.invoke('reverseGeocode', { latitude, longitude });
           setLocation(res.data?.address || `${latitude.toFixed(5)}, ${longitude.toFixed(5)}`);
-          // Trigger availability check after location detected
-          await checkCuisineAvailability(latitude, longitude, filters.radius, filters.openNow);
-          setLastCheckedRadius(filters.radius);
-          setLastCheckedOpenNow(filters.openNow);
         } catch {
           setLocation(`${latitude.toFixed(5)}, ${longitude.toFixed(5)}`);
-          await checkCuisineAvailability(latitude, longitude, filters.radius, filters.openNow);
-          setLastCheckedRadius(filters.radius);
-          setLastCheckedOpenNow(filters.openNow);
         }
+        // Trigger availability check when location is detected
+        await checkCuisineAvailability(latitude, longitude, filters.radius, filters.openNow);
+        setLastCheckedRadius(filters.radius);
+        setLastCheckedOpenNow(filters.openNow);
         setDetecting(false);
       },
       () => { setDetecting(false); setError("Couldn't detect location. Type it in!"); },
@@ -186,14 +222,20 @@ export default function Home() {
         </motion.div>
 
         {/* Filters */}
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
-          <FilterPanel 
-            filters={filters} 
-            onChange={setFilters}
-            availableCuisines={availableCuisines}
-            loadingAvailability={loadingAvailability}
-          />
-        </motion.div>
+         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
+           <FilterPanel 
+             filters={filters} 
+             onChange={setFilters}
+             availableCuisines={availableCuisines}
+             loadingAvailability={loadingAvailability}
+             onRadiusChange={(newRadius) => {
+               if (coords) {
+                 checkCuisineAvailability(coords.latitude, coords.longitude, newRadius, filters.openNow);
+               }
+             }}
+             coords={coords}
+           />
+         </motion.div>
 
         {error && (
           <div className="bg-destructive/10 text-destructive px-4 py-3 rounded-2xl font-semibold text-sm">{error}</div>

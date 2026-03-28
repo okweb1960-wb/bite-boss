@@ -14,12 +14,8 @@ const SERVICE_TYPES = [
 
 const RADIUS_OPTIONS = [1, 3, 5, 10, 20];
 
-export default function FilterPanel({ filters, onChange, availableCuisines = [], loadingAvailability = false }) {
-  const CUISINES = [
-    "American", "Mexican", "Italian", "Chinese", "Japanese", "Thai",
-    "Indian", "Mediterranean", "Pizza", "Burgers", "Sandwiches", "Sushi",
-    "BBQ", "Seafood", "Vegetarian", "Vegan", "Breakfast", "Desserts"
-  ];
+export default function FilterPanel({ filters, onChange, availableCuisines = [], loadingAvailability = false, onRadiusChange, coords }) {
+
 
   function toggleCuisine(c) {
     const current = filters.cuisines || [];
@@ -47,7 +43,10 @@ export default function FilterPanel({ filters, onChange, availableCuisines = [],
           {RADIUS_OPTIONS.map(r => (
             <button
               key={r}
-              onClick={() => onChange({ ...filters, radius: r })}
+              onClick={() => {
+                if (onRadiusChange) onRadiusChange(r);
+                onChange({ ...filters, radius: r });
+              }}
               className={`px-4 py-2 rounded-full font-semibold text-sm transition-all ${
                 filters.radius === r
                   ? "bg-teal-600 text-white shadow-md scale-105"
@@ -76,40 +75,21 @@ export default function FilterPanel({ filters, onChange, availableCuisines = [],
           {CUISINES.map(c => {
             const selected = (filters.cuisines || []).includes(c);
             const available = isCuisineAvailable(c);
-            const isLoading = loadingAvailability && availableCuisines.length === 0;
             const isDisabled = !available && availableCuisines.length > 0;
-
-            if (isLoading) {
-              return (
-                <button key={c} className="px-3 py-1.5 rounded-full font-semibold text-sm animate-shimmer bg-teal-100 text-teal-600" disabled />
-              );
-            }
-
-            if (isDisabled) {
-              return (
-                <button
-                  key={c}
-                  disabled
-                  className="px-3 py-1.5 rounded-full font-semibold text-sm opacity-50 cursor-not-allowed"
-                  style={{ background: '#D1D5DB', color: '#9CA3AF' }}
-                >
-                  {c}
-                </button>
-              );
-            }
 
             return (
               <button
                 key={c}
-                onClick={() => toggleCuisine(c)}
-                className={`px-3 py-1.5 rounded-full font-semibold text-sm transition-all ${
-                  selected
-                    ? "shadow-md scale-105"
-                    : "border border-teal-600 hover:shadow-sm"
-                }`}
+                onClick={() => !isDisabled && toggleCuisine(c)}
+                disabled={isDisabled}
+                className="px-3 py-1.5 rounded-full font-semibold text-sm transition-all"
                 style={{
-                  background: selected ? '#0D9488' : '#CCFBF1',
-                  color: selected ? 'white' : '#0D9488',
+                  opacity: isDisabled ? 0.4 : 1,
+                  background: isDisabled ? '#D1D5DB' : (selected ? '#0D9488' : '#CCFBF1'),
+                  color: isDisabled ? '#9CA3AF' : (selected ? 'white' : '#0D9488'),
+                  border: isDisabled ? 'none' : (selected ? 'none' : '1px solid #0D9488'),
+                  cursor: isDisabled ? 'not-allowed' : 'pointer',
+                  pointerEvents: isDisabled ? 'none' : 'auto',
                 }}
               >
                 {c}
