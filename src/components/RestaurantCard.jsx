@@ -87,14 +87,7 @@ export default function RestaurantCard({ restaurant, onSwipe, onBlock, isTop }) 
           />
           <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.55) 0%, transparent 60%)' }} />
 
-          {/* Open Now badge — overlapping bottom-left */}
-          {isOpen === true && (
-            <div className="absolute" style={{ bottom: '-18px', left: '16px', zIndex: 20, position: 'absolute' }}>
-              <div className="px-3 py-1.5 rounded-full text-xs font-bold text-white bg-green-500 border-2 border-white" style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
-                🟢 Open Now
-              </div>
-            </div>
-          )}
+
 
           {/* No photo yet badge */}
           {!hasRealPhoto && imageLoaded && (
@@ -104,7 +97,14 @@ export default function RestaurantCard({ restaurant, onSwipe, onBlock, isTop }) 
             </div>
           )}
         </div>
-        <div className="px-5" style={{ background: '#ffffff', position: 'relative', zIndex: 1, paddingTop: '26px', paddingBottom: '20px' }}>
+        <div className="px-5 py-5" style={{ background: '#ffffff', position: 'relative', zIndex: 1 }}>
+          {/* Open Now Badge */}
+          {isOpen === true && (
+            <div style={{ display: 'inline-flex', alignItems: 'center', background: '#10B981', color: 'white', borderRadius: '20px', padding: '4px 10px', fontSize: '12px', fontWeight: '600', marginBottom: '8px', gap: '6px' }}>
+              <span style={{ width: '8px', height: '8px', background: '#ffffff', borderRadius: '50%', display: 'inline-block' }}></span>
+              Open Now
+            </div>
+          )}
           {/* Row 1: Name + Price */}
           <div className="flex items-start justify-between mb-1">
             <h2 className="font-black leading-tight" style={{ fontSize: '22px', color: '#111827', margin: 0, flex: 1 }}>{name}</h2>
