@@ -105,29 +105,21 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Invalid coordinates' }, { status: 400 });
     }
 
-    // STEP 1: Check cuisine availability with parallel queries
-    const cuisineQueries = [
-      { label: 'Mexican', query: 'mexican restaurant tacos' },
-      { label: 'Italian', query: 'italian restaurant pizza pasta' },
-      { label: 'Chinese', query: 'chinese restaurant' },
-      { label: 'Japanese', query: 'japanese restaurant sushi ramen' },
-      { label: 'Thai', query: 'thai restaurant' },
-      { label: 'Indian', query: 'indian restaurant curry' },
-      { label: 'Mediterranean', query: 'mediterranean greek restaurant' },
-      { label: 'Burgers', query: 'burger hamburger restaurant' },
-      { label: 'Sandwiches', query: 'sandwich deli sub shop' },
-      { label: 'BBQ', query: 'bbq barbecue restaurant' },
-      { label: 'Seafood', query: 'seafood fish restaurant' },
-      { label: 'Breakfast', query: 'breakfast brunch restaurant' },
-      { label: 'Desserts', query: 'dessert ice cream bakery' },
-      { label: 'Vegetarian', query: 'vegetarian vegan restaurant' },
+    // STEP 1: Make 6 parallel cuisine group queries
+    const cuisineGroupQueries = [
+      'american burger diner steakhouse',
+      'mexican italian pizza pasta',
+      'chinese japanese sushi ramen thai',
+      'indian mediterranean greek middle eastern',
+      'bbq seafood sandwiches chicken wings',
+      'breakfast brunch cafe bakery dessert',
     ];
 
-    const availabilityResults = await Promise.all(
-      cuisineQueries.map(async ({ label, query }) => {
+    const allResults = await Promise.all(
+      cuisineGroupQueries.map(async (query) => {
         const body = {
           textQuery: query,
-          maxResultCount: 5,
+          maxResultCount: 20,
           locationBias: {
             circle: {
               center: { latitude: lat, longitude: lng },
@@ -143,54 +135,26 @@ Deno.serve(async (req) => {
             headers: {
               'Content-Type': 'application/json',
               'X-Goog-Api-Key': GMAPS_KEY || '',
-              'X-Goog-FieldMask': 'places.displayName,places.location',
+              'X-Goog-FieldMask': FIELD_MASK,
             },
             body: JSON.stringify(body),
           }
         );
         const data = await res.json();
-        const count = (data.places || []).filter(p => {
-          if (!p.location) return false;
-          const d = distanceMiles(
-            lat, lng,
-            p.location.latitude,
-            p.location.longitude
-          );
-          return d <= (radius_miles || 5);
-        }).length;
-        return { label, count };
+        return data.places || [];
       })
     );
 
-    const availableCuisinesFromQuery = availabilityResults
-      .filter(r => r.count >= 1)
-      .map(r => r.label);
-
-    // STEP 1b: Fetch all restaurants with general query
-    const broadRequestBody = {
-      textQuery: 'restaurant',
-      maxResultCount: 20,
-      locationBias: {
-        circle: {
-          center: { latitude: lat, longitude: lng },
-          radius: radiusMeters
-        }
-      },
-      ...(open_now ? { openNow: true } : {}),
+    // STEP 2: Combine and deduplicate by name + address
+    const seen = new Set();
+    const broadData = {
+      places: allResults.flat().filter(p => {
+        const key = `${p.displayName?.text}|${p.formattedAddress}`;
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      })
     };
-
-    const broadRes = await fetch('https://places.googleapis.com/v1/places:searchText', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-Goog-Api-Key': GMAPS_KEY || '',
-        'X-Goog-FieldMask': FIELD_MASK,
-      },
-      body: JSON.stringify(broadRequestBody),
-    });
-
-    const broadData = await broadRes.json();
-    if (!broadRes.ok) return Response.json({ error: 'Google API Error', details: broadData }, { status: broadRes.status });
 
     // Helper function to map place to restaurant
     function mapPlaceToRestaurant(p) {
@@ -243,14 +207,7 @@ Deno.serve(async (req) => {
       };
     }
 
-    // STEP 2: Process broad results
-    console.log('RAW PLACE TYPES:', 
-      (broadData.places || []).map(p => ({
-        name: p.displayName?.text,
-        types: p.types
-      }))
-    );
-
+    // STEP 3: Filter and label results
     const allRestaurants = (broadData.places || [])
       .filter(p => p.businessStatus !== 'CLOSED_PERMANENTLY')
       .filter(p => isValidRestaurant(p))
@@ -258,30 +215,18 @@ Deno.serve(async (req) => {
       .map(mapPlaceToRestaurant)
       .filter(r => r.distance_miles !== null && r.distance_miles <= (radius_miles || 5));
 
-    console.log('Total places from Google:', (broadData.places || []).length);
-    console.log('After filtering:', allRestaurants.length);
-    console.log('Sample place types:', (broadData.places || []).slice(0, 5).map(p => ({
-      name: p.displayName?.text,
-      types: p.types
-    })));
-    console.log('Cuisine labels assigned:', allRestaurants.map(r => r.cuisine));
-
-    // Count cuisines with 2+ restaurants
+    // STEP 4: Derive availableCuisines from combined results
     const cuisineCounts = {};
     allRestaurants.forEach(r => {
       cuisineCounts[r.cuisine] = (cuisineCounts[r.cuisine] || 0) + 1;
     });
 
-    console.log('Cuisine counts:', cuisineCounts);
-    console.log('Available cuisines from parallel queries:', availableCuisinesFromQuery);
-    console.log('Restaurant cuisine mapping:', 
-      allRestaurants.map(r => ({
-        name: r.name,
-        cuisine: r.cuisine
-      }))
-    );
+    const availableCuisines = Object.keys(cuisineCounts).sort();
 
-    const availableCuisines = ['American', ...availableCuisinesFromQuery].sort();
+    console.log('Total unique places:', broadData.places.length);
+    console.log('After filtering:', allRestaurants.length);
+    console.log('Cuisine counts:', cuisineCounts);
+    console.log('Available cuisines:', availableCuisines);
 
     // STEP 3: Filter results based on user selections
     let filteredRestaurants = allRestaurants;
