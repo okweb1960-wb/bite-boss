@@ -36,6 +36,12 @@ function getImage(restaurant) {
   return FOOD_IMAGES.restaurant;
 }
 
+function getPriceDisplay(price_level) {
+  if (!price_level) return null;
+  const map = { 1: "$", 2: "$$", 3: "$$$", 4: "$$$$" };
+  return map[price_level] || map[price_level.toString()];
+}
+
 export default function RestaurantCard({ restaurant, onSwipe, onBlock, isTop }) {
   const [imageLoaded, setImageLoaded] = useState(false);
   const { name = 'Unknown', cuisine, address, rating, review_count, price_level, open_now, description, photo_url, distance } = restaurant || {};
@@ -100,9 +106,12 @@ export default function RestaurantCard({ restaurant, onSwipe, onBlock, isTop }) 
         <div className="p-5" style={{ background: '#ffffff' }}>
           <div className="flex items-start justify-between mb-1">
             <h2 className="font-black leading-tight" style={{ fontSize: '22px', color: '#111827', margin: 0 }}>{name}</h2>
-            {priceLevel && <span className="font-bold ml-2 shrink-0" style={{ color: '#6b7280', fontSize: '14px' }}>{priceLevel}</span>}
+            {restaurant.price_level && <span className="font-bold ml-2 shrink-0" style={{ color: '#059669', fontSize: '14px' }}>{getPriceDisplay(restaurant.price_level)}</span>}
           </div>
-          {cuisine && <p className="font-semibold mb-2" style={{ color: '#f97316', fontSize: '14px', margin: '4px 0 8px' }}>{cuisine}</p>}
+          <div className="flex items-center gap-2 mb-2">
+            {cuisine && <p className="font-semibold" style={{ color: '#f97316', fontSize: '14px' }}>{cuisine}</p>}
+            {restaurant.distance && <p style={{ color: '#6b7280', fontSize: '14px' }}>📍 {restaurant.distance}</p>}
+          </div>
           {description && (
             <p style={{ color: '#6b7280', fontSize: '13px', margin: '0 0 10px', lineHeight: 1.4, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
               {description}
@@ -116,13 +125,6 @@ export default function RestaurantCard({ restaurant, onSwipe, onBlock, isTop }) 
                {review_count && <span>({review_count})</span>}
               </span>
             )}
-            {restaurant.address && (
-              <span className="flex items-center gap-1">
-                <MapPin style={{ width: 14, height: 14 }} />
-                {restaurant.address}
-              </span>
-            )}
-
           </div>
           <div className="flex items-center justify-between mt-3">
             <a

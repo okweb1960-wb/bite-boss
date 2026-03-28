@@ -2,7 +2,7 @@ import { useState, useCallback } from "react";
 import { base44 } from "@/api/base44Client";
 import { useNavigate, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, RotateCcw } from "lucide-react";
 import RestaurantCard from "../components/RestaurantCard";
 
 export default function Swipe() {
@@ -16,6 +16,7 @@ export default function Swipe() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [maybes, setMaybes] = useState([]);
   const [lastAction, setLastAction] = useState(null);
+  const [lastSwiped, setLastSwiped] = useState(null);
   const [loadingMore, setLoadingMore] = useState(false);
   const [noMore, setNoMore] = useState(false);
 
@@ -66,51 +67,82 @@ export default function Swipe() {
     if (!current) return;
     if (navigator.vibrate) navigator.vibrate(50);
     if (direction === "maybe") setMaybes(prev => [...prev, current]);
+    setLastSwiped({ restaurant: current, direction });
     setLastAction(direction);
     setCurrentIndex(prev => prev + 1);
     setTimeout(() => setLastAction(null), 600);
   }, [current]);
 
+  const handleUndo = useCallback(() => {
+    if (!lastSwiped) return;
+    if (lastSwiped.direction === "maybe") {
+      setMaybes(prev => prev.filter(r => r.name !== lastSwiped.restaurant.name));
+    }
+    setCurrentIndex(prev => prev - 1);
+    setLastSwiped(null);
+  }, [lastSwiped]);
+
+  const handleStartOver = useCallback(() => {
+    navigate("/");
+  }, [navigate]);
+
   const allDone = currentIndex >= restaurants.length;
 
   return (
     <div className="flex flex-col min-h-screen bg-background">
-      {/* Header */}
-      <div className="px-5 pt-6 pb-3 flex items-center justify-between">
+      {/* Header with Maybe Count */}
+      <div className="px-5 pt-6 pb-4 flex items-center justify-between border-b border-gray-200">
         <button onClick={() => navigate("/")} className="p-2 rounded-2xl bg-muted hover:bg-border transition-all">
           <ArrowLeft className="w-5 h-5 text-foreground" />
         </button>
         <div className="flex items-center gap-4">
-          <button
-            onClick={() => handleSwipe("nope")}
-            disabled={allDone}
-            className="flex items-center gap-2 px-5 py-2.5 rounded-2xl font-black text-white text-sm shadow-lg active:scale-95 transition-all disabled:opacity-30"
-            style={{ background: '#EF4444', boxShadow: '0 4px 15px rgba(239,68,68,0.4)' }}
-          >
-            Nope
-          </button>
-          <span className="text-xs font-semibold text-muted-foreground text-center leading-tight">swipe<br/>or tap</span>
-          <button
-            onClick={() => handleSwipe("maybe")}
-            disabled={allDone}
-            className="flex items-center gap-2 px-5 py-2.5 rounded-2xl font-black text-white text-sm shadow-lg active:scale-95 transition-all disabled:opacity-30"
-            style={{ background: '#10B981', boxShadow: '0 4px 15px rgba(16,185,129,0.4)' }}
-          >
-            Maybe
-          </button>
+          <motion.span className="text-sm font-bold text-green-600" key={maybes.length} initial={{ scale: 0.8 }} animate={{ scale: 1 }}>
+            💚 {maybes.length}
+          </motion.span>
           <p className="text-muted-foreground text-xs font-semibold">{remaining} left</p>
         </div>
       </div>
 
-      {/* Progress bar */}
-      <div className="px-5 mb-4">
-        <div className="h-2 bg-gray-300 rounded-full overflow-hidden">
+      {/* Progress Bar */}
+      <div className="px-5 py-3">
+        <div className="h-1.5 bg-gray-200 rounded-full overflow-hidden">
           <motion.div
             className="h-full bg-teal-600 rounded-full"
             animate={{ width: `${(currentIndex / restaurants.length) * 100}%` }}
+            transition={{ duration: 0.3, ease: "easeOut" }}
           />
         </div>
+        <p className="text-xs text-muted-foreground mt-1 text-center">{Math.round((currentIndex / restaurants.length) * 100)}%</p>
       </div>
+
+      {/* Swipe Controls */}
+      <div className="px-5 pt-4 pb-4 flex items-center justify-center gap-3 border-b border-gray-200">
+        <button
+          onClick={() => handleSwipe("nope")}
+          disabled={allDone}
+          className="flex items-center gap-2 px-5 py-2.5 rounded-2xl font-black text-white text-sm shadow-lg active:scale-95 transition-all disabled:opacity-30"
+          style={{ background: '#EF4444', boxShadow: '0 4px 15px rgba(239,68,68,0.4)' }}
+        >
+          Nope
+        </button>
+        <button
+          onClick={handleUndo}
+          disabled={!lastSwiped || allDone}
+          className="p-2.5 rounded-full border-2 border-teal-600 bg-white hover:bg-teal-50 transition-all disabled:opacity-30 disabled:border-gray-300"
+          title="Undo last swipe"
+        >
+          <span className="text-teal-600 text-lg font-bold disabled:text-gray-400">↩</span>
+        </button>
+        <button
+          onClick={() => handleSwipe("maybe")}
+          disabled={allDone}
+          className="flex items-center gap-2 px-5 py-2.5 rounded-2xl font-black text-white text-sm shadow-lg active:scale-95 transition-all disabled:opacity-30"
+          style={{ background: '#10B981', boxShadow: '0 4px 15px rgba(16,185,129,0.4)' }}
+        >
+          Maybe
+        </button>
+      </div>
+
       <div className="flex-1 px-5 relative flex items-center justify-center">
         {!allDone ? (
           <>
@@ -188,14 +220,16 @@ export default function Swipe() {
       </div>
 
       {/* Action buttons */}
-      <div className="px-5 py-4 flex items-center justify-center">
-        <button
-          onClick={() => navigate("/results", { state: { maybes, allRestaurants: restaurants } })}
-          className="px-5 py-3 bg-orange-500 text-white font-black rounded-2xl shadow-lg hover:shadow-xl hover:scale-105 transition-all text-sm"
-        >
-          View Results
-        </button>
-      </div>
+      {maybes.length > 0 && (
+        <div className="px-5 py-4 flex items-center justify-center">
+          <button
+            onClick={() => navigate("/results", { state: { maybes, allRestaurants: restaurants } })}
+            className="px-6 py-3 bg-green-600 text-white font-black rounded-2xl shadow-lg hover:shadow-xl hover:scale-105 transition-all text-sm"
+          >
+            See My Maybes 💚
+          </button>
+        </div>
+      )}
     </div>
   );
 }
