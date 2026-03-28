@@ -66,9 +66,9 @@ Deno.serve(async (req) => {
     const queryTerm = cuisineList.length > 0 ? cuisineList[0] : 'restaurants';
 
     const requestBody = {
-      textQuery: `${isFastFood ? 'Fast Food ' : ''}${queryTerm} near me`,
+      textQuery: `${isFastFood ? 'Fast Food ' : ''}${queryTerm}`,
       maxResultCount: 60,
-      locationBias: {
+      locationRestriction: {
         circle: { center: { latitude: lat, longitude: lng }, radius: radiusMeters }
       },
       ...(isFastFood ? { includedPrimaryTypes: ['fast_food_restaurant', 'hamburger_restaurant'] } : {}),
