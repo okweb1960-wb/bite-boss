@@ -73,11 +73,12 @@ export default function FilterPanel({ filters, onChange, availableCuisines = [],
           >
             All
           </button>
+          {CUISINES.map(c => {
             const selected = (filters.cuisines || []).includes(c);
             const available = isCuisineAvailable(c);
             const isLoading = loadingAvailability && availableCuisines.length === 0;
             const isDisabled = !available && availableCuisines.length > 0;
-            
+
             return (
               <button
                 key={c}
@@ -96,7 +97,8 @@ export default function FilterPanel({ filters, onChange, availableCuisines = [],
                 {c}
               </button>
             );
-        </div>
+          })}
+          </div>
       </div>
       <div>
         <h3 className="font-bold text-foreground mb-1">How do you want to eat?</h3>
