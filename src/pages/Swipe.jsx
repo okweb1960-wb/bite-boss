@@ -2,10 +2,8 @@ import { useState, useCallback } from "react";
 import { base44 } from "@/api/base44Client";
 import { useNavigate, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, Heart, X, Zap } from "lucide-react";
-import FilterSummary from "../components/FilterSummary";
+import { ArrowLeft } from "lucide-react";
 import RestaurantCard from "../components/RestaurantCard";
-import SkeletonCard from "../components/SkeletonCard";
 
 export default function Swipe() {
   const navigate = useNavigate();
@@ -76,32 +74,41 @@ export default function Swipe() {
   const allDone = currentIndex >= restaurants.length;
 
   return (
-    <div className="flex flex-col min-h-screen" style={{ background: 'linear-gradient(135deg, #FF6B35 0%, #FF2D78 100%)' }}>
-      {/* Filter Summary */}
-      <FilterSummary filters={state.filters} location={state.location} onClear={() => navigate('/')} />
-
+    <div className="flex flex-col min-h-screen bg-background">
       {/* Header */}
       <div className="px-5 pt-6 pb-3 flex items-center justify-between">
-        <button onClick={() => navigate("/")} className="p-2 rounded-full bg-white/20 hover:bg-white/30 transition-all">
-          <ArrowLeft className="w-5 h-5 text-white" />
+        <button onClick={() => navigate("/")} className="p-2 rounded-2xl bg-muted hover:bg-border transition-all">
+          <ArrowLeft className="w-5 h-5 text-foreground" />
         </button>
-        <motion.div
-          key={remaining}
-          initial={{ scale: 0.8, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          className="text-center"
-        >
-          <p className="text-white/80 text-xs font-semibold uppercase tracking-widest">Remaining</p>
-          <p className="text-white font-black text-2xl">{remaining}</p>
-        </motion.div>
-        <div className="w-5" />
+        <div className="flex items-center gap-4">
+          <button
+            onClick={() => handleSwipe("nope")}
+            disabled={allDone}
+            className="flex items-center gap-2 px-5 py-2.5 rounded-2xl font-black text-white text-sm shadow-lg active:scale-95 transition-all disabled:opacity-30"
+            style={{ background: 'linear-gradient(135deg, #f43f5e, #e11d48)', boxShadow: '0 4px 15px rgba(244,63,94,0.4)' }}
+          >
+            Nope
+          </button>
+          <span className="text-xs font-semibold text-muted-foreground text-center leading-tight">swipe<br/>or tap</span>
+          <button
+            onClick={() => handleSwipe("maybe")}
+            disabled={allDone}
+            className="flex items-center gap-2 px-5 py-2.5 rounded-2xl font-black text-white text-sm shadow-lg active:scale-95 transition-all disabled:opacity-30"
+            style={{ background: 'linear-gradient(135deg, #22c55e, #16a34a)', boxShadow: '0 4px 15px rgba(34,197,94,0.4)' }}
+          >
+            Maybe
+          </button>
+        </div>
+        <div className="text-center">
+          <p className="text-muted-foreground text-xs font-semibold">{remaining} left</p>
+        </div>
       </div>
 
       {/* Progress bar */}
       <div className="px-5 mb-4">
-        <div className="h-1.5 bg-white/20 rounded-full overflow-hidden">
+        <div className="h-2 bg-muted rounded-full overflow-hidden">
           <motion.div
-            className="h-full bg-white rounded-full"
+            className="h-full bg-gradient-to-r from-primary to-secondary rounded-full"
             animate={{ width: `${(currentIndex / restaurants.length) * 100}%` }}
           />
         </div>
@@ -113,24 +120,24 @@ export default function Swipe() {
           <>
             <div className="relative" style={{ height: '480px' }}>
               {/* Stack preview cards */}
-              {[2, 1].map((offset) => {
+              {[2, 1].map(offset => {
                 const idx = currentIndex + offset;
                 if (idx >= restaurants.length) return null;
                 return (
-                  <motion.div
+                  <div
                     key={idx}
-                    className="absolute inset-0 rounded-3xl shadow-2xl bg-white"
-                    initial={{ scale: 1 - offset * 0.04, y: offset * 12 }}
-                    animate={{ scale: 1 - offset * 0.04, y: offset * 12 }}
-                    transition={{ type: 'spring', damping: 20 }}
-                    style={{ zIndex: 10 - offset }}
+                    className="absolute inset-0 rounded-3xl shadow-lg" style={{ background: 'white', zIndex: 10 - offset }}
+                    style={{
+                      transform: `scale(${1 - offset * 0.04}) translateY(${offset * 8}px)`,
+                      zIndex: 10 - offset,
+                    }}
                   />
                 );
               })}
 
               {/* Top card */}
               <AnimatePresence>
-                {current ? (
+                {current && (
                   <RestaurantCard
                     key={currentIndex}
                     restaurant={current}
@@ -138,11 +145,25 @@ export default function Swipe() {
                     onBlock={() => blockRestaurant(current.name)}
                     isTop={true}
                   />
-                ) : (
-                  <SkeletonCard key="skeleton" />
                 )}
               </AnimatePresence>
             </div>
+
+            {/* Feedback flash */}
+            <AnimatePresence>
+              {lastAction && (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.5 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 1.5 }}
+                  className="absolute inset-0 flex items-center justify-center pointer-events-none z-50"
+                >
+                  <div className={`text-6xl ${lastAction === "maybe" ? "" : ""}`}>
+                    {lastAction === "maybe" ? "🎉" : "👎"}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </>
         ) : (
           <motion.div
@@ -150,20 +171,20 @@ export default function Swipe() {
             animate={{ opacity: 1, scale: 1 }}
             className="h-[480px] flex flex-col items-center justify-center text-center px-4"
           >
-            <div className="text-7xl mb-4">🎊</div>
-            <h2 className="font-playfair text-3xl font-bold text-white mb-2">You've seen it all!</h2>
+            <div className="text-7xl mb-4">🍽️</div>
+            <h2 className="font-playfair text-3xl font-bold text-foreground mb-2">That's all of them!</h2>
             {noMore ? (
-              <p className="text-white/80 font-semibold mb-4">No more restaurants nearby.</p>
+              <p className="text-muted-foreground font-semibold mb-4">No more restaurants to show nearby.</p>
             ) : (
-              <p className="text-white/80 font-semibold mb-4">Want more options?</p>
+              <p className="text-muted-foreground font-semibold mb-4">Want to see more options?</p>
             )}
             {!noMore && (
               <button
                 onClick={loadMore}
                 disabled={loadingMore}
-                className="bg-white text-orange-500 font-black px-6 py-3 rounded-2xl shadow-lg hover:shadow-xl transition-all flex items-center gap-2 mb-3"
+                className="bg-secondary text-secondary-foreground font-black px-6 py-3 rounded-2xl shadow hover:opacity-90 transition-all flex items-center gap-2 mb-3"
               >
-                {loadingMore ? <>⏳ Loading...</> : '🔍 Show More'}
+                {loadingMore ? <>🔄 Loading more...</> : "🔍 Show Me More"}
               </button>
             )}
           </motion.div>
@@ -171,54 +192,14 @@ export default function Swipe() {
       </div>
 
       {/* Action buttons */}
-      <div className="px-5 py-6 flex items-center justify-center gap-8">
-        <motion.button
-          whileHover={{ scale: 1.1 }}
-          whileTap={{ scale: 0.95 }}
-          onClick={() => handleSwipe('nope')}
-          disabled={allDone}
-          className="w-16 h-16 rounded-full bg-white shadow-xl flex items-center justify-center hover:shadow-2xl transition-shadow disabled:opacity-50"
+      <div className="px-5 py-4 flex items-center justify-center">
+        <button
+          onClick={() => navigate("/results", { state: { maybes, allRestaurants: restaurants } })}
+          className="px-5 py-3 bg-gradient-to-r from-primary to-orange-400 text-white font-black rounded-2xl shadow-lg hover:shadow-xl hover:scale-105 transition-all text-sm"
         >
-          <X className="w-8 h-8 text-red-500" strokeWidth={3} />
-        </motion.button>
-
-        <motion.button
-          whileHover={{ scale: 1.15 }}
-          whileTap={{ scale: 0.9 }}
-          onClick={() => {
-            const pool = maybes.length > 0 ? maybes : restaurants.slice(currentIndex);
-            if (pool.length > 0) {
-              const pick = pool[Math.floor(Math.random() * pool.length)];
-              navigate('/results', { state: { maybes: [pick], allRestaurants: restaurants } });
-            }
-          }}
-          className="w-14 h-14 rounded-full bg-yellow-400 shadow-xl flex items-center justify-center hover:shadow-2xl transition-shadow"
-        >
-          <Zap className="w-7 h-7 text-white" fill="white" />
-        </motion.button>
-
-        <motion.button
-          whileHover={{ scale: 1.1 }}
-          whileTap={{ scale: 0.95 }}
-          onClick={() => handleSwipe('maybe')}
-          disabled={allDone}
-          className="w-16 h-16 rounded-full bg-white shadow-xl flex items-center justify-center hover:shadow-2xl transition-shadow disabled:opacity-50"
-        >
-          <Heart className="w-8 h-8 text-green-500" fill="currentColor" />
-        </motion.button>
+          {allDone ? "See My Picks! 🎉" : "I'm Done"}
+        </button>
       </div>
-
-      {/* Done button */}
-      {!allDone && (
-        <div className="px-5 pb-6 flex justify-center">
-          <button
-            onClick={() => navigate('/results', { state: { maybes, allRestaurants: restaurants } })}
-            className="px-6 py-3 bg-white text-orange-500 font-black rounded-2xl shadow-lg hover:shadow-xl transition-all text-sm"
-          >
-            I'm Done Swiping
-          </button>
-        </div>
-      )}
     </div>
   );
 }
