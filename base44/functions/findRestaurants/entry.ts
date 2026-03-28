@@ -222,7 +222,22 @@ Deno.serve(async (req) => {
       return (a.distance_miles || 0) - (b.distance_miles || 0);
     });
 
-    return Response.json({ restaurants: filteredRestaurants, availableCuisines });
+    return Response.json({ 
+      restaurants: filteredRestaurants, 
+      availableCuisines,
+      debug: {
+        totalFromGoogle: (broadData.places || []).length,
+        afterFiltering: allRestaurants.length,
+        cuisineCounts,
+        sampleTypes: (broadData.places || []).slice(0, 8).map(p => ({
+          name: p.displayName?.text,
+          types: p.types,
+          assignedCuisine: allRestaurants.find(
+            r => r.name === p.displayName?.text
+          )?.cuisine
+        }))
+      }
+    });
 
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
