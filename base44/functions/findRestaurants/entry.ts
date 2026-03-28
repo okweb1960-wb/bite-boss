@@ -51,8 +51,8 @@ Deno.serve(async (req) => {
     const payload = await req.json();
     const { latitude, longitude, radius_miles, cuisine, service, open_now, exclude } = payload;
 
-    const lat = Number(latitude);
-    const lng = Number(longitude);
+    const lat = parseFloat(Number(latitude).toFixed(6));
+    const lng = parseFloat(Number(longitude).toFixed(6));
     const radiusMeters = Math.round((radius_miles || 5) * 1609.34);
     const cuisineList = Array.isArray(cuisine) ? cuisine : (cuisine ? [cuisine] : []);
     const serviceList = Array.isArray(service) ? service : (service ? [service] : []);
