@@ -201,8 +201,10 @@ Deno.serve(async (req) => {
       })
       .filter(r => r.distance_miles === null || r.distance_miles <= (radius_miles || 5));
 
-    // POST-FETCH: filter by cuisine — match name/label text OR google place types
-    if (cuisineList.length > 0) {
+    // POST-FETCH: filter by cuisine — only needed for searchNearby (multi-cuisine or no cuisine)
+    // When searchText was used (single cuisine), Google already ranked by relevance — skip this filter
+    const usedSearchText = cuisineList.length === 1;
+    if (!usedSearchText && cuisineList.length > 0) {
       restaurants = restaurants.filter(r => {
         return cuisineList.some(c => {
           const entry = CUISINE_KEYWORDS[c.toLowerCase()];
