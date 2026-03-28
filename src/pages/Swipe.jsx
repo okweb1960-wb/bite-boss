@@ -87,7 +87,7 @@ export default function Swipe() {
             className="flex items-center gap-2 px-5 py-2.5 rounded-2xl font-black text-white text-sm shadow-lg active:scale-95 transition-all disabled:opacity-30"
             style={{ background: 'linear-gradient(135deg, #f43f5e, #e11d48)', boxShadow: '0 4px 15px rgba(244,63,94,0.4)' }}
           >
-            <span className="text-lg">👎</span> Nope
+            Nope
           </button>
           <span className="text-xs font-semibold text-muted-foreground text-center leading-tight">swipe<br/>or tap</span>
           <button
@@ -96,7 +96,7 @@ export default function Swipe() {
             className="flex items-center gap-2 px-5 py-2.5 rounded-2xl font-black text-white text-sm shadow-lg active:scale-95 transition-all disabled:opacity-30"
             style={{ background: 'linear-gradient(135deg, #22c55e, #16a34a)', boxShadow: '0 4px 15px rgba(34,197,94,0.4)' }}
           >
-            Maybe <span className="text-lg">🎉</span>
+            Maybe
           </button>
         </div>
         <div className="text-center">

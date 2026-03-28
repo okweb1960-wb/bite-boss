@@ -35,37 +35,13 @@ Deno.serve(async (req) => {
     const cuisineList = Array.isArray(cuisine) ? cuisine : (cuisine ? [cuisine] : []);
     const serviceList = Array.isArray(service) ? service : (service ? [service] : []);
 
-    // Build includedTypes from service filters, default to restaurant
-    const includedTypes = serviceList.length > 0
-      ? serviceList.map(s => SERVICE_TYPE_MAP[s] || 'restaurant').filter(Boolean)
-      : ['restaurant'];
+    // Build text query
+    const textQuery = cuisineList.length > 0 ? cuisineList.join(' OR ') + ' restaurant' : 'restaurant';
 
-    // Build text query from cuisine filters
-    const textQuery = cuisineList.length > 0 ? cuisineList.join(' OR ') + ' restaurant' : null;
+    // Always use searchText for broader, more reliable results
+    const endpoint = 'https://places.googleapis.com/v1/places:searchText';
 
-    const body = {
-      locationRestriction: {
-        circle: {
-          center: { latitude, longitude },
-          radius: radiusMeters,
-        }
-      },
-      includedTypes,
-      maxResultCount: 20,
-    };
-
-    if (open_now) body.openNow = true;
-    if (textQuery) body.textQuery = textQuery;
-
-    const fieldMask = 'places.displayName,places.formattedAddress,places.location,places.rating,places.userRatingCount,places.priceLevel,places.currentOpeningHours,places.types,places.editorialSummary';
-
-    // Use searchText if we have a cuisine query, otherwise searchNearby
-    const endpoint = textQuery
-      ? 'https://places.googleapis.com/v1/places:searchText'
-      : 'https://places.googleapis.com/v1/places:searchNearby';
-
-    // searchText uses a different body shape
-    const requestBody = textQuery ? {
+    const requestBody = {
       textQuery,
       locationBias: {
         circle: {
@@ -73,10 +49,12 @@ Deno.serve(async (req) => {
           radius: radiusMeters,
         }
       },
-      includedType: 'restaurant',
+      includedType: serviceList.length > 0 ? (SERVICE_TYPE_MAP[serviceList[0]] || 'restaurant') : 'restaurant',
       maxResultCount: 20,
       ...(open_now ? { openNow: true } : {}),
-    } : body;
+    };
+
+    const fieldMask = 'places.displayName,places.formattedAddress,places.location,places.rating,places.userRatingCount,places.priceLevel,places.currentOpeningHours,places.types,places.editorialSummary';
 
     const res = await fetch(endpoint, {
       method: 'POST',
