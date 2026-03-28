@@ -54,7 +54,7 @@ Deno.serve(async (req) => {
 
     const fieldMask = 'places.displayName,places.formattedAddress,places.location,places.rating,places.userRatingCount,places.priceLevel,places.currentOpeningHours,places.types,places.editorialSummary';
 
-    const res = await fetch(endpoint, {
+    const res = await fetch('https://places.googleapis.com/v1/places:searchText', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
