@@ -10,38 +10,37 @@ function distanceMiles(lat1, lon1, lat2, lon2) {
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
 }
 
-// Cuisine keyword → name/type keywords for post-fetch filtering
+// Cuisine → name keywords AND google place types for post-fetch filtering
 const CUISINE_KEYWORDS = {
-  'american': ['american', 'burger', 'diner', 'bbq', 'barbecue', 'steakhouse', 'wings'],
-  'mexican': ['mexican', 'taco', 'burrito', 'tex-mex', 'tamale', 'quesadilla'],
-  'italian': ['italian', 'pizza', 'pasta', 'trattoria', 'osteria'],
-  'pizza': ['pizza', 'pizzeria'],
-  'chinese': ['chinese', 'dim sum', 'cantonese', 'szechuan'],
-  'japanese': ['japanese', 'sushi', 'ramen', 'teriyaki', 'hibachi'],
-  'sushi': ['sushi', 'japanese'],
-  'thai': ['thai'],
-  'indian': ['indian', 'curry'],
-  'mediterranean': ['mediterranean', 'greek', 'falafel', 'kebab', 'gyro'],
-  'burgers': ['burger', 'hamburger', 'smash'],
-  'sandwiches': ['sandwich', 'sub', 'deli', 'hoagie', 'subway', 'jimmy john'],
-  'bbq': ['bbq', 'barbecue', 'barbeque', 'smokehouse'],
-  'seafood': ['seafood', 'fish', 'crab', 'lobster', 'shrimp', 'oyster'],
-  'breakfast': ['breakfast', 'brunch', 'pancake', 'waffle', 'omelette', 'diner', 'ihop', 'dennys'],
-  'desserts': ['dessert', 'ice cream', 'bakery', 'cake', 'pastry', 'donut', 'yogurt'],
-  'vegetarian': ['vegetarian', 'vegan', 'plant-based'],
-  'vegan': ['vegan', 'plant-based'],
+  'american':      { words: ['american', 'burger', 'diner', 'bbq', 'barbecue', 'steakhouse', 'wings'], types: ['american_restaurant', 'hamburger_restaurant', 'steak_house', 'fast_food_restaurant'] },
+  'mexican':       { words: ['mexican', 'taco', 'burrito', 'tex-mex', 'tamale', 'quesadilla'], types: ['mexican_restaurant'] },
+  'italian':       { words: ['italian', 'pizza', 'pasta', 'trattoria'], types: ['italian_restaurant', 'pizza_restaurant'] },
+  'pizza':         { words: ['pizza', 'pizzeria'], types: ['pizza_restaurant'] },
+  'chinese':       { words: ['chinese', 'dim sum', 'cantonese', 'szechuan'], types: ['chinese_restaurant'] },
+  'japanese':      { words: ['japanese', 'sushi', 'ramen', 'teriyaki', 'hibachi'], types: ['japanese_restaurant', 'ramen_restaurant', 'sushi_restaurant'] },
+  'sushi':         { words: ['sushi', 'japanese'], types: ['sushi_restaurant', 'japanese_restaurant'] },
+  'thai':          { words: ['thai'], types: ['thai_restaurant'] },
+  'indian':        { words: ['indian', 'curry'], types: ['indian_restaurant'] },
+  'mediterranean': { words: ['mediterranean', 'greek', 'falafel', 'kebab', 'gyro'], types: ['mediterranean_restaurant', 'greek_restaurant', 'middle_eastern_restaurant'] },
+  'burgers':       { words: ['burger', 'hamburger', 'smash', 'wendy', 'mcdonald', 'whataburger', 'five guys', 'shake shack'], types: ['hamburger_restaurant', 'fast_food_restaurant'] },
+  'sandwiches':    { words: ['sandwich', 'sub', 'deli', 'hoagie', 'subway', 'jimmy john', 'jersey mike', 'potbelly'], types: ['sandwich_shop'] },
+  'bbq':           { words: ['bbq', 'barbecue', 'barbeque', 'smokehouse'], types: ['barbecue_restaurant'] },
+  'seafood':       { words: ['seafood', 'fish', 'crab', 'lobster', 'shrimp', 'oyster'], types: ['seafood_restaurant'] },
+  'breakfast':     { words: ['breakfast', 'brunch', 'pancake', 'waffle', 'omelette', 'diner', 'ihop', 'denny'], types: ['breakfast_restaurant', 'brunch_restaurant'] },
+  'desserts':      { words: ['dessert', 'ice cream', 'bakery', 'cake', 'pastry', 'donut', 'yogurt'], types: ['ice_cream_shop', 'bakery', 'dessert_shop'] },
+  'vegetarian':    { words: ['vegetarian', 'vegan', 'plant-based'], types: ['vegan_restaurant', 'vegetarian_restaurant'] },
+  'vegan':         { words: ['vegan', 'plant-based'], types: ['vegan_restaurant'] },
 };
 
 // Service filter → post-fetch checks against raw place data
 const SERVICE_FIELD_MAP = {
   'fast food': (p) => p.types?.some(t => ['fast_food_restaurant', 'meal_takeaway'].includes(t)),
-  'sit-down': (p) => p.dineIn === true || p.servesDinner === true || p.servesLunch === true,
-  'takeout': (p) => p.takeout === true || p.types?.some(t => ['meal_takeaway', 'fast_food_restaurant'].includes(t)),
-  'delivery': (p) => p.delivery === true || p.types?.includes('meal_delivery'),
-  'cafe': (p) => p.types?.some(t => ['cafe', 'coffee_shop', 'bakery'].includes(t)),
+  'sit-down':  (p) => p.dineIn === true || p.servesDinner === true || p.servesLunch === true,
+  'takeout':   (p) => p.takeout === true || p.types?.some(t => ['meal_takeaway', 'fast_food_restaurant'].includes(t)),
+  'delivery':  (p) => p.delivery === true || p.types?.includes('meal_delivery'),
+  'cafe':      (p) => p.types?.some(t => ['cafe', 'coffee_shop', 'bakery'].includes(t)),
 };
 
-// Expanded fieldMask including all service amenity boolean fields
 const FIELD_MASK = [
   'places.displayName',
   'places.formattedAddress',
@@ -69,35 +68,18 @@ const FIELD_MASK = [
   'places.restroom',
 ].join(',');
 
-// All food-related types to cast a broad net via nearbySearch
 const ALL_FOOD_TYPES = [
-  'restaurant',
-  'fast_food_restaurant',
-  'cafe',
-  'bakery',
-  'bar',
-  'meal_takeaway',
-  'meal_delivery',
-  'sandwich_shop',
-  'pizza_restaurant',
-  'hamburger_restaurant',
-  'mexican_restaurant',
-  'chinese_restaurant',
-  'japanese_restaurant',
-  'thai_restaurant',
-  'indian_restaurant',
-  'italian_restaurant',
-  'seafood_restaurant',
-  'steak_house',
-  'american_restaurant',
-  'breakfast_restaurant',
-  'brunch_restaurant',
-  'ice_cream_shop',
+  'restaurant', 'fast_food_restaurant', 'cafe', 'bakery', 'bar',
+  'meal_takeaway', 'meal_delivery', 'sandwich_shop', 'pizza_restaurant',
+  'hamburger_restaurant', 'mexican_restaurant', 'chinese_restaurant',
+  'japanese_restaurant', 'thai_restaurant', 'indian_restaurant',
+  'italian_restaurant', 'seafood_restaurant', 'steak_house', 'american_restaurant',
+  'breakfast_restaurant', 'brunch_restaurant', 'ice_cream_shop',
 ];
 
 const SYSTEM_TYPES = new Set([
-  'restaurant','food','point_of_interest','establishment',
-  'meal_takeaway','meal_delivery','cafe','store','bar'
+  'restaurant', 'food', 'point_of_interest', 'establishment',
+  'meal_takeaway', 'meal_delivery', 'cafe', 'store', 'bar'
 ]);
 
 const PRICE_MAP = {
@@ -123,7 +105,6 @@ Deno.serve(async (req) => {
     const cuisineList = Array.isArray(cuisine) ? cuisine : (cuisine ? [cuisine] : []);
     const serviceList = Array.isArray(service) ? service : (service ? [service] : []);
 
-    // Use nearbySearch which supports includedTypes (array) — casts the widest possible net
     const requestBody = {
       includedTypes: ALL_FOOD_TYPES,
       maxResultCount: 20,
@@ -147,14 +128,13 @@ Deno.serve(async (req) => {
     });
 
     const data = await res.json();
-    console.log('nearbySearch status:', res.status, 'places count:', data.places?.length ?? 0);
+    console.log('nearbySearch status:', res.status, 'raw count:', data.places?.length ?? 0);
 
     if (data.error) {
       console.error('Places API error:', JSON.stringify(data.error));
       return Response.json({ error: data.error.message }, { status: 500 });
     }
 
-    // Map raw places to our restaurant shape
     let restaurants = (data.places || [])
       .filter(p => p.businessStatus !== 'CLOSED_PERMANENTLY')
       .filter(p => !excludeNames.includes(p.displayName?.text?.toLowerCase()))
@@ -185,13 +165,16 @@ Deno.serve(async (req) => {
       })
       .filter(r => r.distance_miles === null || r.distance_miles <= (radius_miles || 5));
 
-    // POST-FETCH: filter by cuisine keywords against name + cuisine label
+    // POST-FETCH: filter by cuisine — match name/label text OR google place types
     if (cuisineList.length > 0) {
       restaurants = restaurants.filter(r => {
         return cuisineList.some(c => {
-          const keywords = CUISINE_KEYWORDS[c.toLowerCase()] || [c.toLowerCase()];
+          const entry = CUISINE_KEYWORDS[c.toLowerCase()];
+          const words = entry?.words || [c.toLowerCase()];
+          const types = entry?.types || [];
           const haystack = (r.name + ' ' + r.cuisine).toLowerCase();
-          return keywords.some(kw => haystack.includes(kw));
+          const rawTypes = r._raw?.types || [];
+          return words.some(w => haystack.includes(w)) || types.some(t => rawTypes.includes(t));
         });
       });
     }
@@ -206,12 +189,11 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Strip internal _raw field and sort by distance
     restaurants = restaurants
       .map(({ _raw, ...rest }) => rest)
       .sort((a, b) => (a.distance_miles || 0) - (b.distance_miles || 0));
 
-    console.log('Final restaurants after filtering:', restaurants.length);
+    console.log('Final count after filtering:', restaurants.length);
     return Response.json({ restaurants });
 
   } catch (error) {
