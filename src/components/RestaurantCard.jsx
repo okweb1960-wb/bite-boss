@@ -89,7 +89,7 @@ export default function RestaurantCard({ restaurant, onSwipe, onBlock, isTop }) 
 
           {/* Open Now badge — overlapping bottom-left */}
           {isOpen === true && (
-            <div className="absolute" style={{ bottom: '-14px', left: '16px', zIndex: 20, position: 'absolute' }}>
+            <div className="absolute" style={{ bottom: '-18px', left: '16px', zIndex: 20, position: 'absolute' }}>
               <div className="px-3 py-1.5 rounded-full text-xs font-bold text-white bg-green-500 border-2 border-white" style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
                 🟢 Open Now
               </div>
@@ -104,7 +104,7 @@ export default function RestaurantCard({ restaurant, onSwipe, onBlock, isTop }) 
             </div>
           )}
         </div>
-        <div className="px-5" style={{ background: '#ffffff', position: 'relative', zIndex: 1, paddingTop: '40px', paddingBottom: '20px' }}>
+        <div className="px-5" style={{ background: '#ffffff', position: 'relative', zIndex: 1, paddingTop: '26px', paddingBottom: '20px' }}>
           {/* Row 1: Name + Price */}
           <div className="flex items-start justify-between mb-1">
             <h2 className="font-black leading-tight" style={{ fontSize: '22px', color: '#111827', margin: 0, flex: 1 }}>{name}</h2>
