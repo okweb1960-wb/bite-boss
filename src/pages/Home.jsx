@@ -58,6 +58,16 @@ export default function Home() {
       }
     }
 
+    console.log('Sending to findRestaurants:', {
+        latitude: resolvedCoords.latitude,
+        longitude: resolvedCoords.longitude,
+        radius_miles: filters.radius,
+        cuisine: filters.cuisines,
+        service: filters.services,
+        open_now: filters.openNow,
+        location_text: location,
+      });
+
     try {
       const response = await base44.functions.invoke('findRestaurants', {
         latitude: resolvedCoords.latitude,
