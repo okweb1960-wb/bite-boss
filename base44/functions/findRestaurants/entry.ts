@@ -66,21 +66,25 @@ Deno.serve(async (req) => {
     const queryTerm = cuisineList.length > 0 ? cuisineList[0] : 'restaurants';
 
     const requestBody = {
-      textQuery: `${isFastFood ? 'Fast Food ' : ''}${queryTerm}`,
-      maxResultCount: 60,
-      locationBias: {
-        circle: { center: { latitude: lat, longitude: lng }, radius: radiusMeters }
+      maxResultCount: 20,
+      locationRestriction: {
+        circle: {
+          center: { latitude: lat, longitude: lng },
+          radius: radiusMeters
+        }
       },
-      ...(isFastFood ? { includedPrimaryTypes: ['fast_food_restaurant', 'hamburger_restaurant'] } : {}),
+      includedTypes: cuisineList.length > 0
+        ? cuisineList.flatMap(c => CUISINE_KEYWORDS[c.toLowerCase()]?.types || [])
+        : ['restaurant'],
       ...(open_now ? { openNow: true } : {}),
     };
 
-    const res = await fetch('https://places.googleapis.com/v1/places:searchText', {
+    const res = await fetch('https://places.googleapis.com/v1/places:searchNearby', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'X-Goog-Api-Key': GMAPS_KEY || '',
-        'X-Goog-FieldMask': FIELD_MASK,
+        'X-Goog-FieldMask': 'places.displayName,places.formattedAddress,places.location,places.rating,places.userRatingCount,places.priceLevel,places.currentOpeningHours,places.types,places.editorialSummary,places.businessStatus,places.delivery,places.takeout,places.dineIn,places.servesWine,places.servesBeer,places.servesCocktails',
       },
       body: JSON.stringify(requestBody),
     });
