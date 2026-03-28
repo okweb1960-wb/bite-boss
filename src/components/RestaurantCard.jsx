@@ -1,6 +1,5 @@
 import { motion, useMotionValue, useTransform } from "framer-motion";
-import { Ban } from "lucide-react";
-import { Star, MapPin, Clock, ExternalLink } from "lucide-react";
+import { Ban, Star, MapPin, Clock, ExternalLink } from "lucide-react";
 
 const PRICE_MAP = { 1: "$", 2: "$$", 3: "$$$", 4: "$$$$" };
 
@@ -34,8 +33,6 @@ export default function RestaurantCard({ restaurant, onSwipe, onBlock, isTop }) 
   const x = useMotionValue(0);
   const rotate = useTransform(x, [-200, 200], [-25, 25]);
   const cardOpacity = useTransform(x, [-200, -100, 0, 100, 200], [0, 1, 1, 1, 0]);
-  const nopeOpacity = useTransform(x, [-100, -20, 0], [1, 0, 0]);
-  const maybeOpacity = useTransform(x, [0, 20, 100], [0, 0, 1]);
 
   function handleDragEnd(_, info) {
     if (info.offset.x > 100) onSwipe("maybe");
@@ -64,17 +61,11 @@ export default function RestaurantCard({ restaurant, onSwipe, onBlock, isTop }) 
       whileDrag={{ scale: 1.03 }}
       className="absolute inset-0 z-20 cursor-grab active:cursor-grabbing"
     >
-      {/* Card shell */}
       <div className="w-full h-full rounded-3xl overflow-hidden shadow-2xl" style={{ background: '#ffffff' }}>
 
         {/* Photo */}
         <div className="relative w-full" style={{ height: '260px' }}>
-          <img
-            src={imgSrc}
-            alt={name}
-            className="w-full h-full object-cover"
-            crossOrigin="anonymous"
-          />
+          <img src={imgSrc} alt={name} className="w-full h-full object-cover" crossOrigin="anonymous" />
           <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.55) 0%, transparent 60%)' }} />
 
           {/* Open/closed badge */}
@@ -95,7 +86,54 @@ export default function RestaurantCard({ restaurant, onSwipe, onBlock, isTop }) 
               <Ban className="w-4 h-4 text-white" />
             </button>
           )}
+        </div>
+
+        {/* Info */}
+        <div className="p-5" style={{ background: '#ffffff' }}>
+          <div className="flex items-start justify-between mb-1">
+            <h2 className="font-black leading-tight" style={{ fontSize: '22px', color: '#111827', margin: 0 }}>{name}</h2>
+            {priceLevel && <span className="font-bold ml-2 shrink-0" style={{ color: '#6b7280', fontSize: '14px' }}>{priceLevel}</span>}
           </div>
+          {cuisine && <p className="font-semibold mb-2" style={{ color: '#f97316', fontSize: '14px', margin: '4px 0 8px' }}>{cuisine}</p>}
+          {description && (
+            <p style={{ color: '#6b7280', fontSize: '13px', margin: '0 0 10px', lineHeight: 1.4, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+              {description}
+            </p>
+          )}
+          <div className="flex items-center gap-4" style={{ color: '#6b7280', fontSize: '13px' }}>
+            {rating && (
+              <span className="flex items-center gap-1">
+                <Star style={{ width: 14, height: 14, color: '#f59e0b', fill: '#f59e0b' }} />
+                <span style={{ fontWeight: 700, color: '#111827' }}>{rating}</span>
+                {reviewCount && <span>({reviewCount})</span>}
+              </span>
+            )}
+            {restaurant.address && (
+              <span className="flex items-center gap-1">
+                <MapPin style={{ width: 14, height: 14 }} />
+                {restaurant.address}
+              </span>
+            )}
+            {serviceType && (
+              <span className="flex items-center gap-1">
+                <Clock style={{ width: 14, height: 14 }} />
+                {serviceType}
+              </span>
+            )}
+          </div>
+          <a
+            href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(name + ' ' + location)}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={e => e.stopPropagation()}
+            className="flex items-center gap-1.5 mt-3 font-semibold"
+            style={{ color: '#4285F4', fontSize: '13px', textDecoration: 'none' }}
+          >
+            <ExternalLink style={{ width: 13, height: 13 }} />
+            View on Google Maps
+          </a>
+        </div>
+      </div>
     </motion.div>
   );
 }
