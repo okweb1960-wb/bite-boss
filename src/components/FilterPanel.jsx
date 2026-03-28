@@ -4,17 +4,18 @@ const CUISINES = [
   "BBQ", "Seafood", "Vegetarian", "Vegan", "Breakfast", "Desserts"
 ];
 
-const SERVICE_TYPES = [
-  { value: "sit-down", label: "🍽️ Sit-Down" },
-  { value: "takeout", label: "📦 Takeout" },
-  { value: "fast food", label: "⚡ Fast Food" },
-  { value: "delivery", label: "🛵 Delivery" },
-  { value: "cafe", label: "☕ Café" },
-];
+const SERVICE_LABELS = {
+  "sit-down": "🍽️ Sit-Down",
+  "takeout": "📦 Takeout",
+  "delivery": "🛵 Delivery",
+  "bar": "🍸 Bar"
+};
 
 const RADIUS_OPTIONS = [1, 3, 5, 10, 20];
 
-export default function FilterPanel({ filters, onChange }) {
+export default function FilterPanel({ filters, onChange, availableCuisines, availableServices }) {
+  const cuisineList = availableCuisines.length > 0 ? availableCuisines : CUISINES;
+  const serviceList = availableServices.length > 0 ? availableServices : Object.keys(SERVICE_LABELS);
   function toggleCuisine(c) {
     const current = filters.cuisines || [];
     const updated = current.includes(c) ? current.filter(x => x !== c) : [...current, c];
@@ -64,7 +65,7 @@ export default function FilterPanel({ filters, onChange }) {
           >
             All
           </button>
-          {CUISINES.map(c => {
+          {cuisineList.map(c => {
             const selected = (filters.cuisines || []).includes(c);
             return (
               <button
@@ -98,19 +99,19 @@ export default function FilterPanel({ filters, onChange }) {
           >
             Any Style
           </button>
-          {SERVICE_TYPES.map(s => {
-            const selected = (filters.services || []).includes(s.value);
+          {serviceList.map(s => {
+            const selected = (filters.services || []).includes(s);
             return (
               <button
-                key={s.value}
-                onClick={() => toggleService(s.value)}
+                key={s}
+                onClick={() => toggleService(s)}
                 className={`px-4 py-2 rounded-full font-semibold text-sm transition-all ${
                   selected
                     ? "bg-accent text-accent-foreground shadow-md scale-105"
                     : "bg-muted text-muted-foreground hover:bg-accent/10"
                 }`}
               >
-                {s.label}
+                {SERVICE_LABELS[s] || s}
               </button>
             );
           })}

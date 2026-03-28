@@ -132,7 +132,16 @@ Deno.serve(async (req) => {
         return (a.distance_miles || 0) - (b.distance_miles || 0);
       });
 
-    return Response.json({ restaurants });
+    const availableCuisines = [...new Set(restaurants.map(r => r.cuisine))].sort();
+    const availableServices = new Set();
+    data.places?.forEach(p => {
+      if (p.delivery) availableServices.add('delivery');
+      if (p.takeout) availableServices.add('takeout');
+      if (p.dineIn) availableServices.add('sit-down');
+      if (p.servesWine || p.servesBeer || p.servesCocktails) availableServices.add('bar');
+    });
+
+    return Response.json({ restaurants, availableCuisines: availableCuisines, availableServices: Array.from(availableServices) });
 
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
