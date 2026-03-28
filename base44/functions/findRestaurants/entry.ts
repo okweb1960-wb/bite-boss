@@ -38,8 +38,8 @@ Deno.serve(async (req) => {
     // Build text query - cuisine drives the text search; service type uses includedType for accuracy
     const textQuery = cuisineList.length > 0 ? cuisineList.join(' ') + ' restaurant' : 'restaurant';
 
-    // Use includedType when a single service is selected (most accurate for chains like McDonald's)
-    const includedType = serviceList.length === 1 ? SERVICE_TYPE_MAP[serviceList[0]] : null;
+    // Use includedType from the first matched service (prioritizes accuracy for chains like McDonald's/Burger King)
+    const includedType = serviceList.length > 0 ? SERVICE_TYPE_MAP[serviceList[0]] || null : null;
 
     const requestBody = {
       textQuery,

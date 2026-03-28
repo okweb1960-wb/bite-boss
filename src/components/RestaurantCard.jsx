@@ -76,16 +76,7 @@ export default function RestaurantCard({ restaurant, onSwipe, onBlock, isTop }) 
             </div>
           )}
 
-          {/* Never show again */}
-          {onBlock && (
-            <button
-              onClick={e => { e.stopPropagation(); onBlock(); }}
-              className="absolute bottom-3 right-3 p-2 rounded-full bg-black/40 hover:bg-black/60 transition-all"
-              title="Never show this place again"
-            >
-              <Ban className="w-4 h-4 text-white" />
-            </button>
-          )}
+
         </div>
 
         {/* Info */}
@@ -121,17 +112,28 @@ export default function RestaurantCard({ restaurant, onSwipe, onBlock, isTop }) 
               </span>
             )}
           </div>
-          <a
-            href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(name + ' ' + location)}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={e => e.stopPropagation()}
-            className="flex items-center gap-1.5 mt-3 font-semibold"
-            style={{ color: '#4285F4', fontSize: '13px', textDecoration: 'none' }}
-          >
-            <ExternalLink style={{ width: 13, height: 13 }} />
-            View on Google Maps
-          </a>
+          <div className="flex items-center justify-between mt-3">
+            <a
+              href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(name + ' ' + location)}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={e => e.stopPropagation()}
+              className="flex items-center gap-1.5 font-semibold"
+              style={{ color: '#4285F4', fontSize: '13px', textDecoration: 'none' }}
+            >
+              <ExternalLink style={{ width: 13, height: 13 }} />
+              View on Google Maps
+            </a>
+            {onBlock && (
+              <button
+                onClick={e => { e.stopPropagation(); onBlock(); }}
+                className="p-1.5 rounded-full hover:bg-red-50 transition-all"
+                title="Never show this place again"
+              >
+                <Ban className="w-5 h-5 text-red-600" style={{ strokeWidth: 2.5 }} />
+              </button>
+            )}
+          </div>
         </div>
       </div>
     </motion.div>
