@@ -85,8 +85,7 @@ export default function Home() {
 
       const restaurants = response.data?.restaurants || [];
       if (restaurants.length === 0) {
-        const suggestion = filters.openNow ? " Try turning off 'Open Right Now' to expand options." : " Try increasing your radius.";
-        setError("No restaurants found nearby." + suggestion);
+        setError("No restaurants found. Adjust your filters and try again.");
         setLoading(false);
         return;
       }
