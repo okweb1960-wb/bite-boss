@@ -22,7 +22,8 @@ const CUISINE_KEYWORDS = {
   'thai':          { words: ['thai'], types: ['thai_restaurant'] },
   'indian':        { words: ['indian', 'curry'], types: ['indian_restaurant'] },
   'mediterranean': { words: ['mediterranean', 'greek', 'falafel', 'kebab', 'gyro'], types: ['mediterranean_restaurant', 'greek_restaurant', 'middle_eastern_restaurant'] },
-  'burgers':       { words: ['burger', 'hamburger', 'smash', 'wendy', 'mcdonald', 'whataburger', 'five guys', 'shake shack'], types: ['hamburger_restaurant', 'fast_food_restaurant'] },
+  'burgers':       { words: ['burger', 'hamburger', 'smash', 'wendy', 'mcdonald', 'whataburger', 'five guys', 'shake shack', 'culver'], types: ['hamburger_restaurant'] },
+  'chicken':       { words: ['chicken', 'fried chicken', 'wings', 'cane', 'zaxby', 'kfc', 'popeyes', 'chick-fil', 'wingstop', 'raising'], types: ['chicken_restaurant'] },
   'sandwiches':    { words: ['sandwich', 'sub', 'deli', 'hoagie', 'subway', 'jimmy john', 'jersey mike', 'potbelly'], types: ['sandwich_shop'] },
   'bbq':           { words: ['bbq', 'barbecue', 'barbeque', 'smokehouse'], types: ['barbecue_restaurant'] },
   'seafood':       { words: ['seafood', 'fish', 'crab', 'lobster', 'shrimp', 'oyster'], types: ['seafood_restaurant'] },
@@ -105,19 +106,37 @@ Deno.serve(async (req) => {
     const cuisineList = Array.isArray(cuisine) ? cuisine : (cuisine ? [cuisine] : []);
     const serviceList = Array.isArray(service) ? service : (service ? [service] : []);
 
-    const requestBody = {
-      includedTypes: ALL_FOOD_TYPES,
-      maxResultCount: 20,
-      locationRestriction: {
-        circle: {
-          center: { latitude, longitude },
-          radius: radiusMeters,
-        }
-      },
-      ...(open_now ? { openNow: true } : {}),
-    };
+    let placesApiEndpoint = 'https://places.googleapis.com/v1/places:searchNearby';
+    let requestBody;
 
-    const res = await fetch('https://places.googleapis.com/v1/places:searchNearby', {
+    if (cuisineList.length === 1) {
+      placesApiEndpoint = 'https://places.googleapis.com/v1/places:searchText';
+      requestBody = {
+        textQuery: `Best ${cuisineList[0]} restaurants`,
+        maxResultCount: 20,
+        locationBias: {
+          circle: {
+            center: { latitude, longitude },
+            radius: radiusMeters,
+          }
+        },
+        ...(open_now ? { openNow: true } : {}),
+      };
+    } else {
+      requestBody = {
+        includedTypes: ALL_FOOD_TYPES,
+        maxResultCount: 20,
+        locationRestriction: {
+          circle: {
+            center: { latitude, longitude },
+            radius: radiusMeters,
+          }
+        },
+        ...(open_now ? { openNow: true } : {}),
+      };
+    }
+
+    const res = await fetch(placesApiEndpoint, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -143,9 +162,26 @@ Deno.serve(async (req) => {
         const lon = p.location?.longitude;
         const d = (lat && lon) ? distanceMiles(latitude, longitude, lat, lon) : null;
 
-        const cuisineLabel = p.types?.find(t => !SYSTEM_TYPES.has(t))
-          ?.replace(/_restaurant$/, '')
-          ?.replace(/_/g, ' ') || 'Restaurant';
+        // Prefer our CUISINE_KEYWORDS label over Google's raw type
+        const rawTypesForLabel = p.types || [];
+        const haystackForLabel = ((p.displayName?.text || '') + ' ' + (p.editorialSummary?.text || '')).toLowerCase();
+        let cuisineLabel = 'Restaurant';
+        for (const key of Object.keys(CUISINE_KEYWORDS)) {
+          const entry = CUISINE_KEYWORDS[key];
+          if (
+            (entry.words || []).some(w => haystackForLabel.includes(w)) ||
+            (entry.types || []).some(t => rawTypesForLabel.includes(t))
+          ) {
+            cuisineLabel = key.charAt(0).toUpperCase() + key.slice(1);
+            break;
+          }
+        }
+        if (cuisineLabel === 'Restaurant') {
+          cuisineLabel = rawTypesForLabel.find(t => !SYSTEM_TYPES.has(t))
+            ?.replace(/_restaurant$/, '')
+            ?.replace(/_/g, ' ') || 'Restaurant';
+          cuisineLabel = cuisineLabel.charAt(0).toUpperCase() + cuisineLabel.slice(1);
+        }
 
         return {
           name: p.displayName?.text || 'Unknown',
@@ -176,6 +212,33 @@ Deno.serve(async (req) => {
           const rawTypes = r._raw?.types || [];
           return words.some(w => haystack.includes(w)) || types.some(t => rawTypes.includes(t));
         });
+      });
+    }
+
+    // POST-FETCH: if 'Burgers' is selected, hard-exclude chicken restaurants
+    if (cuisineList.map(c => c.toLowerCase()).includes('burgers')) {
+      const chickenEntry = CUISINE_KEYWORDS['chicken'];
+      const chickenWords = chickenEntry?.words || [];
+      const chickenTypes = chickenEntry?.types || [];
+      restaurants = restaurants.filter(r => {
+        const combinedText = (r.name + ' ' + r.cuisine).toLowerCase();
+        const rawTypes = r._raw?.types || [];
+        return !(chickenWords.some(w => combinedText.includes(w)) || chickenTypes.some(t => rawTypes.includes(t)));
+      });
+    }
+
+    // POST-FETCH: negative seafood filter if 'Seafood' is NOT selected
+    const seafoodSelected = cuisineList.map(c => c.toLowerCase()).includes('seafood');
+    if (!seafoodSelected) {
+      const seafoodKeywords = ['seafood', 'fish', 'sushi', 'shrimp', 'oyster', 'poke', 'lobster', 'crab'];
+      const seafoodGoogleTypes = ['seafood_restaurant', 'sushi_restaurant', 'fish_and_chips_restaurant'];
+      restaurants = restaurants.filter(r => {
+        const combinedText = (r.name + ' ' + r.cuisine).toLowerCase();
+        const rawTypes = r._raw?.types || [];
+        return !(
+          seafoodKeywords.some(kw => combinedText.includes(kw)) ||
+          seafoodGoogleTypes.some(t => rawTypes.includes(t))
+        );
       });
     }
 

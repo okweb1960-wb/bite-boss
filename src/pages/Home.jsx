@@ -35,14 +35,32 @@ export default function Home() {
 
   async function startSwiping() {
     if (!location.trim()) { setError("Please enter or detect your location first!"); return; }
-    if (!coords) { setError("Please use the 📍 Detect button for accurate nearby results — typing a city name won't work with the new precision search."); return; }
     setLoading(true);
     setError("");
 
+    let resolvedCoords = coords;
+    if (!resolvedCoords) {
+      try {
+        const geo = await base44.functions.invoke('geocodeAddress', { address: location });
+        if (geo.data?.latitude && geo.data?.longitude) {
+          resolvedCoords = { latitude: geo.data.latitude, longitude: geo.data.longitude };
+          setCoords(resolvedCoords);
+        } else {
+          setError("Couldn't find that location. Try being more specific (e.g., 'San Jose, CA') or use 📍 Detect.");
+          setLoading(false);
+          return;
+        }
+      } catch {
+        setError("Couldn't find that location. Try being more specific or use 📍 Detect.");
+        setLoading(false);
+        return;
+      }
+    }
+
     try {
       const response = await base44.functions.invoke('findRestaurants', {
-        latitude: coords.latitude,
-        longitude: coords.longitude,
+        latitude: resolvedCoords.latitude,
+        longitude: resolvedCoords.longitude,
         radius_miles: filters.radius,
         cuisine: filters.cuisines,
         service: filters.services,
