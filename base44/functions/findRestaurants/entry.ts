@@ -1,5 +1,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.23';
 
+const GMAPS_KEY = Deno.env.get('GOOGLE_MAPS_API_KEY');
+
 function distanceMiles(lat1, lon1, lat2, lon2) {
   const R = 3958.8;
   const dLat = (lat2 - lat1) * Math.PI / 180;
@@ -8,83 +10,67 @@ function distanceMiles(lat1, lon1, lat2, lon2) {
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
 }
 
+async function fetchPlaces(latitude, longitude, radiusMeters, keyword, pagetoken) {
+  let url = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${latitude},${longitude}&radius=${radiusMeters}&type=restaurant&key=${GMAPS_KEY}`;
+  if (keyword) url += `&keyword=${encodeURIComponent(keyword)}`;
+  if (pagetoken) url += `&pagetoken=${encodeURIComponent(pagetoken)}`;
+  const res = await fetch(url);
+  const data = await res.json();
+  console.log('Google status:', data.status, 'count:', data.results?.length, 'error:', data.error_message);
+  return data;
+}
+
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me();
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
-    const { latitude, longitude, radius_miles, cuisine, service, open_now, exclude, location_text } = await req.json();
+    const { latitude, longitude, radius_miles, cuisine, service, open_now, exclude } = await req.json();
     if (!latitude || !longitude) return Response.json({ error: 'Coordinates required' }, { status: 400 });
 
-    const radius = radius_miles || 5;
-    const cuisineHint = cuisine ? ` Cuisine preference: ${cuisine}.` : '';
-    const serviceHint = service ? ` Service style: ${service}.` : '';
-    const locationHint = location_text ? ` The location is: ${location_text}.` : '';
+    const radiusMeters = Math.round((radius_miles || 5) * 1609.34);
+    const keyword = [cuisine, service].filter(Boolean).join(' ') || undefined;
+    const excludeNames = (exclude || []).map(n => n.toLowerCase());
 
-    const excludeHint = exclude?.length ? ` Do NOT include these places: ${exclude.join(', ')}.` : '';
-    const prompt = `List 8-10 real restaurants that are physically located in or very close to: ${location_text || `lat=${latitude} lon=${longitude}`}. Only include places within ${radius} miles of lat=${latitude} lon=${longitude}. Do NOT include restaurants from other cities or states.${cuisineHint}${serviceHint}${excludeHint}
-Return JSON only. Fields per restaurant: name, cuisine, street, rating, reviews, price (1-4), open (bool), stype (Sit-down/Fast Food/Cafe/Counter), lat, lon.`;
+    const data = await fetchPlaces(latitude, longitude, radiusMeters, keyword);
+    let places = data.results || [];
 
-    const res = await base44.integrations.Core.InvokeLLM({
-      prompt,
-      add_context_from_internet: true,
-      model: 'gemini_3_flash',
-      response_json_schema: {
-        type: 'object',
-        properties: {
-          restaurants: {
-            type: 'array',
-            items: {
-              type: 'object',
-              properties: {
-                name: { type: 'string' },
-                cuisine: { type: 'string' },
-                street: { type: 'string' },
-                rating: { type: 'number' },
-                reviews: { type: 'integer' },
-                price: { type: 'integer' },
-                open: { type: 'boolean' },
-                stype: { type: 'string' },
-                lat: { type: 'number' },
-                lon: { type: 'number' },
-              },
-              required: ['name', 'cuisine', 'rating', 'lat', 'lon']
-            }
-          }
-        },
-        required: ['restaurants']
-      }
-    });
-
-    const excludeNames = exclude?.length ? exclude.map(n => n.toLowerCase()) : [];
-
-    let restaurants = (res?.restaurants || []).map(r => {
-      const d = (r.lat && r.lon) ? distanceMiles(latitude, longitude, r.lat, r.lon) : null;
-      return {
-        name: r.name,
-        cuisine: r.cuisine,
-        address: r.street || '',
-        rating: r.rating,
-        review_count: r.reviews,
-        price_level: r.price,
-        open_now: r.open,
-        service_type: r.stype,
-        lat: r.lat,
-        lon: r.lon,
-        distance_miles: d,
-        distance: d === null ? '' : d < 0.1 ? `${Math.round(d * 5280)} ft` : `${d.toFixed(1)} mi`,
-      };
-    })
-    .filter(r => !excludeNames.includes(r.name.toLowerCase()))
-    .filter(r => r.distance_miles === null || r.distance_miles <= radius + 1)
-    .sort((a, b) => (a.distance_miles || 0) - (b.distance_miles || 0));
-
-    if (open_now) {
-      restaurants = restaurants.filter(r => r.open_now);
+    if (data.next_page_token && places.length < 30) {
+      await new Promise(r => setTimeout(r, 2000));
+      const data2 = await fetchPlaces(latitude, longitude, radiusMeters, keyword, data.next_page_token);
+      places = [...places, ...(data2.results || [])];
     }
 
-    return Response.json({ restaurants });
+    let restaurants = places
+      .filter(p => !excludeNames.includes(p.name.toLowerCase()))
+      .map(p => {
+        const lat = p.geometry?.location?.lat;
+        const lon = p.geometry?.location?.lng;
+        const d = (lat && lon) ? distanceMiles(latitude, longitude, lat, lon) : null;
+        const isOpen = p.opening_hours?.open_now;
+        return {
+          name: p.name,
+          cuisine: p.types?.find(t => !['restaurant','food','point_of_interest','establishment'].includes(t))?.replace(/_/g, ' ') || 'Restaurant',
+          address: p.vicinity || '',
+          rating: p.rating,
+          review_count: p.user_ratings_total,
+          price_level: p.price_level,
+          open_now: isOpen,
+          lat,
+          lon,
+          distance_miles: d,
+          distance: d === null ? '' : d < 0.1 ? `${Math.round(d * 5280)} ft` : `${d.toFixed(1)} mi`,
+        };
+      });
+
+    if (open_now) {
+      restaurants = restaurants.filter(r => r.open_now === true);
+    }
+
+    restaurants.sort((a, b) => (a.distance_miles || 0) - (b.distance_miles || 0));
+
+    return Response.json({ restaurants, status: data.status });
 
   } catch (error) {
     console.error('Error:', error.message);
