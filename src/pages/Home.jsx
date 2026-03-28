@@ -14,82 +14,8 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [filters, setFilters] = useState({ radius: 5, cuisines: [], services: [], openNow: true });
-  const [availableCuisines, setAvailableCuisines] = useState([]);
-  const [loadingAvailability, setLoadingAvailability] = useState(false);
-  const [lastCheckedRadius, setLastCheckedRadius] = useState(5);
-  const [lastCheckedOpenNow, setLastCheckedOpenNow] = useState(true);
 
-  async function checkCuisineAvailability(lat, lng, radius, openNow) {
-    console.log('Availability check triggered');
-    console.log('Radius:', radius);
-    console.log('Coordinates received:', { lat, lng });
-    
-    const availabilityPayload = {
-      latitude: lat,
-      longitude: lng,
-      radius_miles: radius,
-      cuisine: [],
-      service: [],
-      open_now: openNow
-    };
-    console.log('Sending availability payload:', JSON.stringify(availabilityPayload));
-    
-    setLoadingAvailability(true);
-    try {
-      const response = await base44.functions.invoke('findRestaurants', availabilityPayload);
-      console.log('Full API response:', response);
-      
-      const restaurants = response.data?.restaurants || [];
-      console.log('Results count:', restaurants.length);
-      
-      // Count restaurants by cuisine
-      const CUISINE_KEYWORDS = {
-        'American': { words: ['american', 'burger', 'diner', 'bbq', 'barbecue', 'steakhouse', 'wings'] },
-        'Mexican': { words: ['mexican', 'taco', 'burrito', 'tex-mex', 'tamale', 'quesadilla'] },
-        'Italian': { words: ['italian', 'pizza', 'pasta', 'trattoria'] },
-        'Pizza': { words: ['pizza', 'pizzeria'] },
-        'Chinese': { words: ['chinese', 'dim sum', 'cantonese', 'szechuan'] },
-        'Japanese': { words: ['japanese', 'sushi', 'ramen', 'teriyaki', 'hibachi'] },
-        'Sushi': { words: ['sushi'] },
-        'Thai': { words: ['thai'] },
-        'Indian': { words: ['indian', 'curry'] },
-        'Mediterranean': { words: ['mediterranean', 'greek', 'falafel', 'kebab', 'gyro'] },
-        'Burgers': { words: ['burger', 'hamburger'] },
-        'Sandwiches': { words: ['sandwich', 'sub', 'deli', 'hoagie'] },
-        'BBQ': { words: ['bbq', 'barbecue'] },
-        'Seafood': { words: ['seafood', 'fish'] },
-        'Breakfast': { words: ['breakfast', 'brunch', 'pancake', 'waffle'] },
-        'Desserts': { words: ['dessert', 'ice cream', 'bakery', 'cake'] },
-        'Vegetarian': { words: ['vegetarian'] },
-        'Vegan': { words: ['vegan'] },
-      };
-      
-      const cuisineCounts = {};
-      restaurants.forEach(r => {
-        const cuisine = r.cuisine || 'Restaurant';
-        cuisineCounts[cuisine] = (cuisineCounts[cuisine] || 0) + 1;
-      });
-      console.log('Cuisine counts:', cuisineCounts);
-      
-      // A cuisine is available if count >= 2
-      const available = Object.keys(cuisineCounts).filter(c => cuisineCounts[c] >= 2);
-      console.log('Available cuisines:', available);
-      
-      setAvailableCuisines(available);
-      
-      // If user's selected cuisine is no longer available, reset to "All"
-      const selectedCuisines = filters.cuisines || [];
-      const hasUnavailableCuisine = selectedCuisines.some(c => !available.includes(c));
-      if (hasUnavailableCuisine && selectedCuisines.length > 0) {
-        const unavailable = selectedCuisines.find(c => !available.includes(c));
-        setFilters({ ...filters, cuisines: [] });
-        toast.info(`No ${unavailable} spots nearby — showing all restaurants instead.`);
-      }
-    } catch (err) {
-      console.error('Failed to check cuisine availability:', err);
-    }
-    setLoadingAvailability(false);
-  }
+
 
   async function detectLocation() {
     setDetecting(true);
@@ -114,14 +40,7 @@ export default function Home() {
     );
   }
 
-  // Trigger availability check when radius or openNow changes
-  useEffect(() => {
-    if (coords && (filters.radius !== lastCheckedRadius || filters.openNow !== lastCheckedOpenNow)) {
-      checkCuisineAvailability(coords.latitude, coords.longitude, filters.radius, filters.openNow);
-      setLastCheckedRadius(filters.radius);
-      setLastCheckedOpenNow(filters.openNow);
-    }
-  }, [filters.radius, filters.openNow]);
+
 
   async function startSwiping() {
     if (!location.trim()) { setError("Please enter or detect your location first!"); return; }
@@ -231,14 +150,6 @@ export default function Home() {
            <FilterPanel 
              filters={filters} 
              onChange={setFilters}
-             availableCuisines={availableCuisines}
-             loadingAvailability={loadingAvailability}
-             onRadiusChange={(newRadius) => {
-               if (coords) {
-                 checkCuisineAvailability(coords.latitude, coords.longitude, newRadius, filters.openNow);
-               }
-             }}
-             coords={coords}
            />
          </motion.div>
 
