@@ -35,11 +35,10 @@ Deno.serve(async (req) => {
     const cuisineList = Array.isArray(cuisine) ? cuisine : (cuisine ? [cuisine] : []);
     const serviceList = Array.isArray(service) ? service : (service ? [service] : []);
 
-    // Build text query
-    const textQuery = cuisineList.length > 0 ? cuisineList.join(' OR ') + ' restaurant' : 'restaurant';
-
-    // Always use searchText for broader, more reliable results
-    const endpoint = 'https://places.googleapis.com/v1/places:searchText';
+    // Build text query incorporating both cuisine and service filters
+    const cuisinePart = cuisineList.length > 0 ? cuisineList.join(' ') : '';
+    const servicePart = serviceList.length > 0 ? serviceList.join(' ') : '';
+    const textQuery = [cuisinePart, servicePart, 'restaurant'].filter(Boolean).join(' ');
 
     const requestBody = {
       textQuery,
@@ -50,7 +49,6 @@ Deno.serve(async (req) => {
         }
       },
       maxResultCount: 20,
-      ...(serviceList.length > 0 ? { includedType: SERVICE_TYPE_MAP[serviceList[0]] || 'restaurant' } : {}),
       ...(open_now ? { openNow: true } : {}),
     };
 
