@@ -209,6 +209,13 @@ Deno.serve(async (req) => {
     }
 
     // STEP 2: Process broad results
+    console.log('RAW PLACE TYPES:', 
+      (broadData.places || []).map(p => ({
+        name: p.displayName?.text,
+        types: p.types
+      }))
+    );
+
     const allRestaurants = (broadData.places || [])
       .filter(p => p.businessStatus !== 'CLOSED_PERMANENTLY')
       .filter(p => isValidRestaurant(p))
