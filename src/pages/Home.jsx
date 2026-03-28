@@ -149,11 +149,11 @@ export default function Home() {
   return (
     <div className="flex flex-col min-h-screen">
       {/* Header */}
-      <div className="bg-gradient-to-br from-primary via-orange-400 to-secondary p-8 pb-12 rounded-b-[2.5rem] shadow-lg">
+      <div className="bg-gradient-to-br from-teal-600 to-teal-700 p-8 pb-12 rounded-b-[2.5rem] shadow-lg">
         <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
           <div className="flex items-center gap-2 mb-2">
             <Utensils className="w-7 h-7 text-white" />
-            <span className="text-white/80 font-bold text-sm uppercase tracking-widest">Let's Eat</span>
+            <span className="text-teal-600 font-bold text-lg uppercase tracking-wide">Cravr</span>
           </div>
           <h1 className="font-playfair text-4xl font-bold text-white leading-tight">
             Where do you<br />want to eat?
@@ -161,15 +161,13 @@ export default function Home() {
           <p className="text-white/70 mt-2 font-semibold">"I don't know... where do <em>you</em> want to go?"</p>
         </motion.div>
       </div>
-
-      {/* Content */}
       <div className="flex-1 px-5 py-6 overflow-y-auto space-y-6">
         {/* Location */}
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
           <h3 className="font-bold text-foreground mb-3">Where are you?</h3>
           <div className="flex gap-2">
-            <div className="flex-1 flex items-center bg-card border border-border rounded-2xl px-4 gap-2 shadow-sm">
-              <MapPin className="w-4 h-4 text-primary shrink-0" />
+            <div className="flex-1 flex items-center bg-card border border-teal-600 rounded-2xl px-4 gap-2 shadow-sm">
+              <MapPin className="w-4 h-4 text-teal-600 shrink-0" />
               <input
                 value={location}
                 onChange={e => { setLocation(e.target.value); setCoords(null); }}
@@ -180,7 +178,7 @@ export default function Home() {
             <button
               onClick={detectLocation}
               disabled={detecting}
-              className="bg-primary text-primary-foreground px-4 rounded-2xl font-bold shadow-sm hover:opacity-90 transition-all flex items-center gap-1 text-sm"
+              className="bg-orange-500 text-white px-4 rounded-2xl font-bold shadow-sm hover:bg-orange-600 transition-all flex items-center gap-1 text-sm"
             >
               {detecting ? <Loader2 className="w-4 h-4 animate-spin" /> : "📍 Detect"}
             </button>
@@ -206,7 +204,7 @@ export default function Home() {
           <button
             onClick={startSwiping}
             disabled={loading}
-            className="w-full bg-gradient-to-r from-primary to-orange-400 text-white font-black text-xl py-5 rounded-3xl shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all active:scale-[0.98] flex items-center justify-center gap-3"
+            className="w-full bg-orange-500 text-white font-black text-xl py-5 rounded-3xl shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all active:scale-[0.98] flex items-center justify-center gap-3 disabled:opacity-50"
           >
             {loading ? (
               <><Loader2 className="w-6 h-6 animate-spin" /> Finding Restaurants...</>

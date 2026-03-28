@@ -82,7 +82,7 @@ export default function RestaurantCard({ restaurant, onSwipe, onBlock, isTop }) 
           {/* Open/closed badge */}
           {isOpen !== undefined && (
             <div className="absolute top-3 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full text-xs font-bold text-white"
-              style={{ background: isOpen ? '#16a34a' : '#dc2626' }}>
+              style={{ background: isOpen ? '#10B981' : '#EF4444' }}>
               {isOpen ? '🟢 Open Now' : '🔴 Closed'}
             </div>
           )}

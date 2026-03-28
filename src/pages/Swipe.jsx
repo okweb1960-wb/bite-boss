@@ -85,7 +85,7 @@ export default function Swipe() {
             onClick={() => handleSwipe("nope")}
             disabled={allDone}
             className="flex items-center gap-2 px-5 py-2.5 rounded-2xl font-black text-white text-sm shadow-lg active:scale-95 transition-all disabled:opacity-30"
-            style={{ background: 'linear-gradient(135deg, #f43f5e, #e11d48)', boxShadow: '0 4px 15px rgba(244,63,94,0.4)' }}
+            style={{ background: '#EF4444', boxShadow: '0 4px 15px rgba(239,68,68,0.4)' }}
           >
             Nope
           </button>
@@ -94,27 +94,24 @@ export default function Swipe() {
             onClick={() => handleSwipe("maybe")}
             disabled={allDone}
             className="flex items-center gap-2 px-5 py-2.5 rounded-2xl font-black text-white text-sm shadow-lg active:scale-95 transition-all disabled:opacity-30"
-            style={{ background: 'linear-gradient(135deg, #22c55e, #16a34a)', boxShadow: '0 4px 15px rgba(34,197,94,0.4)' }}
+            style={{ background: '#10B981', boxShadow: '0 4px 15px rgba(16,185,129,0.4)' }}
           >
             Maybe
           </button>
         </div>
-        <div className="text-center">
           <p className="text-muted-foreground text-xs font-semibold">{remaining} left</p>
         </div>
       </div>
 
       {/* Progress bar */}
       <div className="px-5 mb-4">
-        <div className="h-2 bg-muted rounded-full overflow-hidden">
+        <div className="h-2 bg-gray-300 rounded-full overflow-hidden">
           <motion.div
-            className="h-full bg-gradient-to-r from-primary to-secondary rounded-full"
+            className="h-full bg-teal-600 rounded-full"
             animate={{ width: `${(currentIndex / restaurants.length) * 100}%` }}
           />
         </div>
       </div>
-
-      {/* Cards */}
       <div className="flex-1 px-5 relative flex items-center justify-center">
         {!allDone ? (
           <>
@@ -182,7 +179,7 @@ export default function Swipe() {
               <button
                 onClick={loadMore}
                 disabled={loadingMore}
-                className="bg-secondary text-secondary-foreground font-black px-6 py-3 rounded-2xl shadow hover:opacity-90 transition-all flex items-center gap-2 mb-3"
+                className="bg-teal-600 text-white font-black px-6 py-3 rounded-2xl shadow hover:opacity-90 transition-all flex items-center gap-2 mb-3"
               >
                 {loadingMore ? <>🔄 Loading more...</> : "🔍 Show Me More"}
               </button>
@@ -195,11 +192,8 @@ export default function Swipe() {
       <div className="px-5 py-4 flex items-center justify-center">
         <button
           onClick={() => navigate("/results", { state: { maybes, allRestaurants: restaurants } })}
-          className="px-5 py-3 bg-gradient-to-r from-primary to-orange-400 text-white font-black rounded-2xl shadow-lg hover:shadow-xl hover:scale-105 transition-all text-sm"
+          className="px-5 py-3 bg-orange-500 text-white font-black rounded-2xl shadow-lg hover:shadow-xl hover:scale-105 transition-all text-sm"
         >
-          {allDone ? "See My Picks! 🎉" : "I'm Done"}
-        </button>
-      </div>
     </div>
   );
 }

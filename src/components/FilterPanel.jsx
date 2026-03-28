@@ -50,8 +50,8 @@ export default function FilterPanel({ filters, onChange, availableCuisines = [],
               onClick={() => onChange({ ...filters, radius: r })}
               className={`px-4 py-2 rounded-full font-semibold text-sm transition-all ${
                 filters.radius === r
-                  ? "bg-primary text-primary-foreground shadow-md scale-105"
-                  : "bg-muted text-muted-foreground hover:bg-primary/10"
+                  ? "bg-teal-600 text-white shadow-md scale-105"
+                  : "border-2 border-teal-600 text-teal-600 hover:bg-teal-50"
               }`}
             >
               {r} mi
@@ -59,8 +59,6 @@ export default function FilterPanel({ filters, onChange, availableCuisines = [],
           ))}
         </div>
       </div>
-
-      {/* Cuisine - multi-select */}
       <div>
         <h3 className="font-bold text-foreground mb-1">What are you in the mood for?</h3>
         <p className="text-xs text-muted-foreground mb-3">Pick one or more</p>
@@ -69,13 +67,12 @@ export default function FilterPanel({ filters, onChange, availableCuisines = [],
             onClick={() => onChange({ ...filters, cuisines: [] })}
             className={`px-3 py-1.5 rounded-full font-semibold text-sm transition-all ${
               (filters.cuisines || []).length === 0
-                ? "bg-secondary text-secondary-foreground shadow-md scale-105"
-                : "bg-muted text-muted-foreground hover:bg-secondary/20"
+                ? "bg-teal-600 text-white shadow-md scale-105"
+                : "bg-teal-100 text-teal-600 hover:bg-teal-200"
             }`}
           >
             All
           </button>
-          {CUISINES.map(c => {
             const selected = (filters.cuisines || []).includes(c);
             const available = isCuisineAvailable(c);
             const isLoading = loadingAvailability && availableCuisines.length === 0;
@@ -88,18 +85,17 @@ export default function FilterPanel({ filters, onChange, availableCuisines = [],
                 disabled={isDisabled}
                 className={`px-3 py-1.5 rounded-full font-semibold text-sm transition-opacity ${
                   isLoading
-                    ? "animate-shimmer bg-muted text-muted-foreground"
+                    ? "animate-shimmer bg-teal-100 text-teal-600"
                     : isDisabled
                     ? "opacity-50 pointer-events-none bg-gray-300 text-gray-600"
                     : selected
-                    ? "opacity-100 bg-secondary text-secondary-foreground shadow-md scale-105"
-                    : "opacity-100 bg-muted text-muted-foreground hover:bg-secondary/20"
+                    ? "opacity-100 bg-teal-600 text-white shadow-md scale-105"
+                    : "opacity-100 bg-teal-100 text-teal-600 hover:bg-teal-200"
                 }`}
               >
                 {c}
               </button>
             );
-          })}
         </div>
       </div>
       <div>
@@ -110,8 +106,8 @@ export default function FilterPanel({ filters, onChange, availableCuisines = [],
             onClick={() => onChange({ ...filters, services: [] })}
             className={`px-4 py-2 rounded-full font-semibold text-sm transition-all ${
               (filters.services || []).length === 0
-                ? "bg-accent text-accent-foreground shadow-md scale-105"
-                : "bg-muted text-muted-foreground hover:bg-accent/10"
+                ? "bg-orange-500 text-white shadow-md scale-105"
+                : "bg-gray-200 text-gray-700 hover:bg-gray-300"
             }`}
           >
             Any Style
@@ -124,19 +120,15 @@ export default function FilterPanel({ filters, onChange, availableCuisines = [],
                 onClick={() => toggleService(s.value)}
                 className={`px-4 py-2 rounded-full font-semibold text-sm transition-all ${
                   selected
-                    ? "bg-accent text-accent-foreground shadow-md scale-105"
-                    : "bg-muted text-muted-foreground hover:bg-accent/10"
+                    ? "bg-orange-500 text-white shadow-md scale-105"
+                    : "bg-gray-200 text-gray-700 hover:bg-gray-300"
                 }`}
               >
                 {s.label}
               </button>
             );
-          })}
-        </div>
-      </div>
-
-      {/* Open Now */}
-      <div className="flex items-center justify-between bg-muted rounded-2xl px-4 py-3">
+          })
+      <div className="flex items-center justify-between bg-teal-50 rounded-2xl px-4 py-3">
         <div>
           <p className="font-bold text-foreground">Open right now</p>
           <p className="text-sm text-muted-foreground">Only show places that are open</p>
@@ -144,7 +136,7 @@ export default function FilterPanel({ filters, onChange, availableCuisines = [],
         <button
           onClick={() => onChange({ ...filters, openNow: !filters.openNow })}
           className={`w-12 h-6 rounded-full transition-all relative ${
-            filters.openNow ? "bg-primary" : "bg-border"
+            filters.openNow ? "bg-green-500" : "bg-gray-300"
           }`}
         >
           <span className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-all ${

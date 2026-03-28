@@ -47,6 +47,26 @@ module.exports = {
   			border: 'hsl(var(--border))',
   			input: 'hsl(var(--input))',
   			ring: 'hsl(var(--ring))',
+  			teal: {
+  				50: '#F0FDFA',
+  				100: '#CCFBF1',
+  				600: '#0D9488',
+  				700: '#0F766E',
+  			},
+  			orange: {
+  				50: '#FFF7ED',
+  				500: '#F97316',
+  			},
+  			green: {
+  				500: '#10B981',
+  			},
+  			red: {
+  				500: '#EF4444',
+  			},
+  			gray: {
+  				300: '#D1D5DB',
+  				600: '#4B5563',
+  			},
   			chart: {
   				'1': 'hsl(var(--chart-1))',
   				'2': 'hsl(var(--chart-2))',
@@ -54,28 +74,6 @@ module.exports = {
   				'4': 'hsl(var(--chart-4))',
   				'5': 'hsl(var(--chart-5))'
   			},
-  		},
-  		keyframes: {
-  			'accordion-down': {
-  				from: { height: '0' },
-  				to: { height: 'var(--radix-accordion-content-height)' }
-  			},
-  			'accordion-up': {
-  				from: { height: 'var(--radix-accordion-content-height)' },
-  				to: { height: '0' }
-  			},
-  			'fly-in': {
-  				from: { opacity: '0', transform: 'scale(0.8) translateY(20px)' },
-  				to: { opacity: '1', transform: 'scale(1) translateY(0)' }
-  			},
-  			'wiggle': {
-  				'0%, 100%': { transform: 'rotate(-3deg)' },
-  				'50%': { transform: 'rotate(3deg)' }
-  			},
-  			'shimmer': {
-  				'0%, 100%': { opacity: '1' },
-  				'50%': { opacity: '0.5' }
-  			}
   		},
   		animation: {
   		'accordion-down': 'accordion-down 0.2s ease-out',
