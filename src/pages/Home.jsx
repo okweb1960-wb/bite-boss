@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { MapPin, Utensils, Loader2, Zap } from "lucide-react";
+import { toast } from "sonner";
 import { motion } from "framer-motion";
 import { base44 } from "@/api/base44Client";
 import FilterPanel from "../components/FilterPanel";
@@ -73,6 +74,10 @@ export default function Home() {
         setError("No restaurants found nearby. Try increasing your radius.");
         setLoading(false);
         return;
+      }
+
+      if (response.data?.filterMismatch) {
+        toast.info("Showing all nearby results to give you more options.");
       }
 
       navigate("/swipe", { state: { restaurants, filters, location, coords } });

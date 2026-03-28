@@ -113,7 +113,7 @@ Deno.serve(async (req) => {
       placesApiEndpoint = 'https://places.googleapis.com/v1/places:searchText';
       requestBody = {
         textQuery: `Best ${cuisineList[0]} restaurants`,
-        maxResultCount: 20,
+        maxResultCount: 60,
         locationRestriction: {
           circle: {
             center: { latitude, longitude },
@@ -125,7 +125,7 @@ Deno.serve(async (req) => {
     } else {
       requestBody = {
         includedTypes: ALL_FOOD_TYPES,
-        maxResultCount: 20,
+        maxResultCount: 60,
         locationRestriction: {
           circle: {
             center: { latitude, longitude },
@@ -202,7 +202,6 @@ Deno.serve(async (req) => {
       .filter(r => r.distance_miles === null || r.distance_miles <= (radius_miles || 5));
 
     // POST-FETCH: filter by cuisine — only needed for searchNearby (multi-cuisine or no cuisine)
-    // When searchText was used (single cuisine), Google already ranked by relevance — skip this filter
     const usedSearchText = cuisineList.length === 1;
     if (!usedSearchText && cuisineList.length > 0) {
       restaurants = restaurants.filter(r => {
@@ -217,30 +216,30 @@ Deno.serve(async (req) => {
       });
     }
 
-    // POST-FETCH: if 'Burgers' is selected, hard-exclude chicken restaurants
-    if (cuisineList.map(c => c.toLowerCase()).includes('burgers')) {
-      const chickenEntry = CUISINE_KEYWORDS['chicken'];
-      const chickenWords = chickenEntry?.words || [];
-      const chickenTypes = chickenEntry?.types || [];
-      restaurants = restaurants.filter(r => {
-        const combinedText = (r.name + ' ' + r.cuisine).toLowerCase();
+    // DEPRIORITIZATION: flag chicken-dominant places when burgers selected (don't exclude)
+    const burgersSelected = cuisineList.map(c => c.toLowerCase()).includes('burgers');
+    if (burgersSelected) {
+      const chickenWords = CUISINE_KEYWORDS['chicken']?.words || [];
+      const chickenTypes = CUISINE_KEYWORDS['chicken']?.types || [];
+      restaurants = restaurants.map(r => {
+        const text = (r.name + ' ' + r.cuisine).toLowerCase();
         const rawTypes = r._raw?.types || [];
-        return !(chickenWords.some(w => combinedText.includes(w)) || chickenTypes.some(t => rawTypes.includes(t)));
+        const isChickenRestaurant = chickenWords.some(w => text.includes(w)) || chickenTypes.some(t => rawTypes.includes(t));
+        return { ...r, isChickenRestaurant };
       });
     }
 
-    // POST-FETCH: negative seafood filter if 'Seafood' is NOT selected
+    // DEPRIORITIZATION: flag high-seafood places only when a specific non-seafood cuisine is selected
     const seafoodSelected = cuisineList.map(c => c.toLowerCase()).includes('seafood');
-    if (!seafoodSelected) {
-      const seafoodKeywords = ['seafood', 'fish', 'sushi', 'shrimp', 'oyster', 'poke', 'lobster', 'crab'];
-      const seafoodGoogleTypes = ['seafood_restaurant', 'sushi_restaurant', 'fish_and_chips_restaurant'];
-      restaurants = restaurants.filter(r => {
-        const combinedText = (r.name + ' ' + r.cuisine).toLowerCase();
+    const hasSpecificCuisine = cuisineList.length > 0 && !seafoodSelected;
+    if (hasSpecificCuisine) {
+      const seafoodWords = CUISINE_KEYWORDS['seafood']?.words || [];
+      const seafoodTypes = ['seafood_restaurant', 'fish_and_chips_restaurant'];
+      restaurants = restaurants.map(r => {
+        const text = (r.name + ' ' + r.cuisine).toLowerCase();
         const rawTypes = r._raw?.types || [];
-        return !(
-          seafoodKeywords.some(kw => combinedText.includes(kw)) ||
-          seafoodGoogleTypes.some(t => rawTypes.includes(t))
-        );
+        const isHighSeafoodMatch = seafoodWords.some(w => text.includes(w)) || seafoodTypes.some(t => rawTypes.includes(t));
+        return { ...r, isHighSeafoodMatch };
       });
     }
 
@@ -254,9 +253,44 @@ Deno.serve(async (req) => {
       });
     }
 
-    restaurants = restaurants
-      .map(({ _raw, ...rest }) => rest)
-      .sort((a, b) => (a.distance_miles || 0) - (b.distance_miles || 0));
+    const preFilteredRestaurants = restaurants.map(({ _raw, ...rest }) => rest);
+
+    // GRACEFUL FALLBACK: if filters left nothing, return unfiltered set with a flag
+    if (preFilteredRestaurants.length === 0) {
+      const fallback = (data.places || [])
+        .filter(p => p.businessStatus !== 'CLOSED_PERMANENTLY')
+        .map(p => {
+          const lat = p.location?.latitude;
+          const lon = p.location?.longitude;
+          const d = (lat && lon) ? distanceMiles(latitude, longitude, lat, lon) : null;
+          return {
+            name: p.displayName?.text || 'Unknown',
+            cuisine: 'Restaurant',
+            address: p.formattedAddress || '',
+            rating: p.rating,
+            review_count: p.userRatingCount,
+            price_level: PRICE_MAP[p.priceLevel] || null,
+            open_now: p.currentOpeningHours?.openNow,
+            description: p.editorialSummary?.text || '',
+            lat, lon, distance_miles: d,
+            distance: d === null ? '' : d < 0.1 ? `${Math.round(d * 5280)} ft` : `${d.toFixed(1)} mi`,
+            filterMismatch: true,
+          };
+        })
+        .sort((a, b) => (b.rating || 0) - (a.rating || 0));
+      console.log('Fallback triggered, returning', fallback.length, 'unfiltered results');
+      return Response.json({ restaurants: fallback, filterMismatch: true });
+    }
+
+    // SMART SORT: deprioritized items go last, otherwise sort by rating desc then distance asc
+    restaurants = preFilteredRestaurants.sort((a, b) => {
+      const aDeprio = (a.isChickenRestaurant || a.isHighSeafoodMatch) ? 1 : 0;
+      const bDeprio = (b.isChickenRestaurant || b.isHighSeafoodMatch) ? 1 : 0;
+      if (aDeprio !== bDeprio) return aDeprio - bDeprio;
+      const ratingDiff = (b.rating || 0) - (a.rating || 0);
+      if (Math.abs(ratingDiff) > 0.2) return ratingDiff;
+      return (a.distance_miles || 0) - (b.distance_miles || 0);
+    });
 
     console.log('Final count after filtering:', restaurants.length);
     return Response.json({ restaurants });
