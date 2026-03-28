@@ -2,7 +2,7 @@ import { useState, useCallback } from "react";
 import { base44 } from "@/api/base44Client";
 import { useNavigate, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, ChevronLeft, ChevronRight } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import RestaurantCard from "../components/RestaurantCard";
 
 export default function Swipe() {
@@ -84,19 +84,19 @@ export default function Swipe() {
           <button
             onClick={() => handleSwipe("nope")}
             disabled={allDone}
-            className="flex flex-col items-center gap-0.5 disabled:opacity-30"
+            className="flex items-center gap-2 px-5 py-2.5 rounded-2xl font-black text-white text-sm shadow-lg active:scale-95 transition-all disabled:opacity-30"
+            style={{ background: 'linear-gradient(135deg, #f43f5e, #e11d48)', boxShadow: '0 4px 15px rgba(244,63,94,0.4)' }}
           >
-            <ChevronLeft className="w-10 h-10 text-red-400" />
-            <span className="text-xs font-bold text-red-400">Nope</span>
+            <span className="text-lg">👎</span> Nope
           </button>
-          <span className="text-xs font-semibold text-muted-foreground text-center leading-tight">Swipe<br/>or Click</span>
+          <span className="text-xs font-semibold text-muted-foreground text-center leading-tight">swipe<br/>or tap</span>
           <button
             onClick={() => handleSwipe("maybe")}
             disabled={allDone}
-            className="flex flex-col items-center gap-0.5 disabled:opacity-30"
+            className="flex items-center gap-2 px-5 py-2.5 rounded-2xl font-black text-white text-sm shadow-lg active:scale-95 transition-all disabled:opacity-30"
+            style={{ background: 'linear-gradient(135deg, #22c55e, #16a34a)', boxShadow: '0 4px 15px rgba(34,197,94,0.4)' }}
           >
-            <ChevronRight className="w-10 h-10 text-green-500" />
-            <span className="text-xs font-bold text-green-500">Maybe</span>
+            Maybe <span className="text-lg">🎉</span>
           </button>
         </div>
         <div className="text-center">
