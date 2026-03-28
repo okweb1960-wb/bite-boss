@@ -230,7 +230,11 @@ Deno.serve(async (req) => {
     });
 
     // STEP 7 & 8: availableCuisines with American always included
-    const availableCuisines = ['American', ...Object.keys(cuisineCounts).filter(c => c !== 'American')].sort();
+    const availableCuisines = [
+      'American',
+      ...Object.keys(cuisineCounts)
+        .filter(c => c !== 'American' && cuisineCounts[c] >= 1)
+    ].sort();
 
     console.log('Total unique places fetched:', broadData.places.length);
     console.log('After isValidRestaurant filter:', validPlaces.length);
