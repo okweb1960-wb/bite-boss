@@ -164,23 +164,24 @@ Deno.serve(async (req) => {
       const pLng = p.location?.longitude;
       const d = (pLat && pLng) ? distanceMiles(lat, lng, pLat, pLng) : null;
 
+      const nameLower = (p.displayName?.text || '').toLowerCase();
+      const descLower = (p.editorialSummary?.text || '').toLowerCase();
+      const typesArr = p.types || [];
       let cuisineLabel = 'American';
 
-      // First pass: match by Google place types (most reliable)
+      // First pass: match by specific Google place types
       for (const [key, val] of Object.entries(CUISINE_KEYWORDS)) {
-        if (p.types?.some(t => val.types.includes(t))) {
+        if (typesArr.some(t => val.types.includes(t))) {
           cuisineLabel = key.charAt(0).toUpperCase() + key.slice(1);
           break;
         }
       }
 
-      // Second pass: only if still American, try name matching
+      // Second pass: if still American, check name AND description
       if (cuisineLabel === 'American') {
+        const haystack = nameLower + ' ' + descLower;
         for (const [key, val] of Object.entries(CUISINE_KEYWORDS)) {
-          if (key === 'american') continue;
-          if (val.words.some(w => 
-            (p.displayName?.text || '').toLowerCase().includes(w)
-          )) {
+          if (val.words.some(w => haystack.includes(w))) {
             cuisineLabel = key.charAt(0).toUpperCase() + key.slice(1);
             break;
           }
