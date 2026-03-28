@@ -27,23 +27,41 @@ Deno.serve(async (req) => {
     const cuisineList = Array.isArray(cuisine) ? cuisine : (cuisine ? [cuisine] : []);
     const serviceList = Array.isArray(service) ? service : (service ? [service] : []);
 
-    const body = {
-      includedTypes: ['restaurant'],
-      maxResultCount: 20,
-      locationRestriction: {
-        circle: {
-          center: { latitude, longitude },
-          radius: radiusMeters,
-        }
-      },
-    };
-
     const textParts = [...cuisineList, ...serviceList].filter(Boolean);
-    if (textParts.length > 0) {
-      body.textQuery = textParts.join(' ');
+    const hasTextFilter = textParts.length > 0;
+
+    let apiUrl;
+    let body;
+
+    if (hasTextFilter) {
+      // Use Text Search which supports both text query and location restriction
+      apiUrl = 'https://places.googleapis.com/v1/places:searchText';
+      body = {
+        textQuery: textParts.join(' ') + ' restaurant',
+        maxResultCount: 20,
+        locationRestriction: {
+          circle: {
+            center: { latitude, longitude },
+            radius: radiusMeters,
+          }
+        },
+      };
+    } else {
+      // Use Nearby Search for general restaurant discovery
+      apiUrl = 'https://places.googleapis.com/v1/places:searchNearby';
+      body = {
+        includedTypes: ['restaurant'],
+        maxResultCount: 20,
+        locationRestriction: {
+          circle: {
+            center: { latitude, longitude },
+            radius: radiusMeters,
+          }
+        },
+      };
     }
 
-    const res = await fetch('https://places.googleapis.com/v1/places:searchNearby', {
+    const res = await fetch(apiUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
