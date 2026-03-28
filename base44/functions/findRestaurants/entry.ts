@@ -10,7 +10,6 @@ function distanceMiles(lat1, lon1, lat2, lon2) {
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
 }
 
-// Cuisine → name keywords AND google place types for post-fetch filtering
 const CUISINE_KEYWORDS = {
   'american':      { words: ['american', 'burger', 'diner', 'bbq', 'barbecue', 'steakhouse', 'wings'], types: ['american_restaurant', 'hamburger_restaurant', 'steak_house', 'fast_food_restaurant'] },
   'mexican':       { words: ['mexican', 'taco', 'burrito', 'tex-mex', 'tamale', 'quesadilla'], types: ['mexican_restaurant'] },
@@ -33,7 +32,6 @@ const CUISINE_KEYWORDS = {
   'vegan':         { words: ['vegan', 'plant-based'], types: ['vegan_restaurant'] },
 };
 
-// Service filter → post-fetch checks against raw place data
 const SERVICE_FIELD_MAP = {
   'fast food': (p) => {
     const isCheap = p.priceLevel === 'PRICE_LEVEL_INEXPENSIVE' || p.priceLevel === 'PRICE_LEVEL_MODERATE';
@@ -48,29 +46,13 @@ const SERVICE_FIELD_MAP = {
 };
 
 const FIELD_MASK = [
-  'places.displayName',
-  'places.formattedAddress',
-  'places.location',
-  'places.rating',
-  'places.userRatingCount',
-  'places.priceLevel',
-  'places.currentOpeningHours',
-  'places.types',
-  'places.editorialSummary',
-  'places.businessStatus',
-  'places.delivery',
-  'places.takeout',
-  'places.dineIn',
-  'places.servesBreakfast',
-  'places.servesLunch',
-  'places.servesDinner',
-  'places.servesBrunch',
-  'places.servesWine',
-  'places.servesBeer',
-  'places.servesCocktails',
-  'places.servesVegetarianFood',
-  'places.outdoorSeating',
-  'places.goodForChildren',
+  'places.displayName', 'places.formattedAddress', 'places.location', 'places.rating',
+  'places.userRatingCount', 'places.priceLevel', 'places.currentOpeningHours',
+  'places.types', 'places.editorialSummary', 'places.businessStatus',
+  'places.delivery', 'places.takeout', 'places.dineIn', 'places.servesBreakfast',
+  'places.servesLunch', 'places.servesDinner', 'places.servesBrunch',
+  'places.servesWine', 'places.servesBeer', 'places.servesCocktails',
+  'places.servesVegetarianFood', 'places.outdoorSeating', 'places.goodForChildren',
   'places.restroom',
 ].join(',');
 
@@ -83,18 +65,8 @@ const ALL_FOOD_TYPES = [
   'breakfast_restaurant', 'brunch_restaurant', 'ice_cream_shop',
 ];
 
-const SYSTEM_TYPES = new Set([
-  'restaurant', 'food', 'point_of_interest', 'establishment',
-  'meal_takeaway', 'meal_delivery', 'cafe', 'store', 'bar'
-]);
-
-const PRICE_MAP = {
-  PRICE_LEVEL_FREE: 1,
-  PRICE_LEVEL_INEXPENSIVE: 1,
-  PRICE_LEVEL_MODERATE: 2,
-  PRICE_LEVEL_EXPENSIVE: 3,
-  PRICE_LEVEL_VERY_EXPENSIVE: 4
-};
+const SYSTEM_TYPES = new Set(['restaurant', 'food', 'point_of_interest', 'establishment', 'meal_takeaway', 'meal_delivery', 'cafe', 'store', 'bar']);
+const PRICE_MAP = { PRICE_LEVEL_FREE: 1, PRICE_LEVEL_INEXPENSIVE: 1, PRICE_LEVEL_MODERATE: 2, PRICE_LEVEL_EXPENSIVE: 3, PRICE_LEVEL_VERY_EXPENSIVE: 4 };
 
 Deno.serve(async (req) => {
   try {
@@ -118,15 +90,14 @@ Deno.serve(async (req) => {
       placesApiEndpoint = 'https://places.googleapis.com/v1/places:searchText';
       const isFastFood = serviceList.includes('fast food');
       const queryPrefix = isFastFood ? 'Fast Food ' : 'Best ';
+
       requestBody = {
         textQuery: `${queryPrefix}${cuisineList[0]} near me`,
         maxResultCount: 60,
-        locationBias: {
-          circle: {
-            center: { latitude, longitude },
-            radius: radiusMeters,
-          }
+        locationRestriction: {
+          circle: { center: { latitude, longitude }, radius: radiusMeters }
         },
+        ...(isFastFood ? { includedPrimaryTypes: ['fast_food_restaurant', 'hamburger_restaurant'] } : {}),
         ...(open_now ? { openNow: true } : {}),
       };
     } else {
@@ -134,10 +105,7 @@ Deno.serve(async (req) => {
         includedTypes: ALL_FOOD_TYPES,
         maxResultCount: 60,
         locationRestriction: {
-          circle: {
-            center: { latitude, longitude },
-            radius: radiusMeters,
-          }
+          circle: { center: { latitude, longitude }, radius: radiusMeters }
         },
         ...(open_now ? { openNow: true } : {}),
       };
@@ -145,16 +113,12 @@ Deno.serve(async (req) => {
 
     const res = await fetch(placesApiEndpoint, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-Goog-Api-Key': GMAPS_KEY,
-        'X-Goog-FieldMask': FIELD_MASK,
-      },
+      headers: { 'Content-Type': 'application/json', 'X-Goog-Api-Key': GMAPS_KEY, 'X-Goog-FieldMask': FIELD_MASK },
       body: JSON.stringify(requestBody),
     });
 
     const data = await res.json();
-    console.log('nearbySearch status:', res.status, 'raw count:', data.places?.length ?? 0);
+    console.log('Places API status:', res.status, 'raw count:', data.places?.length ?? 0);
 
     if (data.error) {
       console.error('Places API error:', JSON.stringify(data.error));
@@ -169,139 +133,64 @@ Deno.serve(async (req) => {
         const lon = p.location?.longitude;
         const d = (lat && lon) ? distanceMiles(latitude, longitude, lat, lon) : null;
 
-        // Prefer our CUISINE_KEYWORDS label over Google's raw type
-        const rawTypesForLabel = p.types || [];
-        const haystackForLabel = ((p.displayName?.text || '') + ' ' + (p.editorialSummary?.text || '')).toLowerCase();
+        const rawTypes = p.types || [];
+        const haystack = ((p.displayName?.text || '') + ' ' + (p.editorialSummary?.text || '')).toLowerCase();
         let cuisineLabel = 'Restaurant';
+
         for (const key of Object.keys(CUISINE_KEYWORDS)) {
           const entry = CUISINE_KEYWORDS[key];
-          if (
-            (entry.words || []).some(w => haystackForLabel.includes(w)) ||
-            (entry.types || []).some(t => rawTypesForLabel.includes(t))
-          ) {
+          if ((entry.words || []).some(w => haystack.includes(w)) || (entry.types || []).some(t => rawTypes.includes(t))) {
             cuisineLabel = key.charAt(0).toUpperCase() + key.slice(1);
             break;
           }
         }
+
         if (cuisineLabel === 'Restaurant') {
-          cuisineLabel = rawTypesForLabel.find(t => !SYSTEM_TYPES.has(t))
-            ?.replace(/_restaurant$/, '')
-            ?.replace(/_/g, ' ') || 'Restaurant';
-          cuisineLabel = cuisineLabel.charAt(0).toUpperCase() + cuisineLabel.slice(1);
+          const fallback = rawTypes.find(t => !SYSTEM_TYPES.has(t));
+          if (fallback) {
+            cuisineLabel = fallback.replace(/_restaurant$/, '').replace(/_/g, ' ');
+            cuisineLabel = cuisineLabel.charAt(0).toUpperCase() + cuisineLabel.slice(1);
+          }
         }
 
         return {
           name: p.displayName?.text || 'Unknown',
-          cuisine: cuisineLabel.charAt(0).toUpperCase() + cuisineLabel.slice(1),
+          cuisine: cuisineLabel,
           address: p.formattedAddress || '',
           rating: p.rating,
           review_count: p.userRatingCount,
           price_level: PRICE_MAP[p.priceLevel] || null,
           open_now: p.currentOpeningHours?.openNow,
           description: p.editorialSummary?.text || '',
-          lat,
-          lon,
-          distance_miles: d,
+          lat, lon, distance_miles: d,
           distance: d === null ? '' : d < 0.1 ? `${Math.round(d * 5280)} ft` : `${d.toFixed(1)} mi`,
           _raw: p,
         };
       })
       .filter(r => r.distance_miles !== null && r.distance_miles <= (radius_miles || 5));
 
-    // POST-FETCH: filter by cuisine — only needed for searchNearby (multi-cuisine or no cuisine)
-    const usedSearchText = cuisineList.length === 1;
-    if (!usedSearchText && cuisineList.length > 0) {
-      restaurants = restaurants.filter(r => {
-        return cuisineList.some(c => {
-          const entry = CUISINE_KEYWORDS[c.toLowerCase()];
-          const words = entry?.words || [c.toLowerCase()];
-          const types = entry?.types || [];
-          const haystack = (r.name + ' ' + r.cuisine).toLowerCase();
-          const rawTypes = r._raw?.types || [];
-          return words.some(w => haystack.includes(w)) || types.some(t => rawTypes.includes(t));
-        });
-      });
-    }
-
-    // DEPRIORITIZATION: flag chicken-dominant places when burgers selected (don't exclude)
-    const burgersSelected = cuisineList.map(c => c.toLowerCase()).includes('burgers');
-    if (burgersSelected) {
-      const chickenWords = CUISINE_KEYWORDS['chicken']?.words || [];
-      const chickenTypes = CUISINE_KEYWORDS['chicken']?.types || [];
-      restaurants = restaurants.map(r => {
-        const text = (r.name + ' ' + r.cuisine).toLowerCase();
-        const rawTypes = r._raw?.types || [];
-        const isChickenRestaurant = chickenWords.some(w => text.includes(w)) || chickenTypes.some(t => rawTypes.includes(t));
-        return { ...r, isChickenRestaurant };
-      });
-    }
-
-    // DEPRIORITIZATION: flag high-seafood places only when a specific non-seafood cuisine is selected
-    const seafoodSelected = cuisineList.map(c => c.toLowerCase()).includes('seafood');
-    const hasSpecificCuisine = cuisineList.length > 0 && !seafoodSelected;
-    if (hasSpecificCuisine) {
-      const seafoodWords = CUISINE_KEYWORDS['seafood']?.words || [];
-      const seafoodTypes = ['seafood_restaurant', 'fish_and_chips_restaurant'];
-      restaurants = restaurants.map(r => {
-        const text = (r.name + ' ' + r.cuisine).toLowerCase();
-        const rawTypes = r._raw?.types || [];
-        const isHighSeafoodMatch = seafoodWords.some(w => text.includes(w)) || seafoodTypes.some(t => rawTypes.includes(t));
-        return { ...r, isHighSeafoodMatch };
-      });
-    }
-
-    // POST-FETCH: filter by service type using amenity boolean fields
+    // Post-fetch service filter
     if (serviceList.length > 0) {
-      restaurants = restaurants.filter(r => {
-        return serviceList.some(s => {
-          const check = SERVICE_FIELD_MAP[s];
-          return check ? check(r._raw) : true;
-        });
-      });
+      restaurants = restaurants.filter(r =>
+        serviceList.some(s => SERVICE_FIELD_MAP[s] ? SERVICE_FIELD_MAP[s](r._raw) : true)
+      );
     }
 
-    const preFilteredRestaurants = restaurants.map(({ _raw, ...rest }) => rest);
+    const finalRestaurants = restaurants.map(({ _raw, ...rest }) => rest);
 
-    // GRACEFUL FALLBACK: if filters left nothing, return unfiltered set with a flag
-    if (preFilteredRestaurants.length === 0) {
-      const fallback = (data.places || [])
-        .filter(p => p.businessStatus !== 'CLOSED_PERMANENTLY')
-        .map(p => {
-          const lat = p.location?.latitude;
-          const lon = p.location?.longitude;
-          const d = (lat && lon) ? distanceMiles(latitude, longitude, lat, lon) : null;
-          return {
-            name: p.displayName?.text || 'Unknown',
-            cuisine: 'Restaurant',
-            address: p.formattedAddress || '',
-            rating: p.rating,
-            review_count: p.userRatingCount,
-            price_level: PRICE_MAP[p.priceLevel] || null,
-            open_now: p.currentOpeningHours?.openNow,
-            description: p.editorialSummary?.text || '',
-            lat, lon, distance_miles: d,
-            distance: d === null ? '' : d < 0.1 ? `${Math.round(d * 5280)} ft` : `${d.toFixed(1)} mi`,
-            filterMismatch: true,
-          };
-        })
-        .filter(r => r.distance_miles !== null && r.distance_miles <= (radius_miles || 5))
-        .sort((a, b) => (b.rating || 0) - (a.rating || 0));
-      console.log('Fallback triggered, returning', fallback.length, 'unfiltered results');
-      return Response.json({ restaurants: fallback, filterMismatch: true });
+    if (finalRestaurants.length === 0) {
+      console.log('No results after filtering, returning empty');
+      return Response.json({ restaurants: [], filterMismatch: true });
     }
 
-    // SMART SORT: deprioritized items go last, otherwise sort by rating desc then distance asc
-    restaurants = preFilteredRestaurants.sort((a, b) => {
-      const aDeprio = (a.isChickenRestaurant || a.isHighSeafoodMatch) ? 1 : 0;
-      const bDeprio = (b.isChickenRestaurant || b.isHighSeafoodMatch) ? 1 : 0;
-      if (aDeprio !== bDeprio) return aDeprio - bDeprio;
+    const sorted = finalRestaurants.sort((a, b) => {
       const ratingDiff = (b.rating || 0) - (a.rating || 0);
-      if (Math.abs(ratingDiff) > 0.2) return ratingDiff;
+      if (Math.abs(ratingDiff) > 0.3) return ratingDiff;
       return (a.distance_miles || 0) - (b.distance_miles || 0);
     });
 
-    console.log('Final count after filtering:', restaurants.length);
-    return Response.json({ restaurants });
+    console.log('Final count:', sorted.length);
+    return Response.json({ restaurants: sorted });
 
   } catch (error) {
     console.error('Error:', error.message);
