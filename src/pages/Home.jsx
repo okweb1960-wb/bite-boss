@@ -14,8 +14,6 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [filters, setFilters] = useState({ radius: 5, cuisines: [], services: [], openNow: false });
-  const [availableCuisines, setAvailableCuisines] = useState([]);
-  const [availableServices, setAvailableServices] = useState([]);
 
   async function detectLocation() {
     setDetecting(true);
@@ -92,8 +90,6 @@ export default function Home() {
         toast.info("Showing all nearby results to give you more options.");
       }
 
-      setAvailableCuisines(response.data?.availableCuisines || []);
-      setAvailableServices(response.data?.availableServices || []);
       navigate("/swipe", { state: { restaurants, filters, location, coords } });
     } catch (err) {
       setError("Failed to find restaurants. Please try again.");
@@ -144,7 +140,7 @@ export default function Home() {
 
         {/* Filters */}
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
-          <FilterPanel filters={filters} onChange={setFilters} availableCuisines={availableCuisines} availableServices={availableServices} />
+          <FilterPanel filters={filters} onChange={setFilters} />
         </motion.div>
 
         {error && (
