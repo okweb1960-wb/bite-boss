@@ -71,14 +71,19 @@ module.exports = {
   			'wiggle': {
   				'0%, 100%': { transform: 'rotate(-3deg)' },
   				'50%': { transform: 'rotate(3deg)' }
+  			},
+  			'shimmer': {
+  				'0%, 100%': { opacity: '1' },
+  				'50%': { opacity: '0.5' }
   			}
-  		},
-  		animation: {
+  			},
+  			animation: {
   			'accordion-down': 'accordion-down 0.2s ease-out',
   			'accordion-up': 'accordion-up 0.2s ease-out',
   			'fly-in': 'fly-in 0.4s ease-out',
   			'wiggle': 'wiggle 0.5s ease-in-out',
-  		}
+  			'shimmer': 'shimmer 1.5s ease-in-out infinite',
+  			}
   	}
   },
   plugins: [require("tailwindcss-animate")],

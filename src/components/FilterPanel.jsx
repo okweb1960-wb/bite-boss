@@ -14,11 +14,22 @@ const SERVICE_TYPES = [
 
 const RADIUS_OPTIONS = [1, 3, 5, 10, 20];
 
-export default function FilterPanel({ filters, onChange }) {
+export default function FilterPanel({ filters, onChange, availableCuisines = [], loadingAvailability = false }) {
+  const CUISINES = [
+    "American", "Mexican", "Italian", "Chinese", "Japanese", "Thai",
+    "Indian", "Mediterranean", "Pizza", "Burgers", "Sandwiches", "Sushi",
+    "BBQ", "Seafood", "Vegetarian", "Vegan", "Breakfast", "Desserts"
+  ];
+
   function toggleCuisine(c) {
     const current = filters.cuisines || [];
     const updated = current.includes(c) ? current.filter(x => x !== c) : [...current, c];
     onChange({ ...filters, cuisines: updated });
+  }
+
+  function isCuisineAvailable(cuisine) {
+    if (availableCuisines.length === 0) return true; // No data yet, enable all
+    return availableCuisines.some(a => a.toLowerCase() === cuisine.toLowerCase());
   }
 
   function toggleService(s) {
@@ -66,12 +77,21 @@ export default function FilterPanel({ filters, onChange }) {
           </button>
           {CUISINES.map(c => {
             const selected = (filters.cuisines || []).includes(c);
+            const available = isCuisineAvailable(c);
+            const isLoading = loadingAvailability && availableCuisines.length === 0;
+            const isDisabled = !available && availableCuisines.length > 0;
+            
             return (
               <button
                 key={c}
-                onClick={() => toggleCuisine(c)}
+                onClick={() => !isDisabled && toggleCuisine(c)}
+                disabled={isDisabled}
                 className={`px-3 py-1.5 rounded-full font-semibold text-sm transition-all ${
-                  selected
+                  isLoading ? "animate-shimmer" : ""
+                } ${
+                  isDisabled
+                    ? "opacity-50 cursor-not-allowed bg-muted text-muted-foreground"
+                    : selected
                     ? "bg-secondary text-secondary-foreground shadow-md scale-105"
                     : "bg-muted text-muted-foreground hover:bg-secondary/20"
                 }`}

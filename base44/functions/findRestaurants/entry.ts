@@ -62,77 +62,93 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Invalid coordinates' }, { status: 400 });
     }
 
-    const isFastFood = serviceList.includes('fast food');
-    const queryTerm = cuisineList.length > 0 ? cuisineList[0] : 'restaurants';
-
-    const requestBody = {
-      maxResultCount: 20,
+    // STEP 1: Make broad API call with no cuisine filters
+    const broadRequestBody = {
+      maxResultCount: 50,
       locationRestriction: {
         circle: {
           center: { latitude: lat, longitude: lng },
           radius: radiusMeters
         }
       },
-      includedTypes: cuisineList.length > 0
-        ? cuisineList.flatMap(c => CUISINE_KEYWORDS[c.toLowerCase()]?.types || [])
-        : ['restaurant'],
+      includedTypes: ['restaurant'],
       ...(open_now ? { openNow: true } : {}),
     };
 
-    const res = await fetch('https://places.googleapis.com/v1/places:searchNearby', {
+    const broadRes = await fetch('https://places.googleapis.com/v1/places:searchNearby', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'X-Goog-Api-Key': GMAPS_KEY || '',
-        'X-Goog-FieldMask': 'places.displayName,places.formattedAddress,places.location,places.rating,places.userRatingCount,places.priceLevel,places.currentOpeningHours,places.types,places.editorialSummary,places.businessStatus,places.delivery,places.takeout,places.dineIn,places.servesWine,places.servesBeer,places.servesCocktails',
+        'X-Goog-FieldMask': FIELD_MASK,
       },
-      body: JSON.stringify(requestBody),
+      body: JSON.stringify(broadRequestBody),
     });
 
-    const data = await res.json();
-    if (!res.ok) return Response.json({ error: 'Google API Error', details: data }, { status: res.status });
+    const broadData = await broadRes.json();
+    if (!broadRes.ok) return Response.json({ error: 'Google API Error', details: broadData }, { status: broadRes.status });
 
-    const restaurants = (data.places || [])
+    // Helper function to map place to restaurant
+    function mapPlaceToRestaurant(p) {
+      const pLat = p.location?.latitude;
+      const pLng = p.location?.longitude;
+      const d = (pLat && pLng) ? distanceMiles(lat, lng, pLat, pLng) : null;
+
+      const nameLower = (p.displayName?.text || '').toLowerCase();
+      const descLower = (p.editorialSummary?.text || '').toLowerCase();
+      const haystack = nameLower + ' ' + descLower;
+      let cuisineLabel = 'Restaurant';
+
+      for (const [key, val] of Object.entries(CUISINE_KEYWORDS)) {
+        if (val.words.some(w => haystack.includes(w)) || p.types?.some(t => val.types.includes(t))) {
+          cuisineLabel = key.charAt(0).toUpperCase() + key.slice(1);
+          break;
+        }
+      }
+
+      return {
+        name: p.displayName?.text || 'Unknown Restaurant',
+        cuisine: cuisineLabel,
+        address: p.formattedAddress || '',
+        rating: p.rating || 0,
+        review_count: p.userRatingCount || 0,
+        price_level: PRICE_MAP[p.priceLevel] || null,
+        open_now: p.currentOpeningHours?.openNow,
+        description: p.editorialSummary?.text || '',
+        distance_miles: d,
+        distance: d === null ? '' : d < 0.1 ? `${Math.round(d * 5280)} ft` : `${d.toFixed(1)} mi`,
+      };
+    }
+
+    // STEP 2: Process broad results
+    const allRestaurants = (broadData.places || [])
       .filter(p => p.businessStatus !== 'CLOSED_PERMANENTLY')
       .filter(p => !excludeNames.includes(p.displayName?.text?.toLowerCase()))
-      .map(p => {
-        const pLat = p.location?.latitude;
-        const pLng = p.location?.longitude;
-        const d = (pLat && pLng) ? distanceMiles(lat, lng, pLat, pLng) : null;
+      .map(mapPlaceToRestaurant)
+      .filter(r => r.distance_miles !== null && r.distance_miles <= (radius_miles || 5));
 
-        const nameLower = (p.displayName?.text || '').toLowerCase();
-        const descLower = (p.editorialSummary?.text || '').toLowerCase();
-        const haystack = nameLower + ' ' + descLower;
-        let cuisineLabel = 'Restaurant';
+    // Count cuisines with 2+ restaurants
+    const cuisineCounts = {};
+    allRestaurants.forEach(r => {
+      cuisineCounts[r.cuisine] = (cuisineCounts[r.cuisine] || 0) + 1;
+    });
+    const availableCuisines = Object.keys(cuisineCounts).filter(c => cuisineCounts[c] >= 2).sort();
 
-        for (const [key, val] of Object.entries(CUISINE_KEYWORDS)) {
-          if (val.words.some(w => haystack.includes(w)) || p.types?.some(t => val.types.includes(t))) {
-            cuisineLabel = key.charAt(0).toUpperCase() + key.slice(1);
-            break;
-          }
-        }
+    // STEP 3: Filter results based on user selections
+    let filteredRestaurants = allRestaurants;
+    if (cuisineList.length > 0) {
+      filteredRestaurants = filteredRestaurants.filter(r => 
+        cuisineList.some(c => r.cuisine.toLowerCase() === c.toLowerCase())
+      );
+    }
 
-        return {
-          name: p.displayName?.text || 'Unknown Restaurant',
-          cuisine: cuisineLabel,
-          address: p.formattedAddress || '',
-          rating: p.rating || 0,
-          review_count: p.userRatingCount || 0,
-          price_level: PRICE_MAP[p.priceLevel] || null,
-          open_now: p.currentOpeningHours?.openNow,
-          description: p.editorialSummary?.text || '',
-          distance_miles: d,
-          distance: d === null ? '' : d < 0.1 ? `${Math.round(d * 5280)} ft` : `${d.toFixed(1)} mi`,
-        };
-      })
-      .filter(r => r.distance_miles !== null && r.distance_miles <= (radius_miles || 5))
-      .sort((a, b) => {
-        const ratingDiff = (b.rating || 0) - (a.rating || 0);
-        if (Math.abs(ratingDiff) > 0.3) return ratingDiff;
-        return (a.distance_miles || 0) - (b.distance_miles || 0);
-      });
+    filteredRestaurants = filteredRestaurants.sort((a, b) => {
+      const ratingDiff = (b.rating || 0) - (a.rating || 0);
+      if (Math.abs(ratingDiff) > 0.3) return ratingDiff;
+      return (a.distance_miles || 0) - (b.distance_miles || 0);
+    });
 
-    return Response.json({ restaurants });
+    return Response.json({ restaurants: filteredRestaurants, availableCuisines });
 
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });

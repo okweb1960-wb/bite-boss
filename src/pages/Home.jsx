@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { MapPin, Utensils, Loader2, Zap } from "lucide-react";
 import { toast } from "sonner";
@@ -13,7 +13,39 @@ export default function Home() {
   const [detecting, setDetecting] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [filters, setFilters] = useState({ radius: 5, cuisines: [], services: [], openNow: false });
+  const [filters, setFilters] = useState({ radius: 5, cuisines: [], services: [], openNow: true });
+  const [availableCuisines, setAvailableCuisines] = useState([]);
+  const [loadingAvailability, setLoadingAvailability] = useState(false);
+  const [lastCheckedRadius, setLastCheckedRadius] = useState(5);
+  const [lastCheckedOpenNow, setLastCheckedOpenNow] = useState(true);
+
+  async function checkCuisineAvailability(lat, lng, radius, openNow) {
+    setLoadingAvailability(true);
+    try {
+      const response = await base44.functions.invoke('findRestaurants', {
+        latitude: lat,
+        longitude: lng,
+        radius_miles: radius,
+        cuisine: [],
+        service: [],
+        open_now: openNow,
+      });
+      const available = response.data?.availableCuisines || [];
+      setAvailableCuisines(available);
+      
+      // If user's selected cuisine is no longer available, reset to "All"
+      const selectedCuisines = filters.cuisines || [];
+      const hasUnavailableCuisine = selectedCuisines.some(c => !available.includes(c));
+      if (hasUnavailableCuisine && selectedCuisines.length > 0) {
+        const unavailable = selectedCuisines.find(c => !available.includes(c));
+        setFilters({ ...filters, cuisines: [] });
+        toast.info(`No ${unavailable} spots nearby — showing all restaurants instead.`);
+      }
+    } catch (err) {
+      console.error('Failed to check cuisine availability:', err);
+    }
+    setLoadingAvailability(false);
+  }
 
   async function detectLocation() {
     setDetecting(true);
@@ -24,8 +56,15 @@ export default function Home() {
         try {
           const res = await base44.functions.invoke('reverseGeocode', { latitude, longitude });
           setLocation(res.data?.address || `${latitude.toFixed(5)}, ${longitude.toFixed(5)}`);
+          // Trigger availability check after location detected
+          await checkCuisineAvailability(latitude, longitude, filters.radius, filters.openNow);
+          setLastCheckedRadius(filters.radius);
+          setLastCheckedOpenNow(filters.openNow);
         } catch {
           setLocation(`${latitude.toFixed(5)}, ${longitude.toFixed(5)}`);
+          await checkCuisineAvailability(latitude, longitude, filters.radius, filters.openNow);
+          setLastCheckedRadius(filters.radius);
+          setLastCheckedOpenNow(filters.openNow);
         }
         setDetecting(false);
       },
@@ -33,6 +72,15 @@ export default function Home() {
       { enableHighAccuracy: true }
     );
   }
+
+  // Trigger availability check when radius or openNow changes
+  useEffect(() => {
+    if (coords && (filters.radius !== lastCheckedRadius || filters.openNow !== lastCheckedOpenNow)) {
+      checkCuisineAvailability(coords.latitude, coords.longitude, filters.radius, filters.openNow);
+      setLastCheckedRadius(filters.radius);
+      setLastCheckedOpenNow(filters.openNow);
+    }
+  }, [filters.radius, filters.openNow]);
 
   async function startSwiping() {
     if (!location.trim()) { setError("Please enter or detect your location first!"); return; }
@@ -81,7 +129,8 @@ export default function Home() {
 
       const restaurants = response.data?.restaurants || [];
       if (restaurants.length === 0) {
-        setError("No restaurants found nearby. Try increasing your radius.");
+        const suggestion = filters.openNow ? " Try turning off 'Open Right Now' to expand options." : " Try increasing your radius.";
+        setError("No restaurants found nearby." + suggestion);
         setLoading(false);
         return;
       }
@@ -140,7 +189,12 @@ export default function Home() {
 
         {/* Filters */}
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
-          <FilterPanel filters={filters} onChange={setFilters} />
+          <FilterPanel 
+            filters={filters} 
+            onChange={setFilters}
+            availableCuisines={availableCuisines}
+            loadingAvailability={loadingAvailability}
+          />
         </motion.div>
 
         {error && (
