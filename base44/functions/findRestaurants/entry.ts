@@ -148,6 +148,19 @@ Deno.serve(async (req) => {
         }
       }
 
+      if (cuisineLabel === 'Restaurant') {
+        for (const [key, val] of Object.entries(CUISINE_KEYWORDS)) {
+          if (p.types?.some(t => val.types.includes(t))) {
+            cuisineLabel = key.charAt(0).toUpperCase() + key.slice(1);
+            break;
+          }
+        }
+      }
+
+      if (cuisineLabel === 'Restaurant') {
+        cuisineLabel = 'American';
+      }
+
       let photoUrl = null;
       if (p.photos && p.photos.length > 0) {
         const photoName = p.photos[0].name;
@@ -182,7 +195,7 @@ Deno.serve(async (req) => {
     allRestaurants.forEach(r => {
       cuisineCounts[r.cuisine] = (cuisineCounts[r.cuisine] || 0) + 1;
     });
-    const availableCuisines = Object.keys(cuisineCounts).filter(c => cuisineCounts[c] >= 2).sort();
+    const availableCuisines = Object.keys(cuisineCounts).filter(c => cuisineCounts[c] >= 1).sort();
 
     // STEP 3: Filter results based on user selections
     let filteredRestaurants = allRestaurants;
