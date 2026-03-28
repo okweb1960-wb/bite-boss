@@ -35,7 +35,12 @@ const CUISINE_KEYWORDS = {
 
 // Service filter → post-fetch checks against raw place data
 const SERVICE_FIELD_MAP = {
-  'fast food': (p) => p.types?.some(t => t === 'fast_food_restaurant') && !p.servesBeer && !p.servesWine && !p.servesCocktails,
+  'fast food': (p) => {
+    const isCheap = p.priceLevel === 'PRICE_LEVEL_INEXPENSIVE' || p.priceLevel === 'PRICE_LEVEL_MODERATE';
+    const isFastType = p.types?.some(t => ['fast_food_restaurant', 'hamburger_restaurant', 'meal_takeaway'].includes(t));
+    const noAlcohol = !p.servesBeer && !p.servesWine && !p.servesCocktails;
+    return isFastType && (isCheap || noAlcohol);
+  },
   'sit-down':  (p) => p.dineIn === true || p.servesDinner === true || p.servesLunch === true,
   'takeout':   (p) => p.takeout === true || p.types?.some(t => ['meal_takeaway', 'fast_food_restaurant'].includes(t)),
   'delivery':  (p) => p.delivery === true || p.types?.includes('meal_delivery'),
@@ -111,9 +116,11 @@ Deno.serve(async (req) => {
 
     if (cuisineList.length === 1) {
       placesApiEndpoint = 'https://places.googleapis.com/v1/places:searchText';
+      const isFastFood = serviceList.includes('fast food');
+      const queryPrefix = isFastFood ? 'Fast Food ' : 'Best ';
       requestBody = {
-        textQuery: `Best ${cuisineList[0]} restaurants`,
-        maxResultCount: 20,
+        textQuery: `${queryPrefix}${cuisineList[0]} near me`,
+        maxResultCount: 60,
         locationBias: {
           circle: {
             center: { latitude, longitude },
