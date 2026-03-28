@@ -123,7 +123,7 @@ Deno.serve(async (req) => {
           locationBias: {
             circle: {
               center: { latitude: lat, longitude: lng },
-              radius: radiusMeters
+              radius: Math.max(radiusMeters, 8047)
             }
           },
           ...(open_now ? { openNow: true } : {}),
@@ -208,27 +208,37 @@ Deno.serve(async (req) => {
     }
 
     // STEP 3: Filter and label results
-    const allRestaurants = (broadData.places || [])
+    // STEP 3a: Run isValidRestaurant filter
+    const validPlaces = (broadData.places || [])
       .filter(p => p.businessStatus !== 'CLOSED_PERMANENTLY')
       .filter(p => isValidRestaurant(p))
-      .filter(p => !excludeNames.includes(p.displayName?.text?.toLowerCase()))
-      .map(mapPlaceToRestaurant)
-      .filter(r => r.distance_miles !== null && r.distance_miles <= (radius_miles || 5));
+      .filter(p => !excludeNames.includes(p.displayName?.text?.toLowerCase()));
 
-    // STEP 4: Derive availableCuisines from combined results
+    // STEP 3b: Map to restaurant objects with cuisine labels
+    const mappedRestaurants = validPlaces.map(mapPlaceToRestaurant);
+
+    // STEP 4: Filter by actual user-selected distance
+    const allRestaurants = mappedRestaurants.filter(
+      r => r.distance_miles !== null && r.distance_miles <= (radius_miles || 5)
+    );
+
+    // STEP 5: Deduplicate by name (already done in combine step, but ensure)
+    // STEP 6: Count cuisines from the distance-filtered set
     const cuisineCounts = {};
     allRestaurants.forEach(r => {
       cuisineCounts[r.cuisine] = (cuisineCounts[r.cuisine] || 0) + 1;
     });
 
-    const availableCuisines = Object.keys(cuisineCounts).sort();
+    // STEP 7 & 8: availableCuisines with American always included
+    const availableCuisines = ['American', ...Object.keys(cuisineCounts).filter(c => c !== 'American')].sort();
 
-    console.log('Total unique places:', broadData.places.length);
-    console.log('After filtering:', allRestaurants.length);
-    console.log('Cuisine counts:', cuisineCounts);
+    console.log('Total unique places fetched:', broadData.places.length);
+    console.log('After isValidRestaurant filter:', validPlaces.length);
+    console.log('After distance filter (<= ' + (radius_miles || 5) + 'mi):', allRestaurants.length);
+    console.log('Cuisine counts (from distance-filtered set):', cuisineCounts);
     console.log('Available cuisines:', availableCuisines);
 
-    // STEP 3: Filter results based on user selections
+    // STEP 9: Apply cuisine selection filter if user selected specific cuisines
     let filteredRestaurants = allRestaurants;
     if (cuisineList.length > 0) {
       filteredRestaurants = filteredRestaurants.filter(r => 
@@ -236,6 +246,7 @@ Deno.serve(async (req) => {
       );
     }
 
+    // STEP 10: Sort and return
     filteredRestaurants = filteredRestaurants.sort((a, b) => {
       const ratingDiff = (b.rating || 0) - (a.rating || 0);
       if (Math.abs(ratingDiff) > 0.3) return ratingDiff;
