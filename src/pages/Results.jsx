@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, ChevronUp, Star, MapPin, Clock, ExternalLink, RotateCcw } from "lucide-react";
@@ -68,6 +68,12 @@ function RestaurantCard({ restaurant, variant = "default" }) {
 export default function Results() {
   const { state } = useLocation();
   const navigate = useNavigate();
+  
+  // Redirect to home if no state (e.g., on page refresh)
+  if (!state?.maybes) {
+    navigate("/", { replace: true });
+    return null;
+  }
   
   const maybes = state?.maybes || [];
   const allRestaurants = state?.allRestaurants || [];
