@@ -1,4 +1,5 @@
 import { motion, useMotionValue, useTransform } from "framer-motion";
+import { Ban } from "lucide-react";
 import { Star, MapPin, Clock, ExternalLink } from "lucide-react";
 
 const PRICE_MAP = { 1: "$", 2: "$$", 3: "$$$", 4: "$$$$" };
@@ -29,7 +30,7 @@ function getImage(restaurant) {
   return FOOD_IMAGES.default;
 }
 
-export default function RestaurantCard({ restaurant, onSwipe, isTop }) {
+export default function RestaurantCard({ restaurant, onSwipe, onBlock, isTop }) {
   const x = useMotionValue(0);
   const rotate = useTransform(x, [-200, 200], [-25, 25]);
   const cardOpacity = useTransform(x, [-200, -100, 0, 100, 200], [0, 1, 1, 1, 0]);
@@ -76,20 +77,6 @@ export default function RestaurantCard({ restaurant, onSwipe, isTop }) {
           />
           <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.55) 0%, transparent 60%)' }} />
 
-          {/* MAYBE badge */}
-          <motion.div style={{ opacity: maybeOpacity }} className="absolute top-6 left-4">
-            <div className="px-4 py-2 rounded-2xl font-black text-2xl text-white" style={{ background: '#22c55e', transform: 'rotate(-15deg)', border: '3px solid #86efac' }}>
-              MAYBE! 🎉
-            </div>
-          </motion.div>
-
-          {/* NOPE badge */}
-          <motion.div style={{ opacity: nopeOpacity }} className="absolute top-6 right-4">
-            <div className="px-4 py-2 rounded-2xl font-black text-2xl text-white" style={{ background: '#ef4444', transform: 'rotate(15deg)', border: '3px solid #fca5a5' }}>
-              NOPE 👎
-            </div>
-          </motion.div>
-
           {/* Open/closed badge */}
           {isOpen !== undefined && (
             <div className="absolute top-3 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full text-xs font-bold text-white"
@@ -97,63 +84,18 @@ export default function RestaurantCard({ restaurant, onSwipe, isTop }) {
               {isOpen ? '🟢 Open Now' : '🔴 Closed'}
             </div>
           )}
-        </div>
 
-        {/* Info */}
-        <div className="p-5" style={{ background: '#ffffff' }}>
-          {/* Name + price */}
-          <div className="flex items-start justify-between mb-1">
-            <h2 className="font-black leading-tight" style={{ fontSize: '22px', color: '#111827', margin: 0 }}>{name}</h2>
-            {priceLevel && <span className="font-bold ml-2 shrink-0" style={{ color: '#6b7280', fontSize: '14px' }}>{priceLevel}</span>}
-          </div>
-
-          {/* Cuisine */}
-          {cuisine && <p className="font-semibold mb-2" style={{ color: '#f97316', fontSize: '14px', margin: '4px 0 8px' }}>{cuisine}</p>}
-
-          {/* Description */}
-          {description && (
-            <p style={{ color: '#6b7280', fontSize: '13px', margin: '0 0 10px', lineHeight: 1.4, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
-              {description}
-            </p>
+          {/* Never show again */}
+          {onBlock && (
+            <button
+              onClick={e => { e.stopPropagation(); onBlock(); }}
+              className="absolute bottom-3 right-3 p-2 rounded-full bg-black/40 hover:bg-black/60 transition-all"
+              title="Never show this place again"
+            >
+              <Ban className="w-4 h-4 text-white" />
+            </button>
           )}
-
-          {/* Stats row */}
-          <div className="flex items-center gap-4" style={{ color: '#6b7280', fontSize: '13px' }}>
-            {rating && (
-              <span className="flex items-center gap-1">
-                <Star style={{ width: 14, height: 14, color: '#f59e0b', fill: '#f59e0b' }} />
-                <span style={{ fontWeight: 700, color: '#111827' }}>{rating}</span>
-                {reviewCount && <span>({reviewCount})</span>}
-              </span>
-            )}
-            {restaurant.address && (
-              <span className="flex items-center gap-1">
-                <MapPin style={{ width: 14, height: 14 }} />
-                {restaurant.address}
-              </span>
-            )}
-            {serviceType && (
-              <span className="flex items-center gap-1">
-                <Clock style={{ width: 14, height: 14 }} />
-                {serviceType}
-              </span>
-            )}
           </div>
-
-          {/* Google Maps link */}
-          <a
-            href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(name + ' ' + location)}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={e => e.stopPropagation()}
-            className="flex items-center gap-1.5 mt-3 font-semibold"
-            style={{ color: '#4285F4', fontSize: '13px', textDecoration: 'none' }}
-          >
-            <ExternalLink style={{ width: 13, height: 13 }} />
-            View on Google Maps
-          </a>
-        </div>
-      </div>
     </motion.div>
   );
 }

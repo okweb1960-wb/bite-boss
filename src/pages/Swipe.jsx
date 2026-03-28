@@ -2,7 +2,7 @@ import { useState, useCallback } from "react";
 import { base44 } from "@/api/base44Client";
 import { useNavigate, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Heart, Ban, ArrowLeft } from "lucide-react";
+import { ArrowLeft, ChevronLeft, ChevronRight } from "lucide-react";
 import RestaurantCard from "../components/RestaurantCard";
 
 export default function Swipe() {
@@ -64,6 +64,7 @@ export default function Swipe() {
 
   const handleSwipe = useCallback((direction) => {
     if (!current) return;
+    if (navigator.vibrate) navigator.vibrate(50);
     if (direction === "maybe") setMaybes(prev => [...prev, current]);
     setLastAction(direction);
     setCurrentIndex(prev => prev + 1);
@@ -79,17 +80,28 @@ export default function Swipe() {
         <button onClick={() => navigate("/")} className="p-2 rounded-2xl bg-muted hover:bg-border transition-all">
           <ArrowLeft className="w-5 h-5 text-foreground" />
         </button>
-        <div className="text-center">
-          <p className="text-muted-foreground text-xs font-semibold uppercase tracking-widest">Swiping</p>
-          <p className="font-black text-foreground">{remaining} left to go</p>
+        <div className="flex items-center gap-4">
+          <button
+            onClick={() => handleSwipe("nope")}
+            disabled={allDone}
+            className="flex flex-col items-center gap-0.5 disabled:opacity-30"
+          >
+            <ChevronLeft className="w-10 h-10 text-red-400" />
+            <span className="text-xs font-bold text-red-400">Nope</span>
+          </button>
+          <span className="text-xs font-semibold text-muted-foreground text-center leading-tight">Swipe<br/>or Click</span>
+          <button
+            onClick={() => handleSwipe("maybe")}
+            disabled={allDone}
+            className="flex flex-col items-center gap-0.5 disabled:opacity-30"
+          >
+            <ChevronRight className="w-10 h-10 text-green-500" />
+            <span className="text-xs font-bold text-green-500">Maybe</span>
+          </button>
         </div>
-        <button
-          onClick={() => navigate("/results", { state: { maybes, allRestaurants: restaurants } })}
-          className="flex items-center gap-1.5 bg-primary/10 px-3 py-2 rounded-2xl font-bold text-sm hover:bg-primary/20 transition-all text-primary"
-        >
-          Maybes
-          <span className="bg-primary text-white rounded-full w-5 h-5 flex items-center justify-center text-xs font-black">{maybes.length}</span>
-        </button>
+        <div className="text-center">
+          <p className="text-muted-foreground text-xs font-semibold">{remaining} left</p>
+        </div>
       </div>
 
       {/* Progress bar */}
@@ -130,6 +142,7 @@ export default function Swipe() {
                     key={currentIndex}
                     restaurant={current}
                     onSwipe={handleSwipe}
+                    onBlock={() => blockRestaurant(current.name)}
                     isTop={true}
                   />
                 )}
@@ -179,51 +192,14 @@ export default function Swipe() {
       </div>
 
       {/* Action buttons */}
-      <div className="px-5 py-4 flex items-center justify-center gap-3">
-        <button
-          onClick={() => handleSwipe("nope")}
-          disabled={allDone}
-          className="w-14 h-14 rounded-full bg-card shadow-lg border-2 border-red-200 flex items-center justify-center hover:scale-110 hover:border-red-400 transition-all active:scale-95 disabled:opacity-30"
-          title="Nope"
-        >
-          <X className="w-6 h-6 text-red-400" />
-        </button>
-
+      <div className="px-5 py-4 flex items-center justify-center">
         <button
           onClick={() => navigate("/results", { state: { maybes, allRestaurants: restaurants } })}
           className="px-5 py-3 bg-gradient-to-r from-primary to-orange-400 text-white font-black rounded-2xl shadow-lg hover:shadow-xl hover:scale-105 transition-all text-sm"
         >
           {allDone ? "See My Picks! 🎉" : "I'm Done"}
         </button>
-
-        <button
-          onClick={() => handleSwipe("maybe")}
-          disabled={allDone}
-          className="w-14 h-14 rounded-full bg-card shadow-lg border-2 border-green-200 flex items-center justify-center hover:scale-110 hover:border-green-400 transition-all active:scale-95 disabled:opacity-30"
-          title="Maybe!"
-        >
-          <Heart className="w-6 h-6 text-green-500" />
-        </button>
       </div>
-
-      {/* Block forever - subtle option below */}
-      {!allDone && current && (
-        <div className="flex justify-center pb-2">
-          <button
-            onClick={() => blockRestaurant(current.name)}
-            className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-red-400 transition-all py-1 px-3"
-          >
-            <Ban className="w-3 h-3" /> Never show this place again
-          </button>
-        </div>
-      )}
-
-      {/* Hint */}
-      {!allDone && (
-        <p className="text-center text-muted-foreground text-xs font-semibold pb-2">
-          ← Nope &nbsp;|&nbsp; ❤️ Maybe →
-        </p>
-      )}
     </div>
   );
 }
