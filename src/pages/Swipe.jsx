@@ -115,10 +115,10 @@ export default function Swipe() {
       </div>
 
       {/* Cards */}
-      <div className="flex-1 px-5 relative">
+      <div className="flex-1 px-5 relative flex items-center justify-center">
         {!allDone ? (
           <>
-            <div className="relative" style={{ height: '480px' }}>
+            <div className="relative w-full" style={{ maxWidth: '400px', minHeight: '600px' }}>
               {/* Stack preview cards */}
               {[2, 1].map(offset => {
                 const idx = currentIndex + offset;
@@ -169,7 +169,7 @@ export default function Swipe() {
           <motion.div
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="h-[480px] flex flex-col items-center justify-center text-center px-4"
+            className="min-h-[600px] flex flex-col items-center justify-center text-center px-4 w-full"
           >
             <div className="text-7xl mb-4">🍽️</div>
             <h2 className="font-playfair text-3xl font-bold text-foreground mb-2">That's all of them!</h2>
