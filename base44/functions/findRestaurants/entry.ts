@@ -190,12 +190,23 @@ Deno.serve(async (req) => {
       .map(mapPlaceToRestaurant)
       .filter(r => r.distance_miles !== null && r.distance_miles <= (radius_miles || 5));
 
+    console.log('Total places from Google:', (broadData.places || []).length);
+    console.log('After filtering:', allRestaurants.length);
+    console.log('Sample place types:', (broadData.places || []).slice(0, 5).map(p => ({
+      name: p.displayName?.text,
+      types: p.types
+    })));
+    console.log('Cuisine labels assigned:', allRestaurants.map(r => r.cuisine));
+
     // Count cuisines with 2+ restaurants
     const cuisineCounts = {};
     allRestaurants.forEach(r => {
       cuisineCounts[r.cuisine] = (cuisineCounts[r.cuisine] || 0) + 1;
     });
     const availableCuisines = Object.keys(cuisineCounts).filter(c => cuisineCounts[c] >= 1).sort();
+
+    console.log('Cuisine counts:', cuisineCounts);
+    console.log('Available cuisines:', availableCuisines);
 
     // STEP 3: Filter results based on user selections
     let filteredRestaurants = allRestaurants;
