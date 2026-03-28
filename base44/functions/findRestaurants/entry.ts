@@ -62,18 +62,20 @@ const FIELD_MASK = [
 
 function isValidRestaurant(place) {
   const types = place.types || [];
-  const hasValidType = types.some(t => VALID_FOOD_TYPES.has(t));
-  const hasInvalidType = types.some(t => INVALID_TYPES.has(t));
   const name = (place.displayName?.text || '').toLowerCase();
   
-  if (!hasValidType) return false;
-  if (hasInvalidType && !hasValidType) return false;
+  // Exclude if name contains non-restaurant keywords
   if (EXCLUDED_KEYWORDS.test(name)) return false;
   
+  // Exclude if ONLY invalid types with no food type
+  const hasInvalidType = types.some(t => INVALID_TYPES.has(t));
+  const hasValidType = types.some(t => VALID_FOOD_TYPES.has(t));
+  if (hasInvalidType && !hasValidType) return false;
+  
+  // Exclude ghost listings only
   const rating = place.rating || 0;
   const reviewCount = place.userRatingCount || 0;
-  const hasDescription = !!(place.editorialSummary?.text);
-  if (rating === 0 && reviewCount < 5 && !hasDescription) return false;
+  if (rating === 0 && reviewCount === 0) return false;
   
   return true;
 }
@@ -136,29 +138,27 @@ Deno.serve(async (req) => {
       const pLng = p.location?.longitude;
       const d = (pLat && pLng) ? distanceMiles(lat, lng, pLat, pLng) : null;
 
-      const nameLower = (p.displayName?.text || '').toLowerCase();
-      const descLower = (p.editorialSummary?.text || '').toLowerCase();
-      const haystack = nameLower + ' ' + descLower;
-      let cuisineLabel = 'Restaurant';
+      let cuisineLabel = 'American';
 
+      // First pass: match by Google place types (most reliable)
       for (const [key, val] of Object.entries(CUISINE_KEYWORDS)) {
-        if (val.words.some(w => haystack.includes(w)) || p.types?.some(t => val.types.includes(t))) {
+        if (p.types?.some(t => val.types.includes(t))) {
           cuisineLabel = key.charAt(0).toUpperCase() + key.slice(1);
           break;
         }
       }
 
-      if (cuisineLabel === 'Restaurant') {
+      // Second pass: only if still American, try name matching
+      if (cuisineLabel === 'American') {
         for (const [key, val] of Object.entries(CUISINE_KEYWORDS)) {
-          if (p.types?.some(t => val.types.includes(t))) {
+          if (key === 'american') continue;
+          if (val.words.some(w => 
+            (p.displayName?.text || '').toLowerCase().includes(w)
+          )) {
             cuisineLabel = key.charAt(0).toUpperCase() + key.slice(1);
             break;
           }
         }
-      }
-
-      if (cuisineLabel === 'Restaurant') {
-        cuisineLabel = 'American';
       }
 
       let photoUrl = null;
