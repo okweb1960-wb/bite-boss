@@ -27,7 +27,8 @@ export default function Home() {
           );
           const data = await res.json();
           const a = data.address;
-          const label = [a.neighbourhood || a.suburb || a.quarter, a.city || a.town || a.village, a.state].filter(Boolean).join(', ');
+          const street = [a.house_number, a.road].filter(Boolean).join(' ');
+          const label = [street || a.neighbourhood || a.suburb, a.city || a.town || a.village, a.state].filter(Boolean).join(', ');
           setLocation(label || `${latitude.toFixed(5)}, ${longitude.toFixed(5)}`);
         } catch {
           setLocation(`${latitude.toFixed(5)}, ${longitude.toFixed(5)}`);
