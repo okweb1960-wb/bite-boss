@@ -68,7 +68,7 @@ Deno.serve(async (req) => {
     const requestBody = {
       textQuery: `${isFastFood ? 'Fast Food ' : ''}${queryTerm}`,
       maxResultCount: 60,
-      locationRestriction: {
+      locationBias: {
         circle: { center: { latitude: lat, longitude: lng }, radius: radiusMeters }
       },
       ...(isFastFood ? { includedPrimaryTypes: ['fast_food_restaurant', 'hamburger_restaurant'] } : {}),
