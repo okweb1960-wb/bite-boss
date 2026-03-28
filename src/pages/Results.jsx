@@ -83,6 +83,7 @@ export default function Results() {
   const [showUnseen, setShowUnseen] = useState(maybes.length === 0);
   const [dragStart, setDragStart] = useState(null);
   const [winner, setWinner] = useState(null);
+  const [selectedCard, setSelectedCard] = useState(null);
   const [lastWinner, setLastWinner] = useState(null);
   const [isShuffling, setIsShuffling] = useState(false);
   
@@ -167,7 +168,7 @@ export default function Results() {
                   disabled={isShuffling}
                   className="w-full px-6 py-4 bg-orange-500 text-white font-black rounded-2xl shadow-lg hover:shadow-xl transition-all text-lg disabled:opacity-60"
                 >
-                  🎲 Pick For Us
+                  🎲 Pick For Me
                 </button>
               </motion.div>
             )}
@@ -188,7 +189,9 @@ export default function Results() {
             ) : (
               <div className="flex-1 overflow-y-auto px-5 py-4 space-y-3 pb-32">
                 {maybes.map(r => (
-                  <RestaurantCard key={r.name} restaurant={r} variant="default" />
+                  <div key={r.name} onClick={() => setSelectedCard(r)} className="cursor-pointer hover:opacity-85 transition-opacity">
+                    <RestaurantCard restaurant={r} variant="default" />
+                  </div>
                 ))}
               </div>
             )}
@@ -267,12 +270,13 @@ export default function Results() {
       </AnimatePresence>
 
       {/* Winner Modal */}
-      {winner && (
+      {(winner || selectedCard) && (
         <WinnerModal
-          restaurant={winner}
+          restaurant={winner || selectedCard}
           maybes={maybes}
-          onClose={() => setWinner(null)}
-          onPickAgain={handlePickAgain}
+          onClose={() => { setWinner(null); setSelectedCard(null); }}
+          onPickAgain={() => { setSelectedCard(null); setTimeout(() => pickWinner(), 300); }}
+          isCardTap={!!selectedCard}
         />
       )}
     </div>

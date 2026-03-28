@@ -62,13 +62,17 @@ function Confetti() {
   return null;
 }
 
-export default function WinnerModal({ restaurant, maybes, onClose, onPickAgain }) {
+export default function WinnerModal({ restaurant, maybes, onClose, onPickAgain, isCardTap = false }) {
   const [showConfetti, setShowConfetti] = useState(false);
 
   useEffect(() => {
     setShowConfetti(true);
-    haptics.winnerLands();
-  }, []);
+    if (!isCardTap) {
+      haptics.winnerLands();
+    } else {
+      if (navigator.vibrate) navigator.vibrate([100, 30, 100]);
+    }
+  }, [isCardTap]);
 
   const { name = "Unknown", cuisine, rating, review_count, distance, price_level, description, photo_url, address } = restaurant;
   const priceLevel = price_level ? PRICE_MAP[price_level] || PRICE_MAP[price_level.toString()] : null;
@@ -81,7 +85,7 @@ export default function WinnerModal({ restaurant, maybes, onClose, onPickAgain }
   function handleLetsGo() {
     haptics.letsGo();
     window.open(
-      `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(name + " " + address)}`,
+      `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(address)}`,
       "_blank"
     );
   }
@@ -109,7 +113,7 @@ export default function WinnerModal({ restaurant, maybes, onClose, onPickAgain }
           className="flex flex-col items-center gap-6 max-w-md w-full"
           initial={{ scale: 0.8, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
-          transition={{ delay: 0.3, type: "spring", damping: 20 }}
+          transition={isCardTap ? { duration: 0.3, ease: "easeOut" } : { delay: 0.3, type: "spring", damping: 20 }}
         >
           {/* Heading */}
           <h1 className="text-center font-bold text-white" style={{ fontSize: "28px" }}>
