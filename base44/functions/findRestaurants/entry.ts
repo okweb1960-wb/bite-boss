@@ -17,12 +17,15 @@ Deno.serve(async (req) => {
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
     const payload = await req.json();
-    console.log('Payload received:', JSON.stringify(payload));
     const { latitude, longitude, radius_miles, cuisine, service, open_now, exclude } = payload;
     if (!latitude || !longitude) return Response.json({ error: 'Coordinates required' }, { status: 400 });
 
     const radiusMeters = Math.round((radius_miles || 5) * 1609.34);
     const excludeNames = (exclude || []).map(n => n.toLowerCase());
+
+    // Handle arrays or strings for cuisine/service
+    const cuisineList = Array.isArray(cuisine) ? cuisine : (cuisine ? [cuisine] : []);
+    const serviceList = Array.isArray(service) ? service : (service ? [service] : []);
 
     const body = {
       includedTypes: ['restaurant'],
@@ -35,8 +38,9 @@ Deno.serve(async (req) => {
       },
     };
 
-    if (cuisine || service) {
-      body.textQuery = [cuisine, service].filter(Boolean).join(' ');
+    const textParts = [...cuisineList, ...serviceList].filter(Boolean);
+    if (textParts.length > 0) {
+      body.textQuery = textParts.join(' ');
     }
 
     const res = await fetch('https://places.googleapis.com/v1/places:searchNearby', {
@@ -76,6 +80,9 @@ Deno.serve(async (req) => {
     if (open_now) {
       restaurants = restaurants.filter(r => r.open_now === true);
     }
+
+    // Filter strictly by radius
+    restaurants = restaurants.filter(r => r.distance_miles === null || r.distance_miles <= (radius_miles || 5));
 
     restaurants.sort((a, b) => (a.distance_miles || 0) - (b.distance_miles || 0));
 

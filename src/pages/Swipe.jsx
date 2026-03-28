@@ -32,8 +32,8 @@ export default function Swipe() {
         latitude: state.coords?.latitude,
         longitude: state.coords?.longitude,
         radius_miles: state.filters?.radius,
-        cuisine: state.filters?.cuisine,
-        service: state.filters?.service,
+        cuisine: state.filters?.cuisines,
+        service: state.filters?.services,
         open_now: state.filters?.openNow,
         exclude: seenNames,
       });

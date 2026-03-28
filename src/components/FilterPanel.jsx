@@ -16,6 +16,18 @@ const SERVICE_TYPES = [
 const RADIUS_OPTIONS = [1, 3, 5, 10, 20];
 
 export default function FilterPanel({ filters, onChange }) {
+  function toggleCuisine(c) {
+    const current = filters.cuisines || [];
+    const updated = current.includes(c) ? current.filter(x => x !== c) : [...current, c];
+    onChange({ ...filters, cuisines: updated });
+  }
+
+  function toggleService(s) {
+    const current = filters.services || [];
+    const updated = current.includes(s) ? current.filter(x => x !== s) : [...current, s];
+    onChange({ ...filters, services: updated });
+  }
+
   return (
     <div className="space-y-6">
       {/* Radius */}
@@ -38,43 +50,51 @@ export default function FilterPanel({ filters, onChange }) {
         </div>
       </div>
 
-      {/* Cuisine */}
+      {/* Cuisine - multi-select */}
       <div>
-        <h3 className="font-bold text-foreground mb-3">What are you in the mood for?</h3>
+        <h3 className="font-bold text-foreground mb-1">What are you in the mood for?</h3>
+        <p className="text-xs text-muted-foreground mb-3">Pick one or more</p>
         <div className="flex gap-2 flex-wrap">
-          {CUISINES.map(c => (
-            <button
-              key={c}
-              onClick={() => onChange({ ...filters, cuisine: c === "Any" ? "" : c })}
-              className={`px-3 py-1.5 rounded-full font-semibold text-sm transition-all ${
-                (c === "Any" && !filters.cuisine) || filters.cuisine === c
-                  ? "bg-secondary text-secondary-foreground shadow-md scale-105"
-                  : "bg-muted text-muted-foreground hover:bg-secondary/20"
-              }`}
-            >
-              {c}
-            </button>
-          ))}
+          {CUISINES.filter(c => c !== 'Any').map(c => {
+            const selected = (filters.cuisines || []).includes(c);
+            return (
+              <button
+                key={c}
+                onClick={() => toggleCuisine(c)}
+                className={`px-3 py-1.5 rounded-full font-semibold text-sm transition-all ${
+                  selected
+                    ? "bg-secondary text-secondary-foreground shadow-md scale-105"
+                    : "bg-muted text-muted-foreground hover:bg-secondary/20"
+                }`}
+              >
+                {c}
+              </button>
+            );
+          })}
         </div>
       </div>
 
-      {/* Service Type */}
+      {/* Service Type - multi-select */}
       <div>
-        <h3 className="font-bold text-foreground mb-3">How do you want to eat?</h3>
+        <h3 className="font-bold text-foreground mb-1">How do you want to eat?</h3>
+        <p className="text-xs text-muted-foreground mb-3">Pick one or more</p>
         <div className="flex gap-2 flex-wrap">
-          {SERVICE_TYPES.map(s => (
-            <button
-              key={s.value}
-              onClick={() => onChange({ ...filters, service: s.value === "any" ? "" : s.value })}
-              className={`px-4 py-2 rounded-full font-semibold text-sm transition-all ${
-                (s.value === "any" && !filters.service) || filters.service === s.value
-                  ? "bg-accent text-accent-foreground shadow-md scale-105"
-                  : "bg-muted text-muted-foreground hover:bg-accent/10"
-              }`}
-            >
-              {s.label}
-            </button>
-          ))}
+          {SERVICE_TYPES.filter(s => s.value !== 'any').map(s => {
+            const selected = (filters.services || []).includes(s.value);
+            return (
+              <button
+                key={s.value}
+                onClick={() => toggleService(s.value)}
+                className={`px-4 py-2 rounded-full font-semibold text-sm transition-all ${
+                  selected
+                    ? "bg-accent text-accent-foreground shadow-md scale-105"
+                    : "bg-muted text-muted-foreground hover:bg-accent/10"
+                }`}
+              >
+                {s.label}
+              </button>
+            );
+          })}
         </div>
       </div>
 

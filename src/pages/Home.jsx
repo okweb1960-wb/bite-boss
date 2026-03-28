@@ -12,7 +12,7 @@ export default function Home() {
   const [detecting, setDetecting] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [filters, setFilters] = useState({ radius: 5, cuisine: "", service: "", openNow: false });
+  const [filters, setFilters] = useState({ radius: 5, cuisines: [], services: [], openNow: false });
 
   async function detectLocation() {
     setDetecting(true);
@@ -50,8 +50,8 @@ export default function Home() {
         latitude: coords.latitude,
         longitude: coords.longitude,
         radius_miles: filters.radius,
-        cuisine: filters.cuisine,
-        service: filters.service,
+        cuisine: filters.cuisines,
+        service: filters.services,
         open_now: filters.openNow,
         location_text: location,
       });
