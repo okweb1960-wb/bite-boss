@@ -40,6 +40,7 @@ export default function RestaurantCard({ restaurant, onSwipe, onBlock, isTop }) 
   const [imageLoaded, setImageLoaded] = useState(false);
   const { name = 'Unknown', cuisine, address, rating, review_count, price_level, open_now, description, photo_url, distance } = restaurant || {};
   const priceLevel = price_level ? PRICE_MAP[price_level] || PRICE_MAP[price_level.toString()] : null;
+  const isOpen = open_now;
   const x = useMotionValue(0);
   const rotate = useTransform(x, [-200, 200], [-25, 25]);
   const cardOpacity = useTransform(x, [-200, -100, 0, 100, 200], [0, 1, 1, 1, 0]);
@@ -109,10 +110,10 @@ export default function RestaurantCard({ restaurant, onSwipe, onBlock, isTop }) 
           )}
           <div className="flex items-center gap-4" style={{ color: '#6b7280', fontSize: '13px' }}>
             {rating && (
-              <span className="flex items-center gap-1">
-                <Star style={{ width: 14, height: 14, color: '#f59e0b', fill: '#f59e0b' }} />
-                <span style={{ fontWeight: 700, color: '#111827' }}>{rating}</span>
-                {reviewCount && <span>({reviewCount})</span>}
+             <span className="flex items-center gap-1">
+               <Star style={{ width: 14, height: 14, color: '#f59e0b', fill: '#f59e0b' }} />
+               <span style={{ fontWeight: 700, color: '#111827' }}>{rating}</span>
+               {review_count && <span>({review_count})</span>}
               </span>
             )}
             {restaurant.address && (
@@ -121,16 +122,11 @@ export default function RestaurantCard({ restaurant, onSwipe, onBlock, isTop }) 
                 {restaurant.address}
               </span>
             )}
-            {serviceType && (
-              <span className="flex items-center gap-1">
-                <Clock style={{ width: 14, height: 14 }} />
-                {serviceType}
-              </span>
-            )}
+
           </div>
           <div className="flex items-center justify-between mt-3">
             <a
-              href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(name + ' ' + location)}`}
+              href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(name + ' ' + address)}`}
               target="_blank"
               rel="noopener noreferrer"
               onClick={e => e.stopPropagation()}
