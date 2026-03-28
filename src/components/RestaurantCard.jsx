@@ -38,6 +38,8 @@ function getImage(restaurant) {
 
 export default function RestaurantCard({ restaurant, onSwipe, onBlock, isTop }) {
   const [imageLoaded, setImageLoaded] = useState(false);
+  const { name = 'Unknown', cuisine, address, rating, review_count, price_level, open_now, description, photo_url, distance } = restaurant || {};
+  const priceLevel = price_level ? PRICE_MAP[price_level] || PRICE_MAP[price_level.toString()] : null;
   const x = useMotionValue(0);
   const rotate = useTransform(x, [-200, 200], [-25, 25]);
   const cardOpacity = useTransform(x, [-200, -100, 0, 100, 200], [0, 1, 1, 1, 0]);
@@ -51,7 +53,6 @@ export default function RestaurantCard({ restaurant, onSwipe, onBlock, isTop }) 
 
   const imgSrc = getImage(restaurant);
   const hasRealPhoto = !!restaurant.photo_url;
-  const name = restaurant.name || "Unknown Restaurant";
 
   return (
     <motion.div
