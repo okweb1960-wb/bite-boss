@@ -49,8 +49,8 @@ Deno.serve(async (req) => {
           radius: radiusMeters,
         }
       },
-      includedType: serviceList.length > 0 ? (SERVICE_TYPE_MAP[serviceList[0]] || 'restaurant') : 'restaurant',
       maxResultCount: 20,
+      ...(serviceList.length > 0 ? { includedType: SERVICE_TYPE_MAP[serviceList[0]] || 'restaurant' } : {}),
       ...(open_now ? { openNow: true } : {}),
     };
 
