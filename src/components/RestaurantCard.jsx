@@ -44,7 +44,7 @@ function getPriceDisplay(price_level) {
 
 export default function RestaurantCard({ restaurant, onSwipe, onBlock, isTop }) {
   const [imageLoaded, setImageLoaded] = useState(false);
-  const { name = 'Unknown', cuisine, address, rating, review_count, price_level, open_now, description, photo_url, distance } = restaurant || {};
+  const { name = 'Unknown', cuisine, address, rating, review_count, price_level, open_now, description, photo_url, distance, delivery, takeout, dineIn } = restaurant || {};
   const priceLevel = price_level ? PRICE_MAP[price_level] || PRICE_MAP[price_level.toString()] : null;
   const isOpen = open_now;
   const x = useMotionValue(0);
@@ -73,7 +73,7 @@ export default function RestaurantCard({ restaurant, onSwipe, onBlock, isTop }) 
       <div className="w-full h-full rounded-3xl overflow-hidden shadow-2xl" style={{ background: '#ffffff' }}>
 
         {/* Photo */}
-        <div className="relative w-full" style={{ height: '260px', overflow: 'hidden' }}>
+        <div className="relative w-full" style={{ height: '220px', overflow: 'hidden' }}>
           {!imageLoaded && (
             <div className="absolute inset-0 bg-gradient-to-r from-gray-300 via-gray-400 to-gray-300 animate-pulse" />
           )}
@@ -87,11 +87,12 @@ export default function RestaurantCard({ restaurant, onSwipe, onBlock, isTop }) 
           />
           <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.55) 0%, transparent 60%)' }} />
 
-          {/* Open/closed badge */}
-          {isOpen !== undefined && (
-            <div className="absolute top-3 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full text-xs font-bold text-white"
-              style={{ background: isOpen ? '#10B981' : '#EF4444' }}>
-              {isOpen ? '🟢 Open Now' : '🔴 Closed'}
+          {/* Open Now badge — overlapping bottom-left */}
+          {isOpen === true && (
+            <div className="absolute" style={{ bottom: '-14px', left: '16px' }}>
+              <div className="px-3 py-1.5 rounded-full text-xs font-bold text-white bg-green-500 border-2 border-white" style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
+                🟢 Open Now
+              </div>
             </div>
           )}
 
@@ -103,30 +104,47 @@ export default function RestaurantCard({ restaurant, onSwipe, onBlock, isTop }) 
             </div>
           )}
         </div>
-        <div className="p-5" style={{ background: '#ffffff' }}>
+        <div className="px-5 py-5" style={{ background: '#ffffff' }}>
+          {/* Row 1: Name + Price */}
           <div className="flex items-start justify-between mb-1">
-            <h2 className="font-black leading-tight" style={{ fontSize: '22px', color: '#111827', margin: 0 }}>{name}</h2>
+            <h2 className="font-black leading-tight" style={{ fontSize: '22px', color: '#111827', margin: 0, flex: 1 }}>{name}</h2>
             {restaurant.price_level && <span className="font-bold ml-2 shrink-0" style={{ color: '#059669', fontSize: '14px' }}>{getPriceDisplay(restaurant.price_level)}</span>}
           </div>
-          <div className="flex items-center gap-2 mb-2">
-            {cuisine && <p className="font-semibold" style={{ color: '#f97316', fontSize: '14px' }}>{cuisine}</p>}
-            {restaurant.distance && <p style={{ color: '#6b7280', fontSize: '14px' }}>📍 {restaurant.distance}</p>}
+
+          {/* Row 2: Cuisine + Distance */}
+          <div className="mb-2 flex items-center gap-2">
+            {cuisine && <p className="font-semibold" style={{ color: '#f97316', fontSize: '14px', margin: 0 }}>{cuisine}</p>}
+            {cuisine && restaurant.distance && <span style={{ color: '#6b7280', fontSize: '14px' }}>•</span>}
+            {restaurant.distance && <p style={{ color: '#6b7280', fontSize: '14px', margin: 0 }}>📍 {restaurant.distance}</p>}
           </div>
+
+          {/* Row 3: Rating */}
+          {rating && (
+            <div className="mb-2 flex items-center gap-1" style={{ color: '#111827', fontSize: '13px' }}>
+              <Star style={{ width: 14, height: 14, color: '#f59e0b', fill: '#f59e0b' }} />
+              <span style={{ fontWeight: 700 }}>{rating}</span>
+              {review_count && <span style={{ color: '#6b7280' }}>({review_count})</span>}
+            </div>
+          )}
+
+          {/* Row 4: Description */}
           {description && (
-            <p style={{ color: '#6b7280', fontSize: '13px', margin: '0 0 10px', lineHeight: 1.4, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+            <p style={{ color: '#6b7280', fontSize: '13px', margin: '6px 0 8px', lineHeight: 1.4, fontStyle: 'italic', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
               {description}
             </p>
           )}
-          <div className="flex items-center gap-4" style={{ color: '#6b7280', fontSize: '13px' }}>
-            {rating && (
-             <span className="flex items-center gap-1">
-               <Star style={{ width: 14, height: 14, color: '#f59e0b', fill: '#f59e0b' }} />
-               <span style={{ fontWeight: 700, color: '#111827' }}>{rating}</span>
-               {review_count && <span>({review_count})</span>}
-              </span>
-            )}
-          </div>
-          <div className="flex items-center justify-between mt-3">
+
+          {/* Row 5: Service Tags */}
+          {(restaurant.takeout || restaurant.delivery || restaurant.dineIn) && (
+            <div className="flex gap-1.5 mb-3 flex-wrap">
+              {restaurant.takeout && <span style={{ background: '#F3F4F6', color: '#6B7280', fontSize: '11px', padding: '4px 8px', borderRadius: '12px', fontWeight: 500 }}>🥡 Takeout</span>}
+              {restaurant.delivery && <span style={{ background: '#F3F4F6', color: '#6B7280', fontSize: '11px', padding: '4px 8px', borderRadius: '12px', fontWeight: 500 }}>🚗 Delivery</span>}
+              {restaurant.dineIn && <span style={{ background: '#F3F4F6', color: '#6B7280', fontSize: '11px', padding: '4px 8px', borderRadius: '12px', fontWeight: 500 }}>🍽️ Dine-in</span>}
+            </div>
+          )}
+
+          {/* Row 6: CTA + Block */}
+          <div className="flex items-center justify-between">
             <a
               href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(name + ' ' + address)}`}
               target="_blank"
