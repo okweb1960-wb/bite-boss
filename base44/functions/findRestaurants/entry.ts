@@ -14,15 +14,16 @@ Deno.serve(async (req) => {
     const user = await base44.auth.me();
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
-    const { latitude, longitude, radius_miles, cuisine, service, open_now, exclude } = await req.json();
+    const { latitude, longitude, radius_miles, cuisine, service, open_now, exclude, location_text } = await req.json();
     if (!latitude || !longitude) return Response.json({ error: 'Coordinates required' }, { status: 400 });
 
     const radius = radius_miles || 5;
     const cuisineHint = cuisine ? ` Cuisine preference: ${cuisine}.` : '';
     const serviceHint = service ? ` Service style: ${service}.` : '';
+    const locationHint = location_text ? ` The location is: ${location_text}.` : '';
 
     const excludeHint = exclude?.length ? ` Do NOT include these places: ${exclude.join(', ')}.` : '';
-    const prompt = `List 8-10 real restaurants near lat=${latitude} lon=${longitude} within ${radius} miles.${cuisineHint}${serviceHint}${excludeHint}
+    const prompt = `List 8-10 real restaurants that are physically located in or very close to: ${location_text || `lat=${latitude} lon=${longitude}`}. Only include places within ${radius} miles of lat=${latitude} lon=${longitude}. Do NOT include restaurants from other cities or states.${cuisineHint}${serviceHint}${excludeHint}
 Return JSON only. Fields per restaurant: name, cuisine, street, rating, reviews, price (1-4), open (bool), stype (Sit-down/Fast Food/Cafe/Counter), lat, lon.`;
 
     const res = await base44.integrations.Core.InvokeLLM({

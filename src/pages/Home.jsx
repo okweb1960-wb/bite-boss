@@ -53,6 +53,7 @@ export default function Home() {
         cuisine: filters.cuisine,
         service: filters.service,
         open_now: filters.openNow,
+        location_text: location,
       });
 
       const restaurants = response.data?.restaurants || [];
