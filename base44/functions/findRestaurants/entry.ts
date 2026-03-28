@@ -199,7 +199,7 @@ Deno.serve(async (req) => {
           _raw: p,
         };
       })
-      .filter(r => r.distance_miles === null || r.distance_miles <= (radius_miles || 5));
+      .filter(r => r.distance_miles !== null && r.distance_miles <= (radius_miles || 5));
 
     // POST-FETCH: filter by cuisine — only needed for searchNearby (multi-cuisine or no cuisine)
     const usedSearchText = cuisineList.length === 1;
@@ -277,6 +277,7 @@ Deno.serve(async (req) => {
             filterMismatch: true,
           };
         })
+        .filter(r => r.distance_miles !== null && r.distance_miles <= (radius_miles || 5))
         .sort((a, b) => (b.rating || 0) - (a.rating || 0));
       console.log('Fallback triggered, returning', fallback.length, 'unfiltered results');
       return Response.json({ restaurants: fallback, filterMismatch: true });
