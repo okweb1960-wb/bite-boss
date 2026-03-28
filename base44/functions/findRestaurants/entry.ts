@@ -114,7 +114,7 @@ Deno.serve(async (req) => {
       requestBody = {
         textQuery: `Best ${cuisineList[0]} restaurants`,
         maxResultCount: 20,
-        locationBias: {
+        locationRestriction: {
           circle: {
             center: { latitude, longitude },
             radius: radiusMeters,
