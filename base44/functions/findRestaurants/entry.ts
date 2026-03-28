@@ -10,6 +10,15 @@ function distanceMiles(lat1, lon1, lat2, lon2) {
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
 }
 
+// Map service filter values to Places API (New) included types
+const SERVICE_TYPE_MAP = {
+  'sit-down': 'sit_down_dining',
+  'fast food': 'fast_food_restaurant',
+  'takeout': 'meal_takeaway',
+  'delivery': 'delivery_restaurant',
+  'cafe': 'cafe',
+};
+
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
@@ -25,50 +34,97 @@ Deno.serve(async (req) => {
 
     const cuisineList = Array.isArray(cuisine) ? cuisine : (cuisine ? [cuisine] : []);
     const serviceList = Array.isArray(service) ? service : (service ? [service] : []);
-    const keyword = [...cuisineList, ...serviceList].filter(Boolean).join(' ');
 
-    const params = new URLSearchParams({
-      location: `${latitude},${longitude}`,
-      radius: radiusMeters,
-      type: 'restaurant',
-      key: GMAPS_KEY,
+    // Build includedTypes from service filters, default to restaurant
+    const includedTypes = serviceList.length > 0
+      ? serviceList.map(s => SERVICE_TYPE_MAP[s] || 'restaurant').filter(Boolean)
+      : ['restaurant'];
+
+    // Build text query from cuisine filters
+    const textQuery = cuisineList.length > 0 ? cuisineList.join(' OR ') + ' restaurant' : null;
+
+    const body = {
+      locationRestriction: {
+        circle: {
+          center: { latitude, longitude },
+          radius: radiusMeters,
+        }
+      },
+      includedTypes,
+      maxResultCount: 20,
+    };
+
+    if (open_now) body.openNow = true;
+    if (textQuery) body.textQuery = textQuery;
+
+    const fieldMask = 'places.displayName,places.formattedAddress,places.location,places.rating,places.userRatingCount,places.priceLevel,places.currentOpeningHours,places.types,places.editorialSummary';
+
+    // Use searchText if we have a cuisine query, otherwise searchNearby
+    const endpoint = textQuery
+      ? 'https://places.googleapis.com/v1/places:searchText'
+      : 'https://places.googleapis.com/v1/places:searchNearby';
+
+    // searchText uses a different body shape
+    const requestBody = textQuery ? {
+      textQuery,
+      locationBias: {
+        circle: {
+          center: { latitude, longitude },
+          radius: radiusMeters,
+        }
+      },
+      includedType: 'restaurant',
+      maxResultCount: 20,
+      ...(open_now ? { openNow: true } : {}),
+    } : body;
+
+    const res = await fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Goog-Api-Key': GMAPS_KEY,
+        'X-Goog-FieldMask': fieldMask,
+      },
+      body: JSON.stringify(requestBody),
     });
-    if (keyword) params.set('keyword', keyword);
-    if (open_now) params.set('opennow', 'true');
 
-    const url = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?${params}`;
-    const res = await fetch(url);
     const data = await res.json();
+    console.log('Places API (New) response status:', res.status, 'places count:', data.places?.length ?? 0);
 
-    console.log('Places API status:', data.status, 'count:', data.results?.length);
-    if (data.status !== 'OK' && data.status !== 'ZERO_RESULTS') {
-      console.error('Places API error:', JSON.stringify(data));
+    if (data.error) {
+      console.error('Places API error:', JSON.stringify(data.error));
+      return Response.json({ error: data.error.message }, { status: 500 });
     }
 
-    let restaurants = (data.results || [])
-      .filter(p => !excludeNames.includes(p.name?.toLowerCase()))
+    const restaurants = (data.places || [])
+      .filter(p => !excludeNames.includes(p.displayName?.text?.toLowerCase()))
       .map(p => {
-        const lat = p.geometry?.location?.lat;
-        const lon = p.geometry?.location?.lng;
+        const lat = p.location?.latitude;
+        const lon = p.location?.longitude;
         const d = (lat && lon) ? distanceMiles(latitude, longitude, lat, lon) : null;
+        const cuisine = p.types?.find(t =>
+          !['restaurant','food','point_of_interest','establishment','meal_takeaway','meal_delivery','cafe'].includes(t)
+        )?.replace(/_/g, ' ') || 'Restaurant';
+
+        const priceMap = { PRICE_LEVEL_FREE: 1, PRICE_LEVEL_INEXPENSIVE: 1, PRICE_LEVEL_MODERATE: 2, PRICE_LEVEL_EXPENSIVE: 3, PRICE_LEVEL_VERY_EXPENSIVE: 4 };
+
         return {
-          name: p.name || 'Unknown',
-          cuisine: p.types?.find(t => !['restaurant','food','point_of_interest','establishment','meal_takeaway','meal_delivery'].includes(t))?.replace(/_/g, ' ') || 'Restaurant',
-          address: p.vicinity || '',
+          name: p.displayName?.text || 'Unknown',
+          cuisine,
+          address: p.formattedAddress || '',
           rating: p.rating,
-          review_count: p.user_ratings_total,
-          price_level: p.price_level,
-          open_now: p.opening_hours?.open_now,
+          review_count: p.userRatingCount,
+          price_level: priceMap[p.priceLevel] || null,
+          open_now: p.currentOpeningHours?.openNow,
+          description: p.editorialSummary?.text || '',
           lat,
           lon,
           distance_miles: d,
           distance: d === null ? '' : d < 0.1 ? `${Math.round(d * 5280)} ft` : `${d.toFixed(1)} mi`,
         };
-      });
-
-    // Filter strictly by radius
-    restaurants = restaurants.filter(r => r.distance_miles === null || r.distance_miles <= (radius_miles || 5));
-    restaurants.sort((a, b) => (a.distance_miles || 0) - (b.distance_miles || 0));
+      })
+      .filter(r => r.distance_miles === null || r.distance_miles <= (radius_miles || 5))
+      .sort((a, b) => (a.distance_miles || 0) - (b.distance_miles || 0));
 
     return Response.json({ restaurants });
 

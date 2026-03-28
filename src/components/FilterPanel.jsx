@@ -1,11 +1,10 @@
 const CUISINES = [
-  "Any", "American", "Mexican", "Italian", "Chinese", "Japanese", "Thai",
+  "American", "Mexican", "Italian", "Chinese", "Japanese", "Thai",
   "Indian", "Mediterranean", "Pizza", "Burgers", "Sandwiches", "Sushi",
   "BBQ", "Seafood", "Vegetarian", "Vegan", "Breakfast", "Desserts"
 ];
 
 const SERVICE_TYPES = [
-  { value: "any", label: "Any Style" },
   { value: "sit-down", label: "🍽️ Sit-Down" },
   { value: "takeout", label: "📦 Takeout" },
   { value: "fast food", label: "⚡ Fast Food" },
@@ -55,7 +54,17 @@ export default function FilterPanel({ filters, onChange }) {
         <h3 className="font-bold text-foreground mb-1">What are you in the mood for?</h3>
         <p className="text-xs text-muted-foreground mb-3">Pick one or more</p>
         <div className="flex gap-2 flex-wrap">
-          {CUISINES.filter(c => c !== 'Any').map(c => {
+          <button
+            onClick={() => onChange({ ...filters, cuisines: [] })}
+            className={`px-3 py-1.5 rounded-full font-semibold text-sm transition-all ${
+              (filters.cuisines || []).length === 0
+                ? "bg-secondary text-secondary-foreground shadow-md scale-105"
+                : "bg-muted text-muted-foreground hover:bg-secondary/20"
+            }`}
+          >
+            All
+          </button>
+          {CUISINES.map(c => {
             const selected = (filters.cuisines || []).includes(c);
             return (
               <button
@@ -79,7 +88,17 @@ export default function FilterPanel({ filters, onChange }) {
         <h3 className="font-bold text-foreground mb-1">How do you want to eat?</h3>
         <p className="text-xs text-muted-foreground mb-3">Pick one or more</p>
         <div className="flex gap-2 flex-wrap">
-          {SERVICE_TYPES.filter(s => s.value !== 'any').map(s => {
+          <button
+            onClick={() => onChange({ ...filters, services: [] })}
+            className={`px-4 py-2 rounded-full font-semibold text-sm transition-all ${
+              (filters.services || []).length === 0
+                ? "bg-accent text-accent-foreground shadow-md scale-105"
+                : "bg-muted text-muted-foreground hover:bg-accent/10"
+            }`}
+          >
+            Any Style
+          </button>
+          {SERVICE_TYPES.map(s => {
             const selected = (filters.services || []).includes(s.value);
             return (
               <button
