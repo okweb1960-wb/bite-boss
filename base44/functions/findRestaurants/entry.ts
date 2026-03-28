@@ -118,12 +118,7 @@ Deno.serve(async (req) => {
     });
 
     const data = await res.json();
-    console.log('Places API status:', res.status, 'raw count:', data.places?.length ?? 0);
-
-    if (data.error) {
-      console.error('Places API error:', JSON.stringify(data.error));
-      return Response.json({ error: data.error.message }, { status: 500 });
-    }
+    if (data.error) return Response.json({ error: data.error.message }, { status: 500 });
 
     let restaurants = (data.places || [])
       .filter(p => p.businessStatus !== 'CLOSED_PERMANENTLY')
@@ -169,31 +164,18 @@ Deno.serve(async (req) => {
       })
       .filter(r => r.distance_miles !== null && r.distance_miles <= (radius_miles || 5));
 
-    // Post-fetch service filter
     if (serviceList.length > 0) {
-      restaurants = restaurants.filter(r =>
-        serviceList.some(s => SERVICE_FIELD_MAP[s] ? SERVICE_FIELD_MAP[s](r._raw) : true)
-      );
+      restaurants = restaurants.filter(r => serviceList.some(s => SERVICE_FIELD_MAP[s] ? SERVICE_FIELD_MAP[s](r._raw) : true));
     }
 
-    const finalRestaurants = restaurants.map(({ _raw, ...rest }) => rest);
-
-    if (finalRestaurants.length === 0) {
-      console.log('No results after filtering, returning empty');
-      return Response.json({ restaurants: [], filterMismatch: true });
-    }
-
-    const sorted = finalRestaurants.sort((a, b) => {
+    const sorted = restaurants.map(({ _raw, ...rest }) => rest).sort((a, b) => {
       const ratingDiff = (b.rating || 0) - (a.rating || 0);
       if (Math.abs(ratingDiff) > 0.3) return ratingDiff;
       return (a.distance_miles || 0) - (b.distance_miles || 0);
     });
 
-    console.log('Final count:', sorted.length);
     return Response.json({ restaurants: sorted });
-
   } catch (error) {
-    console.error('Error:', error.message);
     return Response.json({ error: error.message }, { status: 500 });
   }
 });
