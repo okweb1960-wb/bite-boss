@@ -94,7 +94,7 @@ Deno.serve(async (req) => {
       requestBody = {
         textQuery: `${queryPrefix}${cuisineList[0]} near me`,
         maxResultCount: 60,
-        locationRestriction: {
+        locationBias: {
           circle: { center: { latitude, longitude }, radius: radiusMeters }
         },
         ...(isFastFood ? { includedPrimaryTypes: ['fast_food_restaurant', 'hamburger_restaurant'] } : {}),
