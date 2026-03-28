@@ -105,16 +105,16 @@ export default function Home() {
   return (
     <div className="flex flex-col min-h-screen">
       {/* Header */}
-      <div className="bg-gradient-to-br from-teal-600 to-teal-700 p-8 pb-12 rounded-b-[2.5rem] shadow-lg">
+      <div className="bg-gradient-to-br from-teal-600 to-teal-700 rounded-b-[2.5rem] shadow-lg" style={{ padding: '20px 24px' }}>
         <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
-          <div className="flex items-center gap-2 mb-2">
-            <Utensils className="w-7 h-7 text-white" />
-            <span className="text-teal-600 font-bold text-lg uppercase tracking-wide">Cravr</span>
+          <div className="flex items-center gap-2" style={{ marginBottom: '8px' }}>
+            <Utensils className="text-white" style={{ width: '20px', height: '20px' }} />
+            <span className="text-teal-600 font-bold uppercase tracking-wide" style={{ fontSize: '14px' }}>Cravr</span>
           </div>
-          <h1 className="font-playfair text-4xl font-bold text-white leading-tight">
+          <h1 className="font-playfair font-bold text-white leading-tight" style={{ fontSize: 'clamp(28px, 8vw, 36px)', marginBottom: '4px' }}>
             Where do you<br />want to eat?
           </h1>
-          <p className="text-white/70 mt-2 font-semibold">"I don't know... where do <em>you</em> want to go?"</p>
+          <p className="text-white/70 font-semibold" style={{ fontSize: '13px' }}>"I don't know... where do <em>you</em> want to go?"</p>
         </motion.div>
       </div>
       <div className="flex-1 px-5 py-6 overflow-y-auto space-y-6">
