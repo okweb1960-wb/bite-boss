@@ -99,6 +99,12 @@ Deno.serve(async (req) => {
     }
 
     // STEP 1: Make broad API call with no cuisine filters
+    const includedTypes = cuisineList.length > 0
+      ? cuisineList.flatMap(c => 
+          CUISINE_KEYWORDS[c.toLowerCase()]?.types || []
+        ).filter(Boolean)
+      : null;
+
     const broadRequestBody = {
       maxResultCount: 50,
       locationRestriction: {
@@ -107,7 +113,7 @@ Deno.serve(async (req) => {
           radius: radiusMeters
         }
       },
-      includedTypes: ['restaurant'],
+      ...(includedTypes ? { includedTypes } : {}),
       ...(open_now ? { openNow: true } : {}),
     };
 
