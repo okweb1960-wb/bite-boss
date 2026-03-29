@@ -98,7 +98,7 @@ export default function Swipe() {
     <div className="flex flex-col min-h-screen bg-background">
       {/* Header with Maybe Count */}
       <div className="px-5 pt-6 pb-4 flex items-center justify-between border-b border-gray-200">
-        <button onClick={() => navigate("/")} className="p-2 rounded-2xl bg-muted hover:bg-border transition-all">
+        <button onClick={() => navigate("/")} className="p-2 rounded-2xl bg-gray-200 hover:bg-gray-300 transition-all">
           <ArrowLeft className="w-5 h-5 text-foreground" />
         </button>
         <div className="flex items-center gap-4">
