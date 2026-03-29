@@ -118,7 +118,7 @@ export default function Swipe() {
             transition={{ duration: 0.3, ease: "easeOut" }}
           />
         </div>
-        <p className="text-xs text-muted-foreground mt-1 text-center">{Math.round((currentIndex / restaurants.length) * 100)}%</p>
+        <p className="text-xs text-muted-foreground mt-1 text-center">{currentIndex} of {restaurants.length}</p>
       </div>
 
       {/* Swipe Controls */}
