@@ -150,11 +150,11 @@ export default function RestaurantCard({ restaurant, onSwipe, onBlock, isTop }) 
               target="_blank"
               rel="noopener noreferrer"
               onClick={e => e.stopPropagation()}
-              className="flex items-center gap-1.5 font-semibold"
-              style={{ color: '#4285F4', fontSize: '13px', textDecoration: 'none' }}
+              className="flex items-center gap-1 font-semibold"
+              style={{ color: '#4285F4', fontSize: '12px', textDecoration: 'none' }}
             >
-              <ExternalLink style={{ width: 13, height: 13 }} />
-              View on Google Maps
+              <MapPin style={{ width: 12, height: 12, flexShrink: 0 }} />
+              {address}
             </a>
             {onBlock && (
               <button
