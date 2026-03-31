@@ -80,7 +80,17 @@ function incrementSessionShareCount() {
 export default function WinnerModal({ restaurant, maybes, onClose, onPickAgain, isCardTap = false }) {
   const [showConfetti, setShowConfetti] = useState(false);
   const [showShare, setShowShare] = useState(false);
+  const { name = 'Unknown', cuisine, rating, review_count, distance, price_level, description, photo_url, address } = restaurant;
   const priceLevel = price_level ? PRICE_MAP[price_level] || PRICE_MAP[price_level.toString()] : null;
+
+  useEffect(() => {
+    setShowConfetti(true);
+    if (!isCardTap) {
+      haptics.winnerLands();
+    } else {
+      if (navigator.vibrate) navigator.vibrate([100, 30, 100]);
+    }
+  }, [isCardTap]);
 
   function handlePickAgain() {
     haptics.pickForUs();
