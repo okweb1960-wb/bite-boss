@@ -80,7 +80,6 @@ export default function Results() {
   const allRestaurants = state?.allRestaurants || [];
   const unseen = allRestaurants.filter(r => !maybes.find(m => m.name === r.name));
   
-  const [showUnseen, setShowUnseen] = useState(maybes.length === 0);
   const [dragStart, setDragStart] = useState(null);
   const [winner, setWinner] = useState(null);
   const [selectedCard, setSelectedCard] = useState(null);
@@ -96,22 +95,6 @@ export default function Results() {
       await navigator.clipboard.writeText(message);
       alert('Copied to clipboard!');
     }
-  }
-  
-  function handleBottomIndicatorDrag(e) {
-    if (!e.touches) return;
-    const touchY = e.touches[0].clientY;
-    
-    if (dragStart === null) {
-      setDragStart(touchY);
-    } else if (dragStart - touchY > 50) {
-      setShowUnseen(true);
-      setDragStart(null);
-    }
-  }
-  
-  function handleTouchEnd() {
-    setDragStart(null);
   }
 
   function pickWinner() {
@@ -141,6 +124,7 @@ export default function Results() {
   }
   
   const showEmptyState = maybes.length === 0;
+  const showUnseen = false;
   
   return (
     <div className="flex flex-col min-h-screen bg-background">
@@ -219,79 +203,10 @@ export default function Results() {
               </div>
             )}
             
-            {/* Bottom Indicator (always visible, even when scrolling) */}
-            {!showEmptyState && unseen.length > 0 && (
-              <motion.div
-                className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-5 py-4 cursor-grab active:cursor-grabbing"
-                onTouchStart={handleBottomIndicatorDrag}
-                onTouchMove={handleBottomIndicatorDrag}
-                onTouchEnd={handleTouchEnd}
-                onClick={() => setShowUnseen(true)}
-                whileHover={{ scale: 1.02 }}
-              >
-                <div className="flex flex-col items-center gap-2">
-                  <div className="w-10 h-1 bg-teal-300 rounded-full" />
-                  <p className="text-sm font-semibold text-teal-600 flex items-center gap-1">
-                    {unseen.length} more restaurants <ChevronUp className="w-4 h-4" />
-                  </p>
-                </div>
-              </motion.div>
-            )}
           </motion.div>
         ) : null}
       </AnimatePresence>
       
-      {/* LAYER 2: BOTTOM SHEET (UNSEEN) */}
-      <AnimatePresence>
-        {showUnseen && (
-          <>
-            {/* Overlay */}
-            <motion.div
-              className="fixed inset-0 bg-black/30 z-40"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setShowUnseen(false)}
-            />
-            
-            {/* Bottom Sheet */}
-            <motion.div
-              className="fixed bottom-0 left-0 right-0 bg-white rounded-t-3xl shadow-2xl z-50 flex flex-col"
-              style={{ height: "85vh" }}
-              initial={{ y: "100%" }}
-              animate={{ y: 0 }}
-              exit={{ y: "100%" }}
-              transition={{ type: "spring", damping: 30, stiffness: 300 }}
-            >
-              {/* Handle + Header */}
-              <div className="px-5 pt-4 pb-3 border-b border-gray-200">
-                <div className="flex justify-center mb-3">
-                  <div className="w-10 h-1 bg-teal-300 rounded-full" />
-                </div>
-                <div className="flex items-center justify-between">
-                  <h2 className="font-playfair text-2xl font-bold text-foreground">
-                    Restaurants You Haven't Seen <span className="text-lg">({unseen.length})</span>
-                  </h2>
-                  <button
-                    onClick={() => setShowUnseen(false)}
-                    className="p-2 rounded-full hover:bg-gray-100 transition-all"
-                  >
-                    <X className="w-5 h-5 text-foreground" />
-                  </button>
-                </div>
-              </div>
-              
-              {/* List */}
-              <div className="flex-1 overflow-y-auto px-5 py-4 space-y-3">
-                {unseen.map(r => (
-                  <RestaurantCard key={r.name} restaurant={r} variant="unseen" />
-                ))}
-              </div>
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
-
       {/* Winner Modal */}
       {(winner || selectedCard) && (
         <WinnerModal
