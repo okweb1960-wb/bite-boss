@@ -262,7 +262,14 @@ Deno.serve(async (req) => {
       );
     }
 
-    // STEP 10: Sort and return
+    // STEP 10: Fallback if filters produce 0 results
+    let filterMismatch = false;
+    if (filteredRestaurants.length === 0 && allRestaurants.length > 0) {
+      filteredRestaurants = allRestaurants;
+      filterMismatch = true;
+    }
+
+    // STEP 11: Sort
     filteredRestaurants = filteredRestaurants.sort((a, b) => {
       const ratingDiff = (b.rating || 0) - (a.rating || 0);
       if (Math.abs(ratingDiff) > 0.3) return ratingDiff;
@@ -270,7 +277,8 @@ Deno.serve(async (req) => {
     });
 
     return Response.json({ 
-      restaurants: filteredRestaurants, 
+      restaurants: filteredRestaurants,
+      filterMismatch,
       availableCuisines,
       debug: {
         totalFromGoogle: (broadData.places || []).length,
