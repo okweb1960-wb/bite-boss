@@ -29,6 +29,25 @@ const CUISINE_KEYWORDS = {
   'desserts':      { words: ['dessert', 'ice cream', 'bakery', 'cake', 'pastry', 'donut', 'yogurt', 'gelato'], types: ['ice_cream_shop', 'bakery', 'dessert_shop'] },
 };
 
+const CUISINE_SEARCH_QUERIES = {
+  'american':      'american restaurant grill',
+  'burgers':       'burger hamburger fast food',
+  'mexican':       'mexican restaurant tacos',
+  'italian':       'italian restaurant pasta',
+  'pizza':         'pizza pizzeria',
+  'chinese':       'chinese restaurant',
+  'japanese':      'japanese restaurant ramen',
+  'sushi':         'sushi restaurant',
+  'thai':          'thai restaurant',
+  'indian':        'indian restaurant curry',
+  'mediterranean': 'mediterranean greek restaurant',
+  'bbq':           'bbq barbecue smokehouse',
+  'seafood':       'seafood restaurant fish',
+  'breakfast':     'breakfast brunch diner',
+  'cafe':          'cafe coffee shop',
+  'desserts':      'dessert ice cream bakery',
+};
+
 const PRICE_MAP = { PRICE_LEVEL_FREE: 1, PRICE_LEVEL_INEXPENSIVE: 1, PRICE_LEVEL_MODERATE: 2, PRICE_LEVEL_EXPENSIVE: 3, PRICE_LEVEL_VERY_EXPENSIVE: 4 };
 
 const VALID_FOOD_TYPES = new Set([
@@ -102,8 +121,8 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Invalid coordinates' }, { status: 400 });
     }
 
-    // STEP 1: Make 6 parallel cuisine group queries
-    const cuisineGroupQueries = [
+    // STEP 1: Build queries — always run 6 broad queries, plus targeted ones for selected cuisines
+    const broadQueries = [
       'american restaurant burger fast food',
       'mexican italian pizza restaurant',
       'chinese japanese sushi ramen thai',
@@ -111,6 +130,12 @@ Deno.serve(async (req) => {
       'seafood breakfast brunch restaurant',
       'cafe coffee bakery dessert ice cream',
     ];
+
+    const targetedQueries = cuisineList
+      .map(c => CUISINE_SEARCH_QUERIES[c.toLowerCase()])
+      .filter(Boolean);
+
+    const cuisineGroupQueries = [...broadQueries, ...targetedQueries];
 
     const allResults = await Promise.all(
       cuisineGroupQueries.map(async (query) => {
