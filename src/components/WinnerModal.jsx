@@ -139,7 +139,7 @@ export default function WinnerModal({ restaurant, maybes, onClose, onPickAgain, 
 
         {/* Content */}
         <motion.div
-          className="flex flex-col items-center gap-6 max-w-md w-full overflow-y-auto max-h-[90vh] pb-4"
+          className="flex flex-col items-center gap-4 max-w-md w-full"
           initial={{ scale: 0.8, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           transition={isCardTap ? { duration: 0.3, ease: "easeOut" } : { delay: 0.3, type: "spring", damping: 20 }}
@@ -150,10 +150,10 @@ export default function WinnerModal({ restaurant, maybes, onClose, onPickAgain, 
           </h1>
 
           {/* Restaurant Card */}
-          <div className="w-full bg-white rounded-3xl shadow-2xl overflow-hidden">
+          <div className="w-full bg-white rounded-3xl shadow-2xl overflow-y-auto" style={{ maxHeight: '70vh' }}>
             {/* Photo */}
             {photo_url && (
-              <div className="relative w-full h-48 overflow-hidden">
+              <div className="relative w-full overflow-hidden" style={{ height: '160px' }}>
                 <img
                   src={photo_url}
                   alt={name}
