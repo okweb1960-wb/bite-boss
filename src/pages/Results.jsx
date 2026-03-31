@@ -86,6 +86,17 @@ export default function Results() {
   const [selectedCard, setSelectedCard] = useState(null);
   const [lastWinner, setLastWinner] = useState(null);
   const [isShuffling, setIsShuffling] = useState(false);
+
+  async function handleShareMaybes() {
+    const names = maybes.map(r => `• ${r.name}${r.cuisine ? ` (${r.cuisine})` : ''}`).join('\n');
+    const message = `Deciding with someone? Here's my shortlist 👇\n\n${names}\n\nFind your perfect restaurant: ${window.location.origin}`;
+    if (navigator.share) {
+      await navigator.share({ text: message });
+    } else {
+      await navigator.clipboard.writeText(message);
+      alert('Copied to clipboard!');
+    }
+  }
   
   function handleBottomIndicatorDrag(e) {
     if (!e.touches) return;
@@ -187,12 +198,24 @@ export default function Results() {
                 </button>
               </div>
             ) : (
-              <div className="flex-1 overflow-y-auto px-5 py-4 space-y-3 pb-32">
+              <div className="flex-1 overflow-y-auto px-5 py-4 space-y-3 pb-36">
                 {maybes.map(r => (
                   <div key={r.name} onClick={() => setSelectedCard(r)} className="cursor-pointer hover:opacity-85 transition-opacity">
                     <RestaurantCard restaurant={r} variant="default" />
                   </div>
                 ))}
+                {/* Share Maybes — Trigger Point 2 */}
+                {maybes.length > 0 && (
+                  <div className="mt-4 py-4 flex flex-col items-center gap-2 border-t border-gray-100">
+                    <p className="text-sm font-semibold text-gray-500 text-center">Deciding with someone? Send them this list 👇</p>
+                    <button
+                      onClick={handleShareMaybes}
+                      className="px-6 py-3 bg-teal-600 text-white font-black rounded-2xl shadow hover:shadow-md transition-all text-sm"
+                    >
+                      Share My Maybes 📲
+                    </button>
+                  </div>
+                )}
               </div>
             )}
             

@@ -62,19 +62,24 @@ function Confetti() {
   return null;
 }
 
+const APP_LINK = window.location.origin;
+
+function getShareMessage(restaurant) {
+  const { name, cuisine, rating, distance } = restaurant;
+  const details = [name, rating ? `${rating} ⭐` : null, cuisine, distance].filter(Boolean).join(' • ');
+  return `Stop arguing about where to eat. This app picks for you and it's kind of amazing 🎉 ${details} won tonight.\n\n${APP_LINK}`;
+}
+
+function getSessionShareCount() {
+  return parseInt(sessionStorage.getItem('shareCount') || '0');
+}
+function incrementSessionShareCount() {
+  sessionStorage.setItem('shareCount', getSessionShareCount() + 1);
+}
+
 export default function WinnerModal({ restaurant, maybes, onClose, onPickAgain, isCardTap = false }) {
   const [showConfetti, setShowConfetti] = useState(false);
-
-  useEffect(() => {
-    setShowConfetti(true);
-    if (!isCardTap) {
-      haptics.winnerLands();
-    } else {
-      if (navigator.vibrate) navigator.vibrate([100, 30, 100]);
-    }
-  }, [isCardTap]);
-
-  const { name = "Unknown", cuisine, rating, review_count, distance, price_level, description, photo_url, address } = restaurant;
+  const [showShare, setShowShare] = useState(false);
   const priceLevel = price_level ? PRICE_MAP[price_level] || PRICE_MAP[price_level.toString()] : null;
 
   function handlePickAgain() {
@@ -88,6 +93,20 @@ export default function WinnerModal({ restaurant, maybes, onClose, onPickAgain, 
       `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(address)}`,
       "_blank"
     );
+    if (getSessionShareCount() < 2) {
+      setShowShare(true);
+      incrementSessionShareCount();
+    }
+  }
+
+  async function handleShare() {
+    const message = getShareMessage(restaurant);
+    if (navigator.share) {
+      await navigator.share({ text: message });
+    } else {
+      await navigator.clipboard.writeText(message);
+      alert('Message copied to clipboard!');
+    }
   }
 
   return (
@@ -202,6 +221,22 @@ export default function WinnerModal({ restaurant, maybes, onClose, onPickAgain, 
                   Pick Again 🎲
                 </button>
               </div>
+
+              {/* Share Section */}
+              {showShare && (
+                <div className="mt-4 pt-4 border-t border-gray-100 flex flex-col items-center gap-2">
+                  <p className="text-sm font-semibold text-gray-600 text-center">Settled the debate! Send this to your group 👇</p>
+                  <button
+                    onClick={handleShare}
+                    className="w-full py-3 bg-orange-500 text-white font-black rounded-2xl shadow hover:shadow-md transition-all text-sm"
+                  >
+                    Share This Pick 📲
+                  </button>
+                  <button onClick={onClose} className="text-xs text-gray-400 hover:text-gray-500 transition-colors">
+                    No thanks
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </motion.div>
