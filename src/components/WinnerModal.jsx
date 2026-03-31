@@ -139,7 +139,7 @@ export default function WinnerModal({ restaurant, maybes, onClose, onPickAgain, 
 
         {/* Content */}
         <motion.div
-          className="flex flex-col items-center gap-6 max-w-md w-full"
+          className="flex flex-col items-center gap-6 max-w-md w-full overflow-y-auto max-h-[90vh] pb-4"
           initial={{ scale: 0.8, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           transition={isCardTap ? { duration: 0.3, ease: "easeOut" } : { delay: 0.3, type: "spring", damping: 20 }}
@@ -150,7 +150,7 @@ export default function WinnerModal({ restaurant, maybes, onClose, onPickAgain, 
           </h1>
 
           {/* Restaurant Card */}
-          <div className="w-full bg-white rounded-3xl overflow-hidden shadow-2xl">
+          <div className="w-full bg-white rounded-3xl shadow-2xl overflow-hidden">
             {/* Photo */}
             {photo_url && (
               <div className="relative w-full h-48 overflow-hidden">
@@ -232,21 +232,19 @@ export default function WinnerModal({ restaurant, maybes, onClose, onPickAgain, 
                 </button>
               </div>
 
-              {/* Share Section */}
-              {showShare && (
-                <div className="mt-4 pt-4 border-t border-gray-100 flex flex-col items-center gap-2">
-                  <p className="text-sm font-semibold text-gray-600 text-center">Settled the debate! Send this to your group 👇</p>
-                  <button
-                    onClick={handleShare}
-                    className="w-full py-3 bg-orange-500 text-white font-black rounded-2xl shadow hover:shadow-md transition-all text-sm"
-                  >
-                    Share This Pick 📲
-                  </button>
-                  <button onClick={onClose} className="text-xs text-gray-400 hover:text-gray-500 transition-colors">
-                    No thanks
-                  </button>
-                </div>
-              )}
+              {/* Share Section — always visible */}
+              <div className="mt-4 pt-4 border-t border-gray-100 flex flex-col items-center gap-2">
+                <p className="text-sm font-semibold text-gray-600 text-center">Settled the debate! Send this to your group 👇</p>
+                <button
+                  onClick={handleShare}
+                  className="w-full py-3 bg-orange-500 text-white font-black rounded-2xl shadow hover:shadow-md transition-all text-sm"
+                >
+                  Share This Pick 📲
+                </button>
+                <button onClick={onClose} className="text-xs text-gray-400 hover:text-gray-500 transition-colors">
+                  No thanks
+                </button>
+              </div>
             </div>
           </div>
         </motion.div>
