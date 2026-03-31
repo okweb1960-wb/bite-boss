@@ -1,15 +1,13 @@
 const CUISINES = [
-  "American", "Mexican", "Italian", "Chinese", "Japanese", "Thai",
-  "Indian", "Mediterranean", "Pizza", "Burgers", "Sandwiches", "Sushi",
-  "BBQ", "Seafood", "Vegetarian", "Vegan", "Breakfast", "Desserts"
+  "American", "Burgers", "Mexican", "Italian", "Pizza",
+  "Chinese", "Japanese", "Sushi", "Thai", "Indian",
+  "Mediterranean", "BBQ", "Seafood", "Breakfast", "Cafe", "Desserts"
 ];
 
 const SERVICE_TYPES = [
-  { value: "sit-down", label: "🍽️ Sit-Down" },
-  { value: "takeout", label: "📦 Takeout" },
-  { value: "fast food", label: "⚡ Fast Food" },
-  { value: "delivery", label: "🛵 Delivery" },
-  { value: "cafe", label: "☕ Café" },
+  { value: "dine_in", label: "🍽️ Dine In" },
+  { value: "takeout", label: "🥡 Takeout" },
+  { value: "delivery", label: "🚗 Delivery" },
 ];
 
 const RADIUS_OPTIONS = [1, 3, 5, 10, 20];
@@ -84,18 +82,8 @@ export default function FilterPanel({ filters, onChange }) {
       </div>
       <div>
         <h3 className="font-bold text-foreground mb-1">How do you want to eat?</h3>
-        <p className="text-xs text-muted-foreground mb-3">Pick one or more</p>
+        <p className="text-xs text-muted-foreground mb-3">Pick one or more (or none for all)</p>
         <div className="flex gap-2 flex-wrap">
-          <button
-            onClick={() => onChange({ ...filters, services: [] })}
-            className={`px-4 py-2 rounded-full font-semibold text-sm transition-all ${
-              (filters.services || []).length === 0
-                ? "bg-orange-500 text-white shadow-md scale-105"
-                : "bg-gray-200 text-gray-700 hover:bg-gray-300"
-            }`}
-          >
-            Any Style
-          </button>
           {SERVICE_TYPES.map(s => {
             const selected = (filters.services || []).includes(s.value);
             return (
@@ -104,8 +92,8 @@ export default function FilterPanel({ filters, onChange }) {
                 onClick={() => toggleService(s.value)}
                 className={`px-4 py-2 rounded-full font-semibold text-sm transition-all ${
                   selected
-                    ? "bg-orange-500 text-white shadow-md scale-105"
-                    : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                    ? "bg-teal-600 text-white shadow-md scale-105"
+                    : "border-2 border-teal-600 text-teal-600 hover:bg-teal-50"
                 }`}
               >
                 {s.label}

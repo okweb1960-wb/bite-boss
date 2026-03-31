@@ -11,25 +11,22 @@ function distanceMiles(lat1, lon1, lat2, lon2) {
 }
 
 const CUISINE_KEYWORDS = {
-  'mexican':       { words: ['mexican', 'taco', 'burrito', 'tex-mex', 'tamale', 'quesadilla', 'enchilada', 'tortilla', 'salsa', 'chipotle', 'guacamole', 'nacho', 'taqueria', 'cantina'], types: ['mexican_restaurant'] },
-  'italian':       { words: ['italian', 'pizza', 'pasta', 'trattoria'], types: ['italian_restaurant', 'pizza_restaurant'] },
+  'american':      { words: ['american grill', 'american kitchen', 'american food', 'american cuisine'], types: ['american_restaurant'] },
+  'burgers':       { words: ['burger', 'hamburger', 'smash burger', 'fast food', 'wendy', 'mcdonald', 'whataburger', 'five guys', 'shake shack', 'culver', 'in-n-out', 'sonic'], types: ['hamburger_restaurant', 'fast_food_restaurant'] },
+  'mexican':       { words: ['mexican', 'taco', 'burrito', 'tex-mex', 'tamale', 'quesadilla', 'enchilada', 'tortilla', 'taqueria', 'cantina'], types: ['mexican_restaurant'] },
+  'italian':       { words: ['italian', 'trattoria', 'pasta', 'osteria'], types: ['italian_restaurant'] },
   'pizza':         { words: ['pizza', 'pizzeria'], types: ['pizza_restaurant'] },
   'chinese':       { words: ['chinese', 'dim sum', 'cantonese', 'szechuan'], types: ['chinese_restaurant'] },
-  'japanese':      { words: ['japanese', 'sushi', 'ramen', 'teriyaki', 'hibachi'], types: ['japanese_restaurant', 'ramen_restaurant', 'sushi_restaurant'] },
-  'sushi':         { words: ['sushi', 'japanese'], types: ['sushi_restaurant', 'japanese_restaurant'] },
+  'japanese':      { words: ['japanese', 'ramen', 'teriyaki', 'hibachi', 'izakaya'], types: ['japanese_restaurant', 'ramen_restaurant'] },
+  'sushi':         { words: ['sushi', 'sashimi', 'omakase'], types: ['sushi_restaurant'] },
   'thai':          { words: ['thai'], types: ['thai_restaurant'] },
-  'indian':        { words: ['indian', 'curry'], types: ['indian_restaurant'] },
-  'mediterranean': { words: ['mediterranean', 'greek', 'falafel', 'kebab', 'gyro'], types: ['mediterranean_restaurant', 'greek_restaurant', 'middle_eastern_restaurant'] },
-  'burgers':       { words: ['burger', 'hamburger', 'smash', 'wendy', 'mcdonald', 'whataburger', 'five guys', 'shake shack', 'culver'], types: ['hamburger_restaurant'] },
-  'chicken':       { words: ['chicken', 'fried chicken', 'wings', 'cane', 'zaxby', 'kfc', 'popeyes', 'chick-fil', 'wingstop', 'raising'], types: ['chicken_restaurant'] },
-  'sandwiches':    { words: ['sandwich', 'sub', 'deli', 'hoagie', 'subway', 'jimmy john', 'jersey mike', 'potbelly'], types: ['sandwich_shop'] },
+  'indian':        { words: ['indian', 'curry', 'tandoor'], types: ['indian_restaurant'] },
+  'mediterranean': { words: ['mediterranean', 'greek', 'falafel', 'kebab', 'gyro', 'levantine', 'middle eastern'], types: ['mediterranean_restaurant', 'greek_restaurant', 'middle_eastern_restaurant'] },
   'bbq':           { words: ['bbq', 'barbecue', 'barbeque', 'smokehouse'], types: ['barbecue_restaurant'] },
   'seafood':       { words: ['seafood', 'fish', 'crab', 'lobster', 'shrimp', 'oyster'], types: ['seafood_restaurant'] },
   'breakfast':     { words: ['breakfast', 'brunch', 'pancake', 'waffle', 'omelette', 'diner', 'ihop', 'denny'], types: ['breakfast_restaurant', 'brunch_restaurant'] },
-  'desserts':      { words: ['dessert', 'ice cream', 'bakery', 'cake', 'pastry', 'donut', 'yogurt'], types: ['ice_cream_shop', 'bakery', 'dessert_shop'] },
-  'vegetarian':    { words: ['vegetarian', 'vegan', 'plant-based'], types: ['vegan_restaurant', 'vegetarian_restaurant'] },
-  'vegan':         { words: ['vegan', 'plant-based'], types: ['vegan_restaurant'] },
-  'american':      { words: ['american grill', 'american cuisine', 'american kitchen', 'american food'], types: ['american_restaurant', 'hamburger_restaurant', 'steak_house', 'fast_food_restaurant'] },
+  'cafe':          { words: ['cafe', 'coffee', 'espresso', 'coffeehouse'], types: ['cafe', 'coffee_shop'] },
+  'desserts':      { words: ['dessert', 'ice cream', 'bakery', 'cake', 'pastry', 'donut', 'yogurt', 'gelato'], types: ['ice_cream_shop', 'bakery', 'dessert_shop'] },
 };
 
 const PRICE_MAP = { PRICE_LEVEL_FREE: 1, PRICE_LEVEL_INEXPENSIVE: 1, PRICE_LEVEL_MODERATE: 2, PRICE_LEVEL_EXPENSIVE: 3, PRICE_LEVEL_VERY_EXPENSIVE: 4 };
@@ -107,12 +104,12 @@ Deno.serve(async (req) => {
 
     // STEP 1: Make 6 parallel cuisine group queries
     const cuisineGroupQueries = [
-      'american burger diner steakhouse',
-      'mexican italian pizza pasta',
+      'american restaurant burger fast food',
+      'mexican italian pizza restaurant',
       'chinese japanese sushi ramen thai',
-      'indian mediterranean greek middle eastern',
-      'bbq seafood sandwiches chicken wings',
-      'breakfast brunch cafe bakery dessert',
+      'indian mediterranean greek middle eastern bbq',
+      'seafood breakfast brunch restaurant',
+      'cafe coffee bakery dessert ice cream',
     ];
 
     const allResults = await Promise.all(
@@ -204,6 +201,9 @@ Deno.serve(async (req) => {
         distance_miles: d,
         distance: d === null ? '' : d < 0.1 ? `${Math.round(d * 5280)} ft` : `${d.toFixed(1)} mi`,
         photo_url: photoUrl,
+        dine_in: p.dineIn,
+        takeout: p.takeout,
+        delivery: p.delivery,
       };
     }
 
@@ -245,8 +245,20 @@ Deno.serve(async (req) => {
     // STEP 9: Apply cuisine selection filter if user selected specific cuisines
     let filteredRestaurants = allRestaurants;
     if (cuisineList.length > 0) {
-      filteredRestaurants = filteredRestaurants.filter(r => 
+      filteredRestaurants = filteredRestaurants.filter(r =>
         cuisineList.some(c => r.cuisine.toLowerCase() === c.toLowerCase())
+      );
+    }
+
+    // STEP 9b: Apply service filter
+    if (serviceList.length > 0) {
+      filteredRestaurants = filteredRestaurants.filter(r =>
+        serviceList.some(s => {
+          if (s === 'dine_in') return r.dine_in === true;
+          if (s === 'takeout') return r.takeout === true;
+          if (s === 'delivery') return r.delivery === true;
+          return true;
+        })
       );
     }
 
