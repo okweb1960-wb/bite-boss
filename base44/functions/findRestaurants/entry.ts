@@ -30,16 +30,17 @@ const CUISINE_KEYWORDS = {
   'fast food':     { words: ['mcdonald', 'burger king', 'wendy', 'taco bell', 'kfc', 'chick-fil-a', 'subway', 'fast food', 'whataburger', 'sonic', 'popeyes', 'dairy queen', 'jack in the box', 'five guys', 'in-n-out', 'culver', 'shake shack'], types: ['fast_food_restaurant'] },
 };
 
-// TEXT_SEARCH cuisines: use searchText endpoint with textQuery + includedPrimaryTypes
+// TEXT_SEARCH cuisines: use searchText endpoint with textQuery only (no includedPrimaryTypes)
+// Using includedType (singular, soft filter) avoids the AND-logic trap that blocks local spots
 const TEXT_SEARCH_CUISINES = {
-  'burgers':       { textQuery: 'burgers',           types: ['restaurant', 'fast_food_restaurant', 'hamburger_restaurant'] },
-  'bbq':           { textQuery: 'bbq barbecue',      types: ['restaurant', 'fast_food_restaurant', 'barbecue_restaurant'] },
-  'pizza':         { textQuery: 'pizza',             types: ['restaurant', 'fast_food_restaurant', 'pizza_restaurant'] },
-  'sushi':         { textQuery: 'sushi',             types: ['restaurant', 'sushi_restaurant', 'japanese_restaurant'] },
-  'seafood':       { textQuery: 'seafood',           types: ['restaurant', 'seafood_restaurant'] },
-  'breakfast':     { textQuery: 'breakfast brunch',  types: ['restaurant', 'breakfast_restaurant', 'brunch_restaurant', 'cafe'] },
-  'mediterranean': { textQuery: 'mediterranean',     types: ['restaurant', 'mediterranean_restaurant', 'greek_restaurant', 'middle_eastern_restaurant'] },
-  'desserts':      { textQuery: 'dessert ice cream', types: ['ice_cream_shop', 'bakery', 'dessert_shop', 'cafe'] },
+  'burgers':       { textQuery: 'best burgers' },
+  'bbq':           { textQuery: 'bbq barbecue smokehouse' },
+  'pizza':         { textQuery: 'best pizza' },
+  'sushi':         { textQuery: 'sushi' },
+  'seafood':       { textQuery: 'seafood' },
+  'breakfast':     { textQuery: 'breakfast brunch' },
+  'mediterranean': { textQuery: 'mediterranean' },
+  'desserts':      { textQuery: 'dessert ice cream' },
 };
 
 // NEARBY_SEARCH cuisines: use searchNearby endpoint with includedPrimaryTypes only
@@ -78,7 +79,7 @@ const EXCLUDED_KEYWORDS = /putt|golf|bowling|cinema|theater|theatre|arcade|tramp
 const FIELD_MASK = [
   'places.displayName', 'places.formattedAddress', 'places.location', 'places.rating',
   'places.userRatingCount', 'places.priceLevel', 'places.currentOpeningHours',
-  'places.types', 'places.editorialSummary', 'places.businessStatus', 'places.photos',
+  'places.types', 'places.primaryType', 'places.editorialSummary', 'places.businessStatus', 'places.photos',
   'places.delivery', 'places.takeout', 'places.dineIn',
   'places.servesWine', 'places.servesBeer', 'places.servesCocktails',
 ].join(',');
@@ -140,11 +141,11 @@ Deno.serve(async (req) => {
     // STEP 1: Build and execute queries using the correct endpoint per cuisine type
     const SEARCH_RADIUS = Math.max(radiusMeters, 8046);
 
-    async function runTextSearch(textQuery, includedPrimaryTypes, cuisineLabel) {
+    async function runTextSearch(textQuery, cuisineLabel) {
       const body = {
         textQuery,
         maxResultCount: 20,
-        includedPrimaryTypes,
+        includedType: 'restaurant',
         locationBias: { circle: { center: { latitude: lat, longitude: lng }, radius: SEARCH_RADIUS } },
         ...(open_now ? { openNow: true } : {}),
       };
@@ -181,14 +182,13 @@ Deno.serve(async (req) => {
       queryPromises = cuisineList.map(c => {
         const key = c.toLowerCase();
         if (TEXT_SEARCH_CUISINES[key]) {
-          const { textQuery, types } = TEXT_SEARCH_CUISINES[key];
-          return runTextSearch(textQuery, types, c);
+          return runTextSearch(TEXT_SEARCH_CUISINES[key].textQuery, c);
         }
         if (NEARBY_SEARCH_CUISINES[key]) {
           return runNearbySearch(NEARBY_SEARCH_CUISINES[key], c);
         }
-        // Fallback: text search with broad types
-        return runTextSearch(`${key} restaurant`, ['restaurant', 'fast_food_restaurant'], c);
+        // Fallback: plain text search
+        return runTextSearch(`${key} restaurant`, c);
       });
     }
 
