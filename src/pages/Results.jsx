@@ -123,7 +123,6 @@ export default function Results() {
   }
   
   const showEmptyState = maybes.length === 0;
-  const showUnseen = false;
   
   return (
     <div className="flex flex-col min-h-screen bg-background">
