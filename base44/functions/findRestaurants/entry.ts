@@ -30,24 +30,26 @@ const CUISINE_KEYWORDS = {
   'fast food':     { words: ['mcdonald', 'burger king', 'wendy', 'taco bell', 'kfc', 'chick-fil-a', 'subway', 'fast food', 'whataburger', 'sonic', 'popeyes', 'dairy queen', 'jack in the box', 'five guys', 'in-n-out', 'culver', 'shake shack'], types: ['fast_food_restaurant'] },
 };
 
+// Cuisines with a direct Google Primary Type — use includedPrimaryTypes for precision
+// Cuisines without a primary type — use textQuery so Google searches menu/reviews
 const CUISINE_SEARCH_QUERIES = {
-  'american':      { textQuery: 'american restaurant grill' },
-  'burgers':       { textQuery: 'burger hamburger' },
-  'mexican':       { textQuery: 'mexican restaurant tacos' },
-  'italian':       { textQuery: 'italian restaurant pasta' },
-  'pizza':         { textQuery: 'pizza pizzeria' },
-  'chinese':       { textQuery: 'chinese restaurant' },
-  'japanese':      { textQuery: 'japanese restaurant ramen' },
-  'sushi':         { textQuery: 'sushi restaurant' },
-  'thai':          { textQuery: 'thai restaurant' },
-  'indian':        { textQuery: 'indian restaurant curry' },
-  'mediterranean': { textQuery: 'mediterranean greek restaurant' },
-  'bbq':           { textQuery: 'bbq barbecue smokehouse' },
-  'seafood':       { textQuery: 'seafood restaurant fish' },
-  'breakfast':     { textQuery: 'breakfast brunch diner' },
-  'cafe':          { textQuery: 'cafe coffee shop' },
-  'desserts':      { textQuery: 'dessert ice cream bakery' },
-  'fast food':     { textQuery: 'fast food restaurant', includedPrimaryTypes: ['fast_food_restaurant'] },
+  'american':      { textQuery: 'american restaurant', includedPrimaryTypes: ['american_restaurant'] },
+  'burgers':       { textQuery: 'burgers' },
+  'fast food':     { textQuery: 'fast food', includedPrimaryTypes: ['fast_food_restaurant'] },
+  'mexican':       { textQuery: 'mexican restaurant', includedPrimaryTypes: ['mexican_restaurant'] },
+  'italian':       { textQuery: 'italian restaurant', includedPrimaryTypes: ['italian_restaurant'] },
+  'pizza':         { textQuery: 'pizza' },
+  'chinese':       { textQuery: 'chinese restaurant', includedPrimaryTypes: ['chinese_restaurant'] },
+  'japanese':      { textQuery: 'japanese restaurant', includedPrimaryTypes: ['japanese_restaurant'] },
+  'sushi':         { textQuery: 'sushi' },
+  'thai':          { textQuery: 'thai restaurant', includedPrimaryTypes: ['thai_restaurant'] },
+  'indian':        { textQuery: 'indian restaurant', includedPrimaryTypes: ['indian_restaurant'] },
+  'mediterranean': { textQuery: 'mediterranean restaurant' },
+  'bbq':           { textQuery: 'bbq barbecue' },
+  'seafood':       { textQuery: 'seafood restaurant' },
+  'breakfast':     { textQuery: 'breakfast brunch' },
+  'cafe':          { textQuery: 'cafe coffee', includedPrimaryTypes: ['cafe'] },
+  'desserts':      { textQuery: 'dessert ice cream' },
 };
 
 const PRICE_MAP = { PRICE_LEVEL_FREE: 1, PRICE_LEVEL_INEXPENSIVE: 1, PRICE_LEVEL_MODERATE: 2, PRICE_LEVEL_EXPENSIVE: 3, PRICE_LEVEL_VERY_EXPENSIVE: 4 };
@@ -123,14 +125,11 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Invalid coordinates' }, { status: 400 });
     }
 
-    // STEP 1: Build queries — always run 6 broad queries, plus targeted ones for selected cuisines
-    const broadQueries = [
-      'american restaurant burger fast food',
-      'mexican italian pizza restaurant',
-      'chinese japanese sushi ramen thai',
-      'indian mediterranean greek middle eastern bbq',
-      'seafood breakfast brunch restaurant',
-      'cafe coffee bakery dessert ice cream',
+    // STEP 1: Build queries
+    // Broad queries use includedPrimaryTypes for general discovery (All mode)
+    const broadQueryConfigs = [
+      { textQuery: 'restaurant', includedPrimaryTypes: ['restaurant', 'fast_food_restaurant', 'cafe'] },
+      { textQuery: 'food near me' },
     ];
 
     const targetedQueryConfigs = cuisineList
@@ -140,8 +139,10 @@ Deno.serve(async (req) => {
       })
       .filter(Boolean);
 
-    const broadQueryConfigs = broadQueries.map(q => ({ textQuery: q }));
-    const allQueryConfigs = [...broadQueryConfigs, ...targetedQueryConfigs];
+    // When cuisines are selected, skip broad queries and only run targeted ones
+    const allQueryConfigs = cuisineList.length > 0
+      ? targetedQueryConfigs
+      : broadQueryConfigs;
 
     const allResults = await Promise.all(
       allQueryConfigs.map(async (config) => {
