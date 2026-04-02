@@ -219,7 +219,12 @@ export default function Swipe() {
             >
               View Your {maybes.length} Maybes 💚
             </button>
-
+            <button
+              onClick={() => navigate("/")}
+              className="text-teal-700 font-bold px-8 py-3 rounded-2xl border-2 border-teal-600 hover:bg-teal-50 transition-all text-base"
+            >
+              🔄 Start Over & Adjust Filters
+            </button>
           </motion.div>
         )}
       </div>
