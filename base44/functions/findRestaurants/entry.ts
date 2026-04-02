@@ -39,7 +39,7 @@ const CUISINE_SEARCHES = {
   'pizza':         'pizza pizzeria',
   'chinese':       'chinese food dim sum',
   'japanese':      'japanese restaurant ramen hibachi',
-  'sushi':         'sushi sashimi',
+  'sushi':         'sushi and japanese restaurants',
   'thai':          'thai food curry',
   'indian':        'indian curry tandoor',
   'mediterranean': 'mediterranean greek middle eastern',
@@ -141,9 +141,11 @@ Deno.serve(async (req) => {
         textQuery,
         maxResultCount: 20,
         includedType: 'restaurant',
+        rankPreference: 'RELEVANCE',
         locationBias: { circle: { center: { latitude: lat, longitude: lng }, radius: SEARCH_RADIUS } },
         ...(open_now ? { openNow: true } : {}),
       };
+      console.log(`[${cuisineLabel || 'broad'}] textQuery: "${textQuery}" | lat: ${lat}, lng: ${lng} | radius: ${SEARCH_RADIUS}m`);
       const res = await fetch('https://places.googleapis.com/v1/places:searchText', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'X-Goog-Api-Key': GMAPS_KEY || '', 'X-Goog-FieldMask': FIELD_MASK },
