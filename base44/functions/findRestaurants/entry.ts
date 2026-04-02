@@ -30,23 +30,20 @@ const CUISINE_KEYWORDS = {
   'fast food':     { words: ['mcdonald', 'burger king', 'wendy', 'taco bell', 'kfc', 'chick-fil-a', 'subway', 'fast food', 'whataburger', 'sonic', 'popeyes', 'dairy queen', 'jack in the box', 'five guys', 'in-n-out', 'culver', 'shake shack'], types: ['fast_food_restaurant'] },
 };
 
-// TEXT_ONLY: These are menu items/keywords, NOT Google Primary Types.
-// Must use textQuery only — no includedPrimaryTypes or Google returns 0 results.
-const TEXT_ONLY_CUISINES = new Set(['burgers', 'bbq', 'pizza', 'sushi', 'seafood', 'breakfast', 'mediterranean', 'desserts']);
-
-const CUISINE_TEXT_QUERIES = {
-  'burgers':       'burgers near me',
-  'bbq':           'bbq barbecue near me',
-  'pizza':         'pizza near me',
-  'sushi':         'sushi near me',
-  'seafood':       'seafood restaurant near me',
-  'breakfast':     'breakfast brunch near me',
-  'mediterranean': 'mediterranean restaurant near me',
-  'desserts':      'dessert ice cream near me',
+// TEXT_SEARCH cuisines: use searchText endpoint with textQuery + includedPrimaryTypes
+const TEXT_SEARCH_CUISINES = {
+  'burgers':       { textQuery: 'burgers',           types: ['restaurant', 'fast_food_restaurant', 'hamburger_restaurant'] },
+  'bbq':           { textQuery: 'bbq barbecue',      types: ['restaurant', 'fast_food_restaurant', 'barbecue_restaurant'] },
+  'pizza':         { textQuery: 'pizza',             types: ['restaurant', 'fast_food_restaurant', 'pizza_restaurant'] },
+  'sushi':         { textQuery: 'sushi',             types: ['restaurant', 'sushi_restaurant', 'japanese_restaurant'] },
+  'seafood':       { textQuery: 'seafood',           types: ['restaurant', 'seafood_restaurant'] },
+  'breakfast':     { textQuery: 'breakfast brunch',  types: ['restaurant', 'breakfast_restaurant', 'brunch_restaurant', 'cafe'] },
+  'mediterranean': { textQuery: 'mediterranean',     types: ['restaurant', 'mediterranean_restaurant', 'greek_restaurant', 'middle_eastern_restaurant'] },
+  'desserts':      { textQuery: 'dessert ice cream', types: ['ice_cream_shop', 'bakery', 'dessert_shop', 'cafe'] },
 };
 
-// TYPE_BASED: These have a direct Google Primary Type for precision.
-const CUISINE_PRIMARY_TYPES = {
+// NEARBY_SEARCH cuisines: use searchNearby endpoint with includedPrimaryTypes only
+const NEARBY_SEARCH_CUISINES = {
   'american':      ['american_restaurant'],
   'fast food':     ['fast_food_restaurant'],
   'mexican':       ['mexican_restaurant'],
@@ -140,60 +137,62 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Invalid coordinates' }, { status: 400 });
     }
 
-    // STEP 1: Build queries
-    // All mode: use includedPrimaryTypes to get a full list of dining spots
-    const broadQueryConfigs = [
-      { textQuery: 'restaurants', includedPrimaryTypes: ['restaurant', 'fast_food_restaurant'] },
-    ];
+    // STEP 1: Build and execute queries using the correct endpoint per cuisine type
+    const SEARCH_RADIUS = Math.max(radiusMeters, 8046);
 
-    // Targeted: use textQuery-only for keyword cuisines, includedPrimaryTypes for typed cuisines
-    const targetedQueryConfigs = cuisineList.map(c => {
-      const key = c.toLowerCase();
-      if (TEXT_ONLY_CUISINES.has(key)) {
-        // Keyword search — do NOT add includedPrimaryTypes
-        return { textQuery: CUISINE_TEXT_QUERIES[key] || `${key} restaurant near me`, _cuisine: c };
-      }
-      const types = CUISINE_PRIMARY_TYPES[key];
-      if (types) {
-        return { textQuery: `${key} restaurant`, includedPrimaryTypes: types, _cuisine: c };
-      }
-      // Fallback: plain text search
-      return { textQuery: `${key} restaurant near me`, _cuisine: c };
-    }).filter(Boolean);
+    async function runTextSearch(textQuery, includedPrimaryTypes, cuisineLabel) {
+      const body = {
+        textQuery,
+        maxResultCount: 20,
+        includedPrimaryTypes,
+        locationBias: { circle: { center: { latitude: lat, longitude: lng }, radius: SEARCH_RADIUS } },
+        ...(open_now ? { openNow: true } : {}),
+      };
+      const res = await fetch('https://places.googleapis.com/v1/places:searchText', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Goog-Api-Key': GMAPS_KEY || '', 'X-Goog-FieldMask': FIELD_MASK },
+        body: JSON.stringify(body),
+      });
+      const data = await res.json();
+      return (data.places || []).map(p => ({ ...p, _sourceCuisine: cuisineLabel }));
+    }
 
-    const allQueryConfigs = cuisineList.length > 0 ? targetedQueryConfigs : broadQueryConfigs;
+    async function runNearbySearch(includedPrimaryTypes, cuisineLabel) {
+      const body = {
+        includedPrimaryTypes,
+        maxResultCount: 20,
+        locationRestriction: { circle: { center: { latitude: lat, longitude: lng }, radius: SEARCH_RADIUS } },
+        ...(open_now ? { openNow: true } : {}),
+      };
+      const res = await fetch('https://places.googleapis.com/v1/places:searchNearby', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Goog-Api-Key': GMAPS_KEY || '', 'X-Goog-FieldMask': FIELD_MASK },
+        body: JSON.stringify(body),
+      });
+      const data = await res.json();
+      return (data.places || []).map(p => ({ ...p, _sourceCuisine: cuisineLabel }));
+    }
 
-    const allResults = await Promise.all(
-      allQueryConfigs.map(async (config) => {
-        const { textQuery, _cuisine, ...extraParams } = config;
-        const body = {
-          textQuery,
-          maxResultCount: 20,
-          locationBias: {
-            circle: {
-              center: { latitude: lat, longitude: lng },
-              radius: Math.max(radiusMeters, 8047)
-            }
-          },
-          ...(open_now ? { openNow: true } : {}),
-          ...extraParams,
-        };
-        const res = await fetch(
-          'https://places.googleapis.com/v1/places:searchText',
-          {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'X-Goog-Api-Key': GMAPS_KEY || '',
-              'X-Goog-FieldMask': FIELD_MASK,
-            },
-            body: JSON.stringify(body),
-          }
-        );
-        const data = await res.json();
-        return (data.places || []).map(p => ({ ...p, _sourceCuisine: _cuisine || null }));
-      })
-    );
+    let queryPromises;
+    if (cuisineList.length === 0) {
+      // Broad search: get all restaurants nearby
+      queryPromises = [runNearbySearch(['restaurant', 'fast_food_restaurant'], null)];
+    } else {
+      queryPromises = cuisineList.map(c => {
+        const key = c.toLowerCase();
+        if (TEXT_SEARCH_CUISINES[key]) {
+          const { textQuery, types } = TEXT_SEARCH_CUISINES[key];
+          return runTextSearch(textQuery, types, c);
+        }
+        if (NEARBY_SEARCH_CUISINES[key]) {
+          return runNearbySearch(NEARBY_SEARCH_CUISINES[key], c);
+        }
+        // Fallback: text search with broad types
+        return runTextSearch(`${key} restaurant`, ['restaurant', 'fast_food_restaurant'], c);
+      });
+    }
+
+    const allResults = await Promise.all(queryPromises);
 
     // STEP 2: Combine and deduplicate by name + address
     const seen = new Set();
