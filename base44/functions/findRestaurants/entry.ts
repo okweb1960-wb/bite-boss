@@ -43,8 +43,8 @@ const TEXT_SEARCH_CUISINES = {
   'desserts':      { textQuery: 'dessert ice cream' },
 };
 
-// Chicken-only chains to exclude from burger results
-const CHICKEN_ONLY_NAMES = /raising cane|cane's|chick-fil-a|chick fil a|popeyes|wingstop|wing stop|zaxby|hot chicken/i;
+// Non-burger chains to exclude from burger results
+const CHICKEN_ONLY_NAMES = /raising cane|cane's|chick-fil-a|chick fil a|popeyes|wingstop|wing stop|zaxby|hot chicken|taco bell/i;
 
 // NEARBY_SEARCH cuisines: use searchNearby endpoint with includedPrimaryTypes only
 const NEARBY_SEARCH_CUISINES = {
@@ -281,6 +281,7 @@ Deno.serve(async (req) => {
           const name = p.displayName?.text || '';
           const primaryType = p.primaryType || '';
           if (primaryType === 'chicken_restaurant') return false;
+          if (primaryType === 'mexican_restaurant') return false;
           if (CHICKEN_ONLY_NAMES.test(name)) return false;
           return true;
         })
