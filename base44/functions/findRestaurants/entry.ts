@@ -274,16 +274,20 @@ Deno.serve(async (req) => {
       .filter(p => isValidRestaurant(p))
       .filter(p => !excludeNames.includes(p.displayName?.text?.toLowerCase()));
 
-    // STEP 3b: Map to restaurant objects with cuisine labels
-    let mappedRestaurants = validPlaces.map(mapPlaceToRestaurant);
+    // STEP 3b: If searching burgers, hard-exclude chicken-only places before mapping
+    const isBurgerSearch = cuisineList.length > 0 && cuisineList.map(c => c.toLowerCase()).includes('burgers');
+    const finalValidPlaces = isBurgerSearch
+      ? validPlaces.filter(p => {
+          const name = p.displayName?.text || '';
+          const primaryType = p.primaryType || '';
+          if (primaryType === 'chicken_restaurant') return false;
+          if (CHICKEN_ONLY_NAMES.test(name)) return false;
+          return true;
+        })
+      : validPlaces;
 
-    // STEP 3c: If searching for burgers, exclude chicken-only spots
-    if (cuisineList.length > 0 && cuisineList.map(c => c.toLowerCase()).includes('burgers')) {
-      mappedRestaurants = mappedRestaurants.filter(r => {
-        if (r.cuisine?.toLowerCase() !== 'burgers') return true;
-        return !CHICKEN_ONLY_NAMES.test(r.name);
-      });
-    }
+    // STEP 3c: Map to restaurant objects with cuisine labels
+    const mappedRestaurants = finalValidPlaces.map(mapPlaceToRestaurant);
 
     // STEP 4: Filter by actual user-selected distance
     const allRestaurants = mappedRestaurants.filter(
