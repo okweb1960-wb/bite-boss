@@ -208,17 +208,41 @@ export default function Swipe() {
           >
             <div className="text-7xl mb-4">🍽️</div>
             <h2 className="font-playfair text-3xl font-bold text-foreground mb-2">That's all of them!</h2>
+            {noMore ? (
+              <p className="text-muted-foreground font-semibold mb-4">No more restaurants to show nearby.</p>
+            ) : (
+              <p className="text-muted-foreground font-semibold mb-4">Want to see more options?</p>
+            )}
             <button
               onClick={() => navigate("/results", { state: { maybes, allRestaurants: restaurants } })}
-              className="bg-green-600 text-white font-black px-8 py-4 rounded-2xl shadow-lg hover:opacity-90 transition-all flex items-center gap-2 text-lg"
+              className="bg-green-600 text-white font-black px-8 py-4 rounded-2xl shadow-lg hover:opacity-90 transition-all flex items-center gap-2 mb-3 text-lg"
             >
               View Your {maybes.length} Maybes 💚
             </button>
+            {!noMore && (
+              <button
+                onClick={loadMore}
+                disabled={loadingMore}
+                className="text-teal-600 font-bold px-6 py-2 rounded-2xl border-2 border-teal-600 hover:bg-teal-50 transition-all flex items-center gap-2 text-sm"
+              >
+                {loadingMore ? <>🔄 Loading more...</> : "🔍 Show Me More"}
+              </button>
+            )}
           </motion.div>
         )}
       </div>
 
-
+      {/* Action buttons */}
+      {maybes.length > 0 && (
+        <div className="px-5 py-4 flex items-center justify-center">
+          <button
+            onClick={() => navigate("/results", { state: { maybes, allRestaurants: restaurants } })}
+            className="px-6 py-3 bg-green-600 text-white font-black rounded-2xl shadow-lg hover:shadow-xl hover:scale-105 transition-all text-sm"
+          >
+            See My Maybes 💚
+          </button>
+        </div>
+      )}
     </div>
   );
 }
