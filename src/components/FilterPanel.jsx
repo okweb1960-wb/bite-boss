@@ -1,5 +1,5 @@
 const CUISINES = [
-  "American", "Burgers", "Mexican", "Italian", "Pizza",
+  "American", "Burgers", "Fast Food", "Mexican", "Italian", "Pizza",
   "Chinese", "Japanese", "Sushi", "Thai", "Indian",
   "Mediterranean", "BBQ", "Seafood", "Breakfast", "Cafe", "Desserts"
 ];

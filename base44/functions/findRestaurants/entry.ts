@@ -27,25 +27,27 @@ const CUISINE_KEYWORDS = {
   'breakfast':     { words: ['breakfast', 'brunch', 'pancake', 'waffle', 'omelette', 'diner', 'ihop', 'denny'], types: ['breakfast_restaurant', 'brunch_restaurant'] },
   'cafe':          { words: ['cafe', 'coffee', 'espresso', 'coffeehouse'], types: ['cafe', 'coffee_shop'] },
   'desserts':      { words: ['dessert', 'ice cream', 'bakery', 'cake', 'pastry', 'donut', 'yogurt', 'gelato'], types: ['ice_cream_shop', 'bakery', 'dessert_shop'] },
+  'fast food':     { words: ['mcdonald', 'burger king', 'wendy', 'taco bell', 'kfc', 'chick-fil-a', 'subway', 'fast food', 'whataburger', 'sonic', 'popeyes', 'dairy queen', 'jack in the box', 'five guys', 'in-n-out', 'culver', 'shake shack'], types: ['fast_food_restaurant'] },
 };
 
 const CUISINE_SEARCH_QUERIES = {
-  'american':      'american restaurant grill',
-  'burgers':       'burger hamburger fast food',
-  'mexican':       'mexican restaurant tacos',
-  'italian':       'italian restaurant pasta',
-  'pizza':         'pizza pizzeria',
-  'chinese':       'chinese restaurant',
-  'japanese':      'japanese restaurant ramen',
-  'sushi':         'sushi restaurant',
-  'thai':          'thai restaurant',
-  'indian':        'indian restaurant curry',
-  'mediterranean': 'mediterranean greek restaurant',
-  'bbq':           'bbq barbecue smokehouse',
-  'seafood':       'seafood restaurant fish',
-  'breakfast':     'breakfast brunch diner',
-  'cafe':          'cafe coffee shop',
-  'desserts':      'dessert ice cream bakery',
+  'american':      { textQuery: 'american restaurant grill' },
+  'burgers':       { textQuery: 'burger hamburger' },
+  'mexican':       { textQuery: 'mexican restaurant tacos' },
+  'italian':       { textQuery: 'italian restaurant pasta' },
+  'pizza':         { textQuery: 'pizza pizzeria' },
+  'chinese':       { textQuery: 'chinese restaurant' },
+  'japanese':      { textQuery: 'japanese restaurant ramen' },
+  'sushi':         { textQuery: 'sushi restaurant' },
+  'thai':          { textQuery: 'thai restaurant' },
+  'indian':        { textQuery: 'indian restaurant curry' },
+  'mediterranean': { textQuery: 'mediterranean greek restaurant' },
+  'bbq':           { textQuery: 'bbq barbecue smokehouse' },
+  'seafood':       { textQuery: 'seafood restaurant fish' },
+  'breakfast':     { textQuery: 'breakfast brunch diner' },
+  'cafe':          { textQuery: 'cafe coffee shop' },
+  'desserts':      { textQuery: 'dessert ice cream bakery' },
+  'fast food':     { textQuery: 'fast food restaurant', includedPrimaryTypes: ['fast_food_restaurant'] },
 };
 
 const PRICE_MAP = { PRICE_LEVEL_FREE: 1, PRICE_LEVEL_INEXPENSIVE: 1, PRICE_LEVEL_MODERATE: 2, PRICE_LEVEL_EXPENSIVE: 3, PRICE_LEVEL_VERY_EXPENSIVE: 4 };
@@ -131,22 +133,21 @@ Deno.serve(async (req) => {
       'cafe coffee bakery dessert ice cream',
     ];
 
-    const targetedQueries = cuisineList
-      .map(c => CUISINE_SEARCH_QUERIES[c.toLowerCase()])
+    const targetedQueryConfigs = cuisineList
+      .map(c => {
+        const cfg = CUISINE_SEARCH_QUERIES[c.toLowerCase()];
+        return cfg ? { ...cfg, _cuisine: c } : null;
+      })
       .filter(Boolean);
 
-    const cuisineGroupQueries = [...broadQueries, ...targetedQueries];
-
-    // Track which cuisine each targeted query belongs to
-    const queryToCuisine = {};
-    targetedQueries.forEach((q, i) => {
-      queryToCuisine[q] = cuisineList[i];
-    });
+    const broadQueryConfigs = broadQueries.map(q => ({ textQuery: q }));
+    const allQueryConfigs = [...broadQueryConfigs, ...targetedQueryConfigs];
 
     const allResults = await Promise.all(
-      cuisineGroupQueries.map(async (query) => {
+      allQueryConfigs.map(async (config) => {
+        const { textQuery, _cuisine, ...extraParams } = config;
         const body = {
-          textQuery: query,
+          textQuery,
           maxResultCount: 20,
           locationBias: {
             circle: {
@@ -155,6 +156,7 @@ Deno.serve(async (req) => {
             }
           },
           ...(open_now ? { openNow: true } : {}),
+          ...extraParams,
         };
         const res = await fetch(
           'https://places.googleapis.com/v1/places:searchText',
@@ -169,9 +171,7 @@ Deno.serve(async (req) => {
           }
         );
         const data = await res.json();
-        // Tag each place with the cuisine it was found under (for targeted queries)
-        const sourceCuisine = queryToCuisine[query] || null;
-        return (data.places || []).map(p => ({ ...p, _sourceCuisine: sourceCuisine }));
+        return (data.places || []).map(p => ({ ...p, _sourceCuisine: _cuisine || null }));
       })
     );
 
