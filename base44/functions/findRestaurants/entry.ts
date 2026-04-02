@@ -33,7 +33,7 @@ const CUISINE_KEYWORDS = {
 // TEXT_SEARCH cuisines: use searchText endpoint with textQuery only (no includedPrimaryTypes)
 // Using includedType (singular, soft filter) avoids the AND-logic trap that blocks local spots
 const TEXT_SEARCH_CUISINES = {
-  'burgers':       { textQuery: 'best burgers' },
+  'burgers':       { textQuery: 'hamburger restaurant' },
   'bbq':           { textQuery: 'bbq barbecue smokehouse' },
   'pizza':         { textQuery: 'best pizza' },
   'sushi':         { textQuery: 'sushi' },
@@ -42,6 +42,9 @@ const TEXT_SEARCH_CUISINES = {
   'mediterranean': { textQuery: 'mediterranean' },
   'desserts':      { textQuery: 'dessert ice cream' },
 };
+
+// Chicken-only chains to exclude from burger results
+const CHICKEN_ONLY_NAMES = /raising cane|cane's|chick-fil-a|chick fil a|popeyes|wingstop|wing stop|zaxby|hot chicken/i;
 
 // NEARBY_SEARCH cuisines: use searchNearby endpoint with includedPrimaryTypes only
 const NEARBY_SEARCH_CUISINES = {
@@ -272,7 +275,15 @@ Deno.serve(async (req) => {
       .filter(p => !excludeNames.includes(p.displayName?.text?.toLowerCase()));
 
     // STEP 3b: Map to restaurant objects with cuisine labels
-    const mappedRestaurants = validPlaces.map(mapPlaceToRestaurant);
+    let mappedRestaurants = validPlaces.map(mapPlaceToRestaurant);
+
+    // STEP 3c: If searching for burgers, exclude chicken-only spots
+    if (cuisineList.length > 0 && cuisineList.map(c => c.toLowerCase()).includes('burgers')) {
+      mappedRestaurants = mappedRestaurants.filter(r => {
+        if (r.cuisine?.toLowerCase() !== 'burgers') return true;
+        return !CHICKEN_ONLY_NAMES.test(r.name);
+      });
+    }
 
     // STEP 4: Filter by actual user-selected distance
     const allRestaurants = mappedRestaurants.filter(
