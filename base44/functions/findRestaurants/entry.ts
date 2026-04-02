@@ -286,8 +286,19 @@ Deno.serve(async (req) => {
         })
       : validPlaces;
 
-    // STEP 3c: Map to restaurant objects with cuisine labels
-    const mappedRestaurants = finalValidPlaces.map(mapPlaceToRestaurant);
+    // STEP 3c: If category cuisines (NEARBY_SEARCH) are selected alongside keyword cuisines,
+    // apply their primaryTypes as a strict intersection filter on the raw places.
+    const selectedCategoryTypes = cuisineList
+      .map(c => NEARBY_SEARCH_CUISINES[c.toLowerCase()])
+      .filter(Boolean)
+      .flat();
+
+    const intersectionFiltered = selectedCategoryTypes.length > 0
+      ? finalValidPlaces.filter(p => selectedCategoryTypes.includes(p.primaryType))
+      : finalValidPlaces;
+
+    // STEP 3d: Map to restaurant objects with cuisine labels
+    const mappedRestaurants = intersectionFiltered.map(mapPlaceToRestaurant);
 
     // STEP 4: Filter by actual user-selected distance
     const allRestaurants = mappedRestaurants.filter(
