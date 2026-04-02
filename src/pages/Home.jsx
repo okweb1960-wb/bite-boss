@@ -135,7 +135,7 @@ export default function Home() {
               disabled={detecting}
               className="bg-orange-500 text-white px-4 rounded-2xl font-bold shadow-sm hover:bg-orange-600 transition-all flex items-center gap-1 text-sm"
             >
-              {detecting ? <Loader2 className="w-4 h-4 animate-spin" /> : "📍 Detect"}
+              {detecting ? <Loader2 className="w-4 h-4 animate-spin" /> : <><MapPin className="w-4 h-4" />Detect</>}
             </button>
           </div>
         </motion.div>
