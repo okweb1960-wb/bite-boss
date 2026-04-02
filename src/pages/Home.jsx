@@ -122,7 +122,7 @@ export default function Home() {
           <h3 className="font-bold text-foreground mb-3">Where are you?</h3>
           <div className="flex gap-2">
             <div className="flex-1 flex items-center bg-card border border-teal-600 rounded-2xl px-4 gap-2 shadow-sm">
-              <MapPin className="w-4 h-4 text-teal-600 shrink-0" />
+              <MapPin className="w-4 h-4 text-orange-500 shrink-0" />
               <input
                 value={location}
                 onChange={e => { setLocation(e.target.value); setCoords(null); }}
