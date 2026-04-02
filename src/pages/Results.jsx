@@ -70,21 +70,20 @@ function RestaurantCard({ restaurant, variant = "default" }) {
 export default function Results() {
   const { state } = useLocation();
   const navigate = useNavigate();
-  
-  if (!state?.maybes) {
-    navigate("/", { replace: true });
-    return null;
-  }
-  
-  const maybes = state?.maybes || [];
-  const allRestaurants = state?.allRestaurants || [];
-  const unseen = allRestaurants.filter(r => !maybes.find(m => m.name === r.name));
-  
-  const [dragStart, setDragStart] = useState(null);
+
   const [winner, setWinner] = useState(null);
   const [selectedCard, setSelectedCard] = useState(null);
   const [lastWinner, setLastWinner] = useState(null);
   const [isShuffling, setIsShuffling] = useState(false);
+  const [showUnseen, setShowUnseen] = useState(false);
+
+  if (!state?.maybes) {
+    navigate("/", { replace: true });
+    return null;
+  }
+
+  const maybes = state?.maybes || [];
+  const allRestaurants = state?.allRestaurants || [];
 
   async function handleShareMaybes() {
     const names = maybes.map(r => `• ${r.name}${r.cuisine ? ` (${r.cuisine})` : ''}`).join('\n');

@@ -137,6 +137,12 @@ Deno.serve(async (req) => {
 
     const cuisineGroupQueries = [...broadQueries, ...targetedQueries];
 
+    // Track which cuisine each targeted query belongs to
+    const queryToCuisine = {};
+    targetedQueries.forEach((q, i) => {
+      queryToCuisine[q] = cuisineList[i];
+    });
+
     const allResults = await Promise.all(
       cuisineGroupQueries.map(async (query) => {
         const body = {
@@ -163,7 +169,9 @@ Deno.serve(async (req) => {
           }
         );
         const data = await res.json();
-        return data.places || [];
+        // Tag each place with the cuisine it was found under (for targeted queries)
+        const sourceCuisine = queryToCuisine[query] || null;
+        return (data.places || []).map(p => ({ ...p, _sourceCuisine: sourceCuisine }));
       })
     );
 
@@ -187,17 +195,22 @@ Deno.serve(async (req) => {
       const nameLower = (p.displayName?.text || '').toLowerCase();
       const descLower = (p.editorialSummary?.text || '').toLowerCase();
       const typesArr = p.types || [];
-      let cuisineLabel = 'Restaurant';
+      // If this place came from a targeted cuisine query, use that label directly
+      let cuisineLabel = p._sourceCuisine
+        ? p._sourceCuisine.charAt(0).toUpperCase() + p._sourceCuisine.slice(1)
+        : 'Restaurant';
 
-      // First pass: match by specific Google place types
-      for (const [key, val] of Object.entries(CUISINE_KEYWORDS)) {
-        if (typesArr.some(t => val.types.includes(t))) {
-          cuisineLabel = key.charAt(0).toUpperCase() + key.slice(1);
-          break;
+      if (cuisineLabel === 'Restaurant') {
+        // Match by Google place types
+        for (const [key, val] of Object.entries(CUISINE_KEYWORDS)) {
+          if (typesArr.some(t => val.types.includes(t))) {
+            cuisineLabel = key.charAt(0).toUpperCase() + key.slice(1);
+            break;
+          }
         }
       }
 
-      // Second pass: if still Restaurant, check name AND description
+      // Final pass: check name + description keywords
       if (cuisineLabel === 'Restaurant') {
         const haystack = nameLower + ' ' + descLower;
         for (const [key, val] of Object.entries(CUISINE_KEYWORDS)) {
