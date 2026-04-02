@@ -169,7 +169,7 @@ Deno.serve(async (req) => {
         const body = {
           textQuery,
           maxResultCount: 20,
-          locationRestriction: {
+          locationBias: {
             circle: {
               center: { latitude: lat, longitude: lng },
               radius: Math.max(radiusMeters, 8047)
