@@ -232,17 +232,7 @@ export default function Swipe() {
         )}
       </div>
 
-      {/* Action buttons */}
-      {maybes.length > 0 && (
-        <div className="px-5 py-4 flex items-center justify-center">
-          <button
-            onClick={() => navigate("/results", { state: { maybes, allRestaurants: restaurants } })}
-            className="px-6 py-3 bg-green-600 text-white font-black rounded-2xl shadow-lg hover:shadow-xl hover:scale-105 transition-all text-sm"
-          >
-            See My Maybes 💚
-          </button>
-        </div>
-      )}
+
     </div>
   );
 }
