@@ -140,7 +140,6 @@ Deno.serve(async (req) => {
       const body = {
         textQuery,
         maxResultCount: 20,
-        includedType: 'restaurant',
         rankPreference: 'RELEVANCE',
         locationBias: { circle: { center: { latitude: lat, longitude: lng }, radius: SEARCH_RADIUS } },
         ...(open_now ? { openNow: true } : {}),
