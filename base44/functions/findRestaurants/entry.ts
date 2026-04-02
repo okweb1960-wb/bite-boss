@@ -30,26 +30,32 @@ const CUISINE_KEYWORDS = {
   'fast food':     { words: ['mcdonald', 'burger king', 'wendy', 'taco bell', 'kfc', 'chick-fil-a', 'subway', 'fast food', 'whataburger', 'sonic', 'popeyes', 'dairy queen', 'jack in the box', 'five guys', 'in-n-out', 'culver', 'shake shack'], types: ['fast_food_restaurant'] },
 };
 
-// Cuisines with a direct Google Primary Type — use includedPrimaryTypes for precision
-// Cuisines without a primary type — use textQuery so Google searches menu/reviews
-const CUISINE_SEARCH_QUERIES = {
-  'american':      { textQuery: 'american restaurant', includedPrimaryTypes: ['american_restaurant'] },
-  'burgers':       { textQuery: 'burgers' },
-  'fast food':     { textQuery: 'fast food', includedPrimaryTypes: ['fast_food_restaurant'] },
-  'mexican':       { textQuery: 'mexican restaurant', includedPrimaryTypes: ['mexican_restaurant'] },
-  'italian':       { textQuery: 'italian restaurant', includedPrimaryTypes: ['italian_restaurant'] },
-  'pizza':         { textQuery: 'pizza' },
-  'chinese':       { textQuery: 'chinese restaurant', includedPrimaryTypes: ['chinese_restaurant'] },
-  'japanese':      { textQuery: 'japanese restaurant', includedPrimaryTypes: ['japanese_restaurant'] },
-  'sushi':         { textQuery: 'sushi' },
-  'thai':          { textQuery: 'thai restaurant', includedPrimaryTypes: ['thai_restaurant'] },
-  'indian':        { textQuery: 'indian restaurant', includedPrimaryTypes: ['indian_restaurant'] },
-  'mediterranean': { textQuery: 'mediterranean restaurant' },
-  'bbq':           { textQuery: 'bbq barbecue' },
-  'seafood':       { textQuery: 'seafood restaurant' },
-  'breakfast':     { textQuery: 'breakfast brunch' },
-  'cafe':          { textQuery: 'cafe coffee', includedPrimaryTypes: ['cafe'] },
-  'desserts':      { textQuery: 'dessert ice cream' },
+// TEXT_ONLY: These are menu items/keywords, NOT Google Primary Types.
+// Must use textQuery only — no includedPrimaryTypes or Google returns 0 results.
+const TEXT_ONLY_CUISINES = new Set(['burgers', 'bbq', 'pizza', 'sushi', 'seafood', 'breakfast', 'mediterranean', 'desserts']);
+
+const CUISINE_TEXT_QUERIES = {
+  'burgers':       'burgers near me',
+  'bbq':           'bbq barbecue near me',
+  'pizza':         'pizza near me',
+  'sushi':         'sushi near me',
+  'seafood':       'seafood restaurant near me',
+  'breakfast':     'breakfast brunch near me',
+  'mediterranean': 'mediterranean restaurant near me',
+  'desserts':      'dessert ice cream near me',
+};
+
+// TYPE_BASED: These have a direct Google Primary Type for precision.
+const CUISINE_PRIMARY_TYPES = {
+  'american':      ['american_restaurant'],
+  'fast food':     ['fast_food_restaurant'],
+  'mexican':       ['mexican_restaurant'],
+  'italian':       ['italian_restaurant'],
+  'chinese':       ['chinese_restaurant'],
+  'japanese':      ['japanese_restaurant', 'ramen_restaurant'],
+  'thai':          ['thai_restaurant'],
+  'indian':        ['indian_restaurant'],
+  'cafe':          ['cafe', 'coffee_shop'],
 };
 
 const PRICE_MAP = { PRICE_LEVEL_FREE: 1, PRICE_LEVEL_INEXPENSIVE: 1, PRICE_LEVEL_MODERATE: 2, PRICE_LEVEL_EXPENSIVE: 3, PRICE_LEVEL_VERY_EXPENSIVE: 4 };
@@ -135,23 +141,27 @@ Deno.serve(async (req) => {
     }
 
     // STEP 1: Build queries
-    // Broad queries use includedPrimaryTypes for general discovery (All mode)
+    // All mode: use includedPrimaryTypes to get a full list of dining spots
     const broadQueryConfigs = [
-      { textQuery: 'restaurant', includedPrimaryTypes: ['restaurant', 'fast_food_restaurant', 'cafe'] },
-      { textQuery: 'food near me' },
+      { textQuery: 'restaurants', includedPrimaryTypes: ['restaurant', 'fast_food_restaurant'] },
     ];
 
-    const targetedQueryConfigs = cuisineList
-      .map(c => {
-        const cfg = CUISINE_SEARCH_QUERIES[c.toLowerCase()];
-        return cfg ? { ...cfg, _cuisine: c } : null;
-      })
-      .filter(Boolean);
+    // Targeted: use textQuery-only for keyword cuisines, includedPrimaryTypes for typed cuisines
+    const targetedQueryConfigs = cuisineList.map(c => {
+      const key = c.toLowerCase();
+      if (TEXT_ONLY_CUISINES.has(key)) {
+        // Keyword search — do NOT add includedPrimaryTypes
+        return { textQuery: CUISINE_TEXT_QUERIES[key] || `${key} restaurant near me`, _cuisine: c };
+      }
+      const types = CUISINE_PRIMARY_TYPES[key];
+      if (types) {
+        return { textQuery: `${key} restaurant`, includedPrimaryTypes: types, _cuisine: c };
+      }
+      // Fallback: plain text search
+      return { textQuery: `${key} restaurant near me`, _cuisine: c };
+    }).filter(Boolean);
 
-    // When cuisines are selected, skip broad queries and only run targeted ones
-    const allQueryConfigs = cuisineList.length > 0
-      ? targetedQueryConfigs
-      : broadQueryConfigs;
+    const allQueryConfigs = cuisineList.length > 0 ? targetedQueryConfigs : broadQueryConfigs;
 
     const allResults = await Promise.all(
       allQueryConfigs.map(async (config) => {
