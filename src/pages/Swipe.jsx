@@ -213,11 +213,17 @@ export default function Swipe() {
             ) : (
               <p className="text-muted-foreground font-semibold mb-4">Want to see more options?</p>
             )}
+            <button
+              onClick={() => navigate("/results", { state: { maybes, allRestaurants: restaurants } })}
+              className="bg-green-600 text-white font-black px-8 py-4 rounded-2xl shadow-lg hover:opacity-90 transition-all flex items-center gap-2 mb-3 text-lg"
+            >
+              View Your {maybes.length} Maybes 💚
+            </button>
             {!noMore && (
               <button
                 onClick={loadMore}
                 disabled={loadingMore}
-                className="bg-teal-600 text-white font-black px-6 py-3 rounded-2xl shadow hover:opacity-90 transition-all flex items-center gap-2 mb-3"
+                className="text-teal-600 font-bold px-6 py-2 rounded-2xl border-2 border-teal-600 hover:bg-teal-50 transition-all flex items-center gap-2 text-sm"
               >
                 {loadingMore ? <>🔄 Loading more...</> : "🔍 Show Me More"}
               </button>
