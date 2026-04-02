@@ -88,7 +88,16 @@ function isValidRestaurant(place) {
   if (EXCLUDED_KEYWORDS.test(name)) return false;
   
   // REQUIRED: at least one broad food type indicator
-  const FOOD_TYPES = new Set(['restaurant', 'food', 'meal_takeaway', 'meal_delivery', 'cafe', 'bakery', 'fast_food_restaurant']);
+  const FOOD_TYPES = new Set([
+    'restaurant', 'food', 'meal_takeaway', 'meal_delivery', 'cafe', 'bakery',
+    'fast_food_restaurant', 'hamburger_restaurant', 'barbecue_restaurant',
+    'pizza_restaurant', 'sandwich_shop', 'american_restaurant', 'mexican_restaurant',
+    'italian_restaurant', 'chinese_restaurant', 'japanese_restaurant', 'thai_restaurant',
+    'indian_restaurant', 'seafood_restaurant', 'sushi_restaurant', 'ramen_restaurant',
+    'breakfast_restaurant', 'brunch_restaurant', 'mediterranean_restaurant',
+    'greek_restaurant', 'middle_eastern_restaurant', 'steak_house',
+    'ice_cream_shop', 'dessert_shop', 'vegan_restaurant', 'vegetarian_restaurant'
+  ]);
   const hasFoodType = types.some(t => FOOD_TYPES.has(t));
   if (!hasFoodType) return false;
   
@@ -281,13 +290,10 @@ Deno.serve(async (req) => {
     console.log('Cuisine counts (from distance-filtered set):', cuisineCounts);
     console.log('Available cuisines:', availableCuisines);
 
-    // STEP 9: Apply cuisine selection filter if user selected specific cuisines
+    // STEP 9: Apply cuisine selection filter
+    // For keyword-based cuisines (burgers, bbq) we trust _sourceCuisine tagging from the API query.
+    // Since targeted queries already fetched only relevant results, no further label filtering needed.
     let filteredRestaurants = allRestaurants;
-    if (cuisineList.length > 0) {
-      filteredRestaurants = filteredRestaurants.filter(r =>
-        cuisineList.some(c => r.cuisine.toLowerCase() === c.toLowerCase())
-      );
-    }
 
     // STEP 9b: Apply service filter
     if (serviceList.length > 0) {
