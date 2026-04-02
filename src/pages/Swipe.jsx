@@ -160,8 +160,9 @@ export default function Swipe() {
                 return (
                   <div
                     key={idx}
-                    className="absolute inset-0 rounded-3xl shadow-lg" style={{ background: 'white', zIndex: 10 - offset }}
+                    className="absolute inset-0 rounded-3xl shadow-lg"
                     style={{
+                      background: 'white',
                       transform: `scale(${1 - offset * 0.04}) translateY(${offset * 8}px)`,
                       zIndex: 10 - offset,
                     }}
