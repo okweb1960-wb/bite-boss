@@ -105,9 +105,7 @@ function isValidRestaurant(place) {
   const hasValidType = types.some(t => VALID_FOOD_TYPES.has(t));
   if (hasInvalidType && !hasValidType) return false;
   
-  const rating = place.rating || 0;
-  const reviewCount = place.userRatingCount || 0;
-  if (rating === 0 && reviewCount === 0) return false;
+
   
   return true;
 }
