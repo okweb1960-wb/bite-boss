@@ -102,9 +102,18 @@ export default function Swipe() {
           <ArrowLeft className="w-5 h-5 text-foreground" />
         </button>
         <div className="flex items-center gap-4">
-          <motion.span className="text-sm font-bold text-green-600" key={maybes.length} initial={{ scale: 0.8 }} animate={{ scale: 1 }}>
-            💚 {maybes.length}
-          </motion.span>
+          {maybes.length > 0 ? (
+            <button
+              onClick={() => navigate("/results", { state: { maybes, allRestaurants: restaurants } })}
+              className="flex items-center gap-1.5 bg-green-500 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow hover:bg-green-600 transition-all"
+            >
+              💚 {maybes.length} Maybes
+            </button>
+          ) : (
+            <motion.span className="text-sm font-bold text-green-600" key={maybes.length} initial={{ scale: 0.8 }} animate={{ scale: 1 }}>
+              💚 {maybes.length}
+            </motion.span>
+          )}
           <p className="text-muted-foreground text-xs font-semibold">{remaining} left</p>
         </div>
       </div>
