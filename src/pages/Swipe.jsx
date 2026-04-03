@@ -135,26 +135,23 @@ export default function Swipe() {
         <button
           onClick={() => handleSwipe("nope")}
           disabled={allDone}
-          className="flex items-center gap-2 px-5 py-2.5 rounded-2xl font-black text-white text-sm shadow-lg active:scale-95 transition-all disabled:opacity-30"
-          style={{ background: '#EF4444', boxShadow: '0 4px 15px rgba(239,68,68,0.4)' }}
+          className="w-12 h-12 rounded-full border-2 border-red-400 bg-white flex items-center justify-center hover:bg-red-50 transition-all disabled:opacity-30"
         >
-          Nope
+          <span className="text-red-400 text-xl font-bold">✕</span>
         </button>
         <button
-          onClick={handleUndo}
-          disabled={!lastSwiped || allDone}
-          className="p-2.5 rounded-full border-2 border-teal-600 bg-white hover:bg-teal-50 transition-all disabled:opacity-30 disabled:border-gray-300"
-          title="Undo last swipe"
+          onClick={() => navigate("/results", { state: { maybes, allRestaurants: restaurants } })}
+          className="flex items-center gap-2 px-6 py-3 rounded-2xl font-black text-white text-base shadow-lg active:scale-95 transition-all"
+          style={{ background: '#F97316', boxShadow: '0 4px 15px rgba(249,115,22,0.4)' }}
         >
-          <span className="text-teal-600 text-lg font-bold disabled:text-gray-400">↩</span>
+          I'm Done
         </button>
         <button
           onClick={() => handleSwipe("maybe")}
           disabled={allDone}
-          className="flex items-center gap-2 px-5 py-2.5 rounded-2xl font-black text-white text-sm shadow-lg active:scale-95 transition-all disabled:opacity-30"
-          style={{ background: '#10B981', boxShadow: '0 4px 15px rgba(16,185,129,0.4)' }}
+          className="w-12 h-12 rounded-full border-2 border-green-400 bg-white flex items-center justify-center hover:bg-green-50 transition-all disabled:opacity-30"
         >
-          Maybe
+          <span className="text-green-500 text-xl">♡</span>
         </button>
       </div>
 
