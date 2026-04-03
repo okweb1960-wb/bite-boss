@@ -158,11 +158,22 @@ export default function Swipe() {
         </button>
       </div>
 
-      <div className="flex-1 px-5 relative flex items-center justify-center">
+      <div className="flex-1 px-5 flex flex-col items-center justify-center gap-4">
         {!allDone ? (
           <>
+            {/* I'm Done button — appears once user has at least one maybe */}
+            {maybes.length > 0 && (
+              <button
+                onClick={() => navigate("/results", { state: { maybes, allRestaurants: restaurants } })}
+                className="w-full max-w-xs py-3 rounded-2xl font-black text-white text-base shadow-lg active:scale-95 transition-all"
+                style={{ background: '#F97316', boxShadow: '0 4px 15px rgba(249,115,22,0.4)' }}
+              >
+                I'm Done 💚
+              </button>
+            )}
+
+            {/* Card stack */}
             <div className="relative w-full" style={{ maxWidth: '400px', minHeight: '600px' }}>
-              {/* Stack preview cards */}
               {[2, 1].map(offset => {
                 const idx = currentIndex + offset;
                 if (idx >= restaurants.length) return null;
@@ -179,7 +190,6 @@ export default function Swipe() {
                 );
               })}
 
-              {/* Top card */}
               <AnimatePresence>
                 {current && (
                   <RestaurantCard
@@ -191,36 +201,23 @@ export default function Swipe() {
                   />
                 )}
               </AnimatePresence>
+
+              {/* Feedback flash */}
+              <AnimatePresence>
+                {lastAction && (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.5 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 1.5 }}
+                    className="absolute inset-0 flex items-center justify-center pointer-events-none z-50"
+                  >
+                    <div className="text-6xl">
+                      {lastAction === "maybe" ? "🎉" : "👎"}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
-
-            {/* Feedback flash */}
-            <AnimatePresence>
-              {lastAction && (
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.5 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 1.5 }}
-                  className="absolute inset-0 flex items-center justify-center pointer-events-none z-50"
-                >
-                  <div className={`text-6xl ${lastAction === "maybe" ? "" : ""}`}>
-                    {lastAction === "maybe" ? "🎉" : "👎"}
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-
-            {/* I'm Done button */}
-            {maybes.length > 0 && (
-              <div className="absolute bottom-4 left-0 right-0 flex justify-center z-30">
-                <button
-                  onClick={() => navigate("/results", { state: { maybes, allRestaurants: restaurants } })}
-                  className="px-8 py-3 rounded-full font-black text-white text-base shadow-lg active:scale-95 transition-all"
-                  style={{ background: '#F97316', boxShadow: '0 4px 15px rgba(249,115,22,0.4)' }}
-                >
-                  I'm Done
-                </button>
-              </div>
-            )}
           </>
         ) : (
           <motion.div
@@ -252,8 +249,6 @@ export default function Swipe() {
           </motion.div>
         )}
       </div>
-
-
     </div>
   );
 }
