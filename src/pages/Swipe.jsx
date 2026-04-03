@@ -208,6 +208,19 @@ export default function Swipe() {
                 </motion.div>
               )}
             </AnimatePresence>
+
+            {/* I'm Done button */}
+            {maybes.length > 0 && (
+              <div className="absolute bottom-4 left-0 right-0 flex justify-center z-30">
+                <button
+                  onClick={() => navigate("/results", { state: { maybes, allRestaurants: restaurants } })}
+                  className="px-8 py-3 rounded-full font-black text-white text-base shadow-lg active:scale-95 transition-all"
+                  style={{ background: '#F97316', boxShadow: '0 4px 15px rgba(249,115,22,0.4)' }}
+                >
+                  I'm Done
+                </button>
+              </div>
+            )}
           </>
         ) : (
           <motion.div
