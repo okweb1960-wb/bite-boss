@@ -150,11 +150,19 @@ export default function WinnerModal({ restaurant, maybes, onClose, onPickAgain, 
 
   async function handleShare() {
     const message = getShareMessage(restaurant);
-    if (navigator.share) {
-      await navigator.share({ text: message });
-    } else {
+    try {
+      if (navigator.share) {
+        await navigator.share({ text: message });
+        return;
+      }
+    } catch (e) {
+      // Share failed or cancelled, fall through to clipboard
+    }
+    try {
       await navigator.clipboard.writeText(message);
       alert('Message copied to clipboard!');
+    } catch (e) {
+      alert(message);
     }
   }
 
