@@ -62,16 +62,6 @@ export default function Home() {
       }
     }
 
-    console.log('Sending to findRestaurants:', {
-        latitude: resolvedCoords.latitude,
-        longitude: resolvedCoords.longitude,
-        radius_miles: filters.radius,
-        cuisine: filters.cuisines,
-        service: filters.services,
-        open_now: filters.openNow,
-        location_text: location,
-      });
-
     try {
       const response = await base44.functions.invoke('findRestaurants', {
         latitude: resolvedCoords.latitude,
@@ -108,7 +98,7 @@ export default function Home() {
         <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
           <div className="flex items-center gap-2" style={{ marginBottom: '8px' }}>
             <Utensils className="text-white" style={{ width: '20px', height: '20px' }} />
-            <span className="text-teal-600 font-bold uppercase tracking-wide" style={{ fontSize: '14px' }}>Bite Boss</span>
+            <span className="text-white font-bold uppercase tracking-wide" style={{ fontSize: '14px' }}>Bite Boss</span>
           </div>
           <h1 className="font-playfair font-bold text-white leading-tight" style={{ fontSize: 'clamp(28px, 8vw, 36px)', marginBottom: '4px' }}>
             Where do you<br />want to eat?

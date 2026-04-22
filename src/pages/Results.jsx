@@ -49,17 +49,15 @@ export default function Results() {
   function pickWinner() {
     haptics.pickForUs();
     setIsShuffling(true);
-
     setTimeout(() => {
-      let selected = maybes[0];
-      let attempts = 0;
-      while (attempts < 10 && selected.name === lastWinner?.name) {
-        const weighted = maybes.map(r => ({
-          ...r,
-          weight: (r.rating || 3) * Math.random(),
-        }));
-        selected = weighted.sort((a, b) => b.weight - a.weight)[0];
-        attempts++;
+      const weighted = maybes.map(r => ({
+        ...r,
+        weight: (r.rating || 3) * Math.random(),
+      }));
+      let selected = weighted.sort((a, b) => b.weight - a.weight)[0];
+      if (selected.name === lastWinner?.name && maybes.length > 1) {
+        const others = weighted.filter(r => r.name !== lastWinner.name);
+        selected = others.sort((a, b) => b.weight - a.weight)[0];
       }
       setLastWinner(selected);
       setWinner(selected);
@@ -145,6 +143,19 @@ export default function Results() {
 
 
 
+      {/* Pull indicator for unseen sheet */}
+      {!showUnseen && unseenRestaurants.length > 0 && maybes.length > 0 && (
+        <div
+          onClick={() => setShowUnseen(true)}
+          className="fixed bottom-0 left-0 right-0 flex justify-center pb-4 pt-2 bg-gradient-to-t from-white to-transparent cursor-pointer z-30"
+        >
+          <div className="flex items-center gap-2 px-5 py-2 bg-teal-600 text-white font-bold text-sm rounded-full shadow-lg">
+            <span>↑</span>
+            <span>{unseenRestaurants.length} more restaurants</span>
+          </div>
+        </div>
+      )}
+
       {/* Unseen Bottom Sheet */}
       <AnimatePresence>
         {showUnseen && (
@@ -189,7 +200,13 @@ export default function Results() {
 
               {/* Scrollable list */}
               <div className="flex-1 overflow-y-auto px-5 py-4 space-y-3">
-                {unseenRestaurants.map(r => (
+                {unseenRestaurants.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-16 text-center">
+                    <div className="text-5xl mb-4">🎯</div>
+                    <p className="font-bold text-lg text-foreground mb-2">You saw them all!</p>
+                    <p className="text-muted-foreground text-sm">Every restaurant made it into your Maybes or Nopes.</p>
+                  </div>
+                ) : unseenRestaurants.map(r => (
                   <RestaurantListCard
                     key={r.name}
                     restaurant={r}
