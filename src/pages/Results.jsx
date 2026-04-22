@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, RotateCcw } from "lucide-react";
 import WinnerModal from "../components/WinnerModal";
-import RestaurantCard from "../components/RestaurantCard";
+import RestaurantListCard from "../components/RestaurantListCard";
 import { haptics } from "@/utils/haptics";
 
 export default function Results() {
@@ -117,9 +117,7 @@ export default function Results() {
         ) : (
           <div className="flex-1 overflow-y-auto px-5 py-4 space-y-3 pb-36">
             {maybes.map(r => (
-              <div key={r.name} onClick={() => setSelectedCard(r)} className="cursor-pointer hover:opacity-85 transition-opacity">
-                <RestaurantCard restaurant={r} onSwipe={() => {}} isTop={false} />
-              </div>
+              <RestaurantListCard key={r.name} restaurant={r} onClick={() => setSelectedCard(r)} />
             ))}
             {/* Share Maybes */}
             {maybes.length > 0 && (
@@ -193,13 +191,11 @@ export default function Results() {
               {/* Scrollable list */}
               <div className="flex-1 overflow-y-auto px-5 py-4 space-y-3">
                 {unseenRestaurants.map(r => (
-                  <div
+                  <RestaurantListCard
                     key={r.name}
+                    restaurant={r}
                     onClick={() => { setShowUnseen(false); setSelectedCard(r); }}
-                    className="cursor-pointer hover:opacity-85 transition-opacity"
-                  >
-                    <RestaurantCard restaurant={r} onSwipe={() => {}} isTop={false} />
-                  </div>
+                  />
                 ))}
               </div>
             </motion.div>
