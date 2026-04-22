@@ -30,11 +30,19 @@ export default function Results() {
   async function handleShareMaybes() {
     const names = maybes.map(r => `• ${r.name}${r.cuisine ? ` (${r.cuisine})` : ''}`).join('\n');
     const message = `Deciding with someone? Here's my shortlist 👇\n\n${names}\n\nFind your perfect restaurant: ${window.location.origin}`;
-    if (navigator.share) {
-      await navigator.share({ text: message });
-    } else {
+    try {
+      if (navigator.share) {
+        await navigator.share({ text: message });
+        return;
+      }
+    } catch (e) {
+      // Share failed or was cancelled, fall through to clipboard
+    }
+    try {
       await navigator.clipboard.writeText(message);
       alert('Copied to clipboard!');
+    } catch (e) {
+      alert(message);
     }
   }
 
