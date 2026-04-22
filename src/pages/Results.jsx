@@ -135,16 +135,7 @@ export default function Results() {
         )}
       </div>
 
-      {/* Pull Indicator — only when unseen sheet is closed and there are unseen restaurants */}
-      {!showUnseen && unseenRestaurants.length > 0 && (
-        <button
-          onClick={() => setShowUnseen(true)}
-          className="fixed bottom-6 left-1/2 -translate-x-1/2 z-30 px-5 py-3 rounded-full font-bold text-white text-sm shadow-lg flex items-center gap-2 whitespace-nowrap"
-          style={{ background: '#0D9488', boxShadow: '0 4px 20px rgba(13,148,136,0.4)' }}
-        >
-          ↑ {unseenRestaurants.length} more restaurants
-        </button>
-      )}
+
 
       {/* Unseen Bottom Sheet */}
       <AnimatePresence>
