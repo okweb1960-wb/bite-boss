@@ -78,7 +78,7 @@ const FIELD_MASK = [
   'places.displayName', 'places.formattedAddress', 'places.location', 'places.rating',
   'places.userRatingCount', 'places.priceLevel', 'places.currentOpeningHours',
   'places.types', 'places.primaryType', 'places.editorialSummary', 'places.businessStatus', 'places.photos',
-  'places.delivery', 'places.takeout', 'places.dineIn',
+  'places.delivery', 'places.takeout', 'places.dineIn', 'places.photos.authorAttributions',
   'places.servesWine', 'places.servesBeer', 'places.servesCocktails',
 ].join(',');
 
@@ -229,8 +229,15 @@ Deno.serve(async (req) => {
 
       let photoUrl = null;
       if (p.photos && p.photos.length > 0) {
-        const photoName = p.photos[0].name;
-        photoUrl = `https://places.googleapis.com/v1/${photoName}/media?maxWidthPx=800&key=${GMAPS_KEY}`;
+        const userPhoto = p.photos.find(ph => {
+          const attribution = ph.authorAttributions?.[0];
+          return attribution &&
+                 attribution.displayName !== 'Google' &&
+                 attribution.uri &&
+                 !attribution.uri.includes('google.com/maps');
+        });
+        const selectedPhoto = userPhoto || p.photos[Math.min(1, p.photos.length - 1)];
+        photoUrl = `https://places.googleapis.com/v1/${selectedPhoto.name}/media?maxWidthPx=800&key=${GMAPS_KEY}`;
       }
 
       return {
@@ -246,6 +253,7 @@ Deno.serve(async (req) => {
         distance: d === null ? '' : d < 0.1 ? `${Math.round(d * 5280)} ft` : `${d.toFixed(1)} mi`,
         photo_url: photoUrl,
         dine_in: p.dineIn,
+        dineIn: p.dineIn,
         takeout: p.takeout,
         delivery: p.delivery,
       };

@@ -44,7 +44,10 @@ function getPriceDisplay(price_level) {
 
 export default function RestaurantCard({ restaurant, onSwipe, onBlock, isTop }) {
   const [imageLoaded, setImageLoaded] = useState(false);
-  const { name = 'Unknown', cuisine, address, rating, review_count, price_level, open_now, description, photo_url, distance, delivery, takeout, dineIn } = restaurant || {};
+  const { name = 'Unknown', cuisine, address, rating, review_count, price_level, open_now, description, photo_url, distance, delivery, takeout } = restaurant || {};
+  const hasTakeout = takeout;
+  const hasDelivery = delivery;
+  const hasDineIn = restaurant?.dineIn || restaurant?.dine_in;
   const priceLevel = price_level ? PRICE_MAP[price_level] || PRICE_MAP[price_level.toString()] : null;
   const isOpen = open_now;
   const x = useMotionValue(0);
@@ -135,11 +138,11 @@ export default function RestaurantCard({ restaurant, onSwipe, onBlock, isTop }) 
           )}
 
           {/* Row 5: Service Tags */}
-          {(restaurant.takeout || restaurant.delivery || restaurant.dineIn) && (
+          {(hasTakeout || hasDelivery || hasDineIn) && (
             <div className="flex gap-1.5 mb-3 flex-wrap">
-              {restaurant.takeout && <span style={{ background: '#F3F4F6', color: '#6B7280', fontSize: '11px', padding: '4px 8px', borderRadius: '12px', fontWeight: 500 }}>🥡 Takeout</span>}
-              {restaurant.delivery && <span style={{ background: '#F3F4F6', color: '#6B7280', fontSize: '11px', padding: '4px 8px', borderRadius: '12px', fontWeight: 500 }}>🚗 Delivery</span>}
-              {restaurant.dineIn && <span style={{ background: '#F3F4F6', color: '#6B7280', fontSize: '11px', padding: '4px 8px', borderRadius: '12px', fontWeight: 500 }}>🍽️ Dine-in</span>}
+              {hasTakeout && <span style={{ background: '#F3F4F6', color: '#6B7280', fontSize: '11px', padding: '4px 8px', borderRadius: '12px', fontWeight: 500 }}>🥡 Takeout</span>}
+              {hasDelivery && <span style={{ background: '#F3F4F6', color: '#6B7280', fontSize: '11px', padding: '4px 8px', borderRadius: '12px', fontWeight: 500 }}>🚗 Delivery</span>}
+              {hasDineIn && <span style={{ background: '#F3F4F6', color: '#6B7280', fontSize: '11px', padding: '4px 8px', borderRadius: '12px', fontWeight: 500 }}>🍽️ Dine-in</span>}
             </div>
           )}
 

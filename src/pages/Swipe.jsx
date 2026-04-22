@@ -159,7 +159,7 @@ export default function Swipe() {
                 className="w-full max-w-xs py-3 rounded-2xl font-black text-white text-base shadow-lg active:scale-95 transition-all"
                 style={{ background: '#F97316', boxShadow: '0 4px 15px rgba(249,115,22,0.4)' }}
               >
-                I'm Done
+                See My Maybes 💚
               </button>
             )}
 

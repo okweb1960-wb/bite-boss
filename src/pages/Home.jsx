@@ -108,7 +108,7 @@ export default function Home() {
         <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
           <div className="flex items-center gap-2" style={{ marginBottom: '8px' }}>
             <Utensils className="text-white" style={{ width: '20px', height: '20px' }} />
-            <span className="text-teal-600 font-bold uppercase tracking-wide" style={{ fontSize: '14px' }}>Cravr</span>
+            <span className="text-teal-600 font-bold uppercase tracking-wide" style={{ fontSize: '14px' }}>Bite Boss</span>
           </div>
           <h1 className="font-playfair font-bold text-white leading-tight" style={{ fontSize: 'clamp(28px, 8vw, 36px)', marginBottom: '4px' }}>
             Where do you<br />want to eat?

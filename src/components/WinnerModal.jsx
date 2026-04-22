@@ -1,9 +1,38 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Star, MapPin, ExternalLink } from "lucide-react";
+import { X, Star, MapPin } from "lucide-react";
 import { haptics } from "@/utils/haptics";
 
 const PRICE_MAP = { 1: "$", 2: "$$", 3: "$$$", 4: "$$$$" };
+
+const FOOD_IMAGES = {
+  american: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=800",
+  burgers: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=800",
+  mexican: "https://images.unsplash.com/photo-1565299585323-38d6b0865b47?w=800",
+  italian: "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=800",
+  pizza: "https://images.unsplash.com/photo-1574071318508-1cdbab80d002?w=800",
+  chinese: "https://images.unsplash.com/photo-1563245372-f21724e3856d?w=800",
+  japanese: "https://images.unsplash.com/photo-1579871494447-9811cf80d66c?w=800",
+  sushi: "https://images.unsplash.com/photo-1579871494447-9811cf80d66c?w=800",
+  thai: "https://images.unsplash.com/photo-1559314809-0d155014e29e?w=800",
+  indian: "https://images.unsplash.com/photo-1585937421612-70a008356fbe?w=800",
+  mediterranean: "https://images.unsplash.com/photo-1544025162-d76694265947?w=800",
+  bbq: "https://images.unsplash.com/photo-1529193591184-b1d58069ecdd?w=800",
+  seafood: "https://images.unsplash.com/photo-1565680018434-b513d5e5fd47?w=800",
+  breakfast: "https://images.unsplash.com/photo-1533089860892-a7c6f0a88666?w=800",
+  desserts: "https://images.unsplash.com/photo-1551024601-bec78aea704b?w=800",
+  cafe: "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=800",
+  restaurant: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=800",
+};
+
+function getModalImage(restaurant) {
+  if (restaurant?.photo_url) return restaurant.photo_url;
+  const cuisine = (restaurant?.cuisine || "").toLowerCase();
+  for (const key of Object.keys(FOOD_IMAGES)) {
+    if (cuisine.includes(key)) return FOOD_IMAGES[key];
+  }
+  return FOOD_IMAGES.restaurant;
+}
 
 function Confetti() {
   useEffect(() => {
@@ -19,17 +48,20 @@ function Confetti() {
 
     const ctx = canvas.getContext("2d");
     const particles = [];
-    const colors = ["#0D9488", "#F97316", "#CCFBF1", "#FFFFFF"];
+    const colors = ["#0D9488", "#F97316", "#CCFBF1", "#FFFFFF", "#FCD34D", "#F472B6"];
 
-    for (let i = 0; i < 50; i++) {
+    for (let i = 0; i < 120; i++) {
       particles.push({
-        x: canvas.width / 2,
-        y: -20,
+        x: Math.random() * canvas.width,
+        y: -20 - Math.random() * 100,
         vx: (Math.random() - 0.5) * 8,
         vy: Math.random() * 6 + 2,
         life: 1,
         color: colors[Math.floor(Math.random() * colors.length)],
         size: Math.random() * 4 + 2,
+        rotation: Math.random() * 360,
+        rotationSpeed: (Math.random() - 0.5) * 10,
+        isRect: Math.random() > 0.5,
       });
     }
 
@@ -42,12 +74,22 @@ function Confetti() {
         p.y += p.vy;
         p.vy += 0.15;
         p.life -= 0.01;
+        p.rotation += p.rotationSpeed;
 
         ctx.globalAlpha = p.life;
         ctx.fillStyle = p.color;
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-        ctx.fill();
+
+        if (p.isRect) {
+          ctx.save();
+          ctx.translate(p.x, p.y);
+          ctx.rotate(p.rotation * Math.PI / 180);
+          ctx.fillRect(-p.size, -p.size / 2, p.size * 2, p.size);
+          ctx.restore();
+        } else {
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+          ctx.fill();
+        }
 
         if (p.life <= 0) particles.splice(i, 1);
       }
@@ -67,7 +109,7 @@ const APP_LINK = window.location.origin;
 function getShareMessage(restaurant) {
   const { name, cuisine, rating, distance } = restaurant;
   const details = [name, rating ? `${rating} ⭐` : null, cuisine, distance].filter(Boolean).join(' • ');
-  return `Stop arguing about where to eat. This app picks for you and it's kind of amazing 🎉 ${details} won tonight.\n\n${APP_LINK}`;
+  return `Can't decide where to eat? Bite Boss picks for you 🎯\n\nTonight's pick: ${details}\n\n${APP_LINK}`;
 }
 
 function getSessionShareCount() {
@@ -79,9 +121,9 @@ function incrementSessionShareCount() {
 
 export default function WinnerModal({ restaurant, maybes, onClose, onPickAgain, isCardTap = false }) {
   const [showConfetti, setShowConfetti] = useState(false);
-  const [showShare, setShowShare] = useState(false);
-  const { name = 'Unknown', cuisine, rating, review_count, distance, price_level, description, photo_url, address } = restaurant;
+  const { name = 'Unknown', cuisine, rating, review_count, distance, price_level, description, address } = restaurant;
   const priceLevel = price_level ? PRICE_MAP[price_level] || PRICE_MAP[price_level.toString()] : null;
+  const hasDineIn = restaurant.dineIn || restaurant.dine_in;
 
   useEffect(() => {
     setShowConfetti(true);
@@ -103,10 +145,7 @@ export default function WinnerModal({ restaurant, maybes, onClose, onPickAgain, 
       `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(address)}`,
       "_blank"
     );
-    if (getSessionShareCount() < 2) {
-      setShowShare(true);
-      incrementSessionShareCount();
-    }
+    incrementSessionShareCount();
   }
 
   async function handleShare() {
@@ -151,17 +190,15 @@ export default function WinnerModal({ restaurant, maybes, onClose, onPickAgain, 
 
           {/* Restaurant Card */}
           <div className="w-full bg-white rounded-3xl shadow-2xl overflow-y-auto" style={{ maxHeight: '70vh' }}>
-            {/* Photo */}
-            {photo_url && (
-              <div className="relative w-full overflow-hidden" style={{ height: '160px' }}>
-                <img
-                  src={photo_url}
-                  alt={name}
-                  className="w-full h-full object-cover"
-                />
-                <div className="absolute inset-0" style={{ background: "linear-gradient(to top, rgba(0,0,0,0.4) 0%, transparent 60%)" }} />
-              </div>
-            )}
+            {/* Photo — always shown with fallback */}
+            <div className="relative w-full overflow-hidden" style={{ height: '160px' }}>
+              <img
+                src={getModalImage(restaurant)}
+                alt={name}
+                className="w-full h-full object-cover"
+              />
+              <div className="absolute inset-0" style={{ background: "linear-gradient(to top, rgba(0,0,0,0.4) 0%, transparent 60%)" }} />
+            </div>
 
             {/* Card content */}
             <div className="p-5">
@@ -196,7 +233,7 @@ export default function WinnerModal({ restaurant, maybes, onClose, onPickAgain, 
               )}
 
               {/* Service tags */}
-              {(restaurant.takeout || restaurant.delivery || restaurant.dineIn) && (
+              {(restaurant.takeout || restaurant.delivery || hasDineIn) && (
                 <div className="flex gap-2 mb-4 flex-wrap">
                   {restaurant.takeout && (
                     <span style={{ background: "#F3F4F6", color: "#6B7280", fontSize: "11px", padding: "4px 8px", borderRadius: "12px", fontWeight: 500 }}>
@@ -208,7 +245,7 @@ export default function WinnerModal({ restaurant, maybes, onClose, onPickAgain, 
                       🚗 Delivery
                     </span>
                   )}
-                  {restaurant.dineIn && (
+                  {hasDineIn && (
                     <span style={{ background: "#F3F4F6", color: "#6B7280", fontSize: "11px", padding: "4px 8px", borderRadius: "12px", fontWeight: 500 }}>
                       🍽️ Dine-in
                     </span>
@@ -232,9 +269,9 @@ export default function WinnerModal({ restaurant, maybes, onClose, onPickAgain, 
                 </button>
               </div>
 
-              {/* Share Section — always visible */}
+              {/* Share Section */}
               <div className="mt-4 pt-4 border-t border-gray-100 flex flex-col items-center gap-2">
-                <p className="text-sm font-semibold text-gray-600 text-center">Settled the debate! Send this to your group 👇</p>
+                <p className="text-sm font-semibold text-gray-600 text-center">Settled the debate? Share Bite Boss 👇</p>
                 <button
                   onClick={handleShare}
                   className="w-full py-3 bg-orange-500 text-white font-black rounded-2xl shadow hover:shadow-md transition-all text-sm"
