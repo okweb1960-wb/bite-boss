@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { motion } from "framer-motion";
 import { base44 } from "@/api/base44Client";
 import FilterPanel from "../components/FilterPanel";
+import { gtag } from "@/utils/gtag";
 
 export default function Home() {
   const navigate = useNavigate();
@@ -84,6 +85,12 @@ export default function Home() {
         toast.info("Showing all nearby results to give you more options.");
       }
 
+      gtag('event', 'search_started', {
+        radius_miles: filters.radius,
+        cuisine_count: filters.cuisines.length,
+        service_count: filters.services.length,
+        open_now: filters.openNow
+      });
       navigate("/swipe", { state: { restaurants, filters, location, coords } });
     } catch (err) {
       setError("Failed to find restaurants. Please try again.");

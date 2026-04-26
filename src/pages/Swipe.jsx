@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { ArrowLeft, RotateCcw } from "lucide-react";
 import RestaurantCard from "../components/RestaurantCard";
 import { haptics } from "@/utils/haptics";
+import { gtag } from "@/utils/gtag";
 
 export default function Swipe() {
   const navigate = useNavigate();
@@ -72,11 +73,16 @@ export default function Swipe() {
     } else {
       haptics.nope();
     }
+    gtag('event', 'card_swiped', {
+      direction: direction,
+      restaurant_cuisine: current.cuisine,
+      card_position: currentIndex
+    });
     setLastSwiped({ restaurant: current, direction });
     setLastAction(direction);
     setCurrentIndex(prev => prev + 1);
     setTimeout(() => setLastAction(null), 600);
-  }, [current]);
+  }, [current, currentIndex]);
 
   const handleUndo = useCallback(() => {
     if (!lastSwiped) return;
@@ -155,7 +161,14 @@ export default function Swipe() {
             {/* I'm Done button — appears once user has at least one maybe */}
             {maybes.length > 0 && (
               <button
-                onClick={() => navigate("/results", { state: { maybes, allRestaurants: restaurants } })}
+                onClick={() => {
+                  gtag('event', 'session_completed', {
+                    total_cards_seen: currentIndex,
+                    maybe_count: maybes.length,
+                    completion_rate: Math.round((currentIndex / restaurants.length) * 100)
+                  });
+                  navigate("/results", { state: { maybes, allRestaurants: restaurants } });
+                }}
                 className="w-full max-w-xs py-3 rounded-2xl font-black text-white text-base shadow-lg active:scale-95 transition-all"
                 style={{ background: '#F97316', boxShadow: '0 4px 15px rgba(249,115,22,0.4)' }}
               >
@@ -225,7 +238,14 @@ export default function Swipe() {
             )}
             {maybes.length > 0 && (
               <button
-                onClick={() => navigate("/results", { state: { maybes, allRestaurants: restaurants } })}
+                onClick={() => {
+                  gtag('event', 'session_completed', {
+                    total_cards_seen: currentIndex,
+                    maybe_count: maybes.length,
+                    completion_rate: Math.round((currentIndex / restaurants.length) * 100)
+                  });
+                  navigate("/results", { state: { maybes, allRestaurants: restaurants } });
+                }}
                 className="bg-green-600 text-white font-black px-8 py-4 rounded-2xl shadow-lg hover:opacity-90 transition-all flex items-center gap-2 mb-3 text-lg"
               >
                 View Your {maybes.length} Maybes 💚

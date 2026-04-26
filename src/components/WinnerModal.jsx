@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { X, Star, MapPin } from "lucide-react";
 import { haptics } from "@/utils/haptics";
 import { getImage } from "@/utils/foodImages";
+import { gtag } from "@/utils/gtag";
 
 const PRICE_MAP = { 1: "$", 2: "$$", 3: "$$$", 4: "$$$$" };
 
@@ -113,6 +114,7 @@ export default function WinnerModal({ restaurant, maybes, onClose, onPickAgain, 
 
   function handleLetsGo() {
     haptics.letsGo();
+    gtag('event', 'lets_go_tapped', { restaurant_name: name, restaurant_cuisine: cuisine });
     window.open(
       `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(address)}`,
       "_blank"
@@ -121,6 +123,7 @@ export default function WinnerModal({ restaurant, maybes, onClose, onPickAgain, 
   }
 
   async function handleShare() {
+    gtag('event', 'share_tapped', { share_type: 'winner' });
     const message = getShareMessage(restaurant);
     try {
       if (navigator.share) {
