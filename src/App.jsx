@@ -10,6 +10,8 @@ import Home from './pages/Home';
 import Swipe from './pages/Swipe';
 import Results from './pages/Results.jsx';
 import Admin from './pages/Admin';
+import Terms from './pages/Terms';
+import Privacy from './pages/Privacy';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -38,6 +40,8 @@ const AuthenticatedApp = () => {
         <Route path="/swipe" element={<Swipe />} />
         <Route path="/results" element={<Results />} />
         <Route path="/admin" element={<Admin />} />
+        <Route path="/terms" element={<Terms />} />
+        <Route path="/privacy" element={<Privacy />} />
         <Route path="*" element={<PageNotFound />} />
       </Route>
     </Routes>

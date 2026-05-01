@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { MapPin, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
@@ -160,6 +160,14 @@ export default function Home() {
             )}
           </button>
         </motion.div>
+
+        {/* Footer */}
+        <div style={{ paddingTop: '8px', paddingBottom: '16px', textAlign: 'center', fontSize: '11px', color: '#9CA3AF' }}>
+          © 2025 Bite Boss ·{' '}
+          <Link to="/terms" style={{ color: '#9CA3AF', textDecoration: 'none' }} className="hover:underline">Terms of Service</Link>
+          {' | '}
+          <Link to="/privacy" style={{ color: '#9CA3AF', textDecoration: 'none' }} className="hover:underline">Privacy Policy</Link>
+        </div>
       </div>
     </div>
   );
