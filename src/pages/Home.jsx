@@ -104,7 +104,7 @@ export default function Home() {
       <div className="rounded-b-[2.5rem] shadow-lg overflow-hidden bg-teal-600" style={{ borderTopLeftRadius: 0, borderTopRightRadius: 0 }}>
         <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
           <img
-            src="https://media.base44.com/images/public/69c6057518b3fad7a690ceef/ca5a00515_image_d02fe642.png"
+            src="https://media.base44.com/images/public/69c6057518b3fad7a690ceef/8c2b5da37_image_b15af7e4.png"
             alt="Bite Boss header"
             className="w-full"
             style={{ display: 'block' }}
