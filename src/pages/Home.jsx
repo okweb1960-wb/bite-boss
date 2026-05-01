@@ -101,27 +101,14 @@ export default function Home() {
   return (
     <div className="flex flex-col min-h-screen">
       {/* Header */}
-      <div className="bg-gradient-to-br from-teal-600 to-teal-700 rounded-b-[2.5rem] shadow-lg overflow-hidden" style={{ minHeight: '160px' }}>
-        <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="flex items-stretch" style={{ padding: '20px 24px' }}>
-          {/* Text side */}
-          <div className="flex-1 flex flex-col justify-center">
-            <div className="flex items-center gap-2" style={{ marginBottom: '8px' }}>
-              <img src="https://media.base44.com/images/public/69c6057518b3fad7a690ceef/81b423731_image_ee35052a.png" alt="Bite Boss" style={{ width: '28px', height: '28px', objectFit: 'contain' }} />
-              <span className="text-white font-bold uppercase tracking-wide" style={{ fontSize: '14px' }}>Bite Boss</span>
-            </div>
-            <h1 className="font-playfair font-bold text-white leading-tight" style={{ fontSize: 'clamp(26px, 7vw, 34px)', marginBottom: '4px' }}>
-              Where do you<br />want to eat?
-            </h1>
-            <p className="text-white/70 font-semibold" style={{ fontSize: '12px' }}>"I don't know... where do <em>you</em> want to go?"</p>
-          </div>
-          {/* Chef image */}
-          <div className="flex items-end justify-end" style={{ marginRight: '-8px', marginBottom: '-4px' }}>
-            <img
-              src="https://media.base44.com/images/public/69c6057518b3fad7a690ceef/ca5a00515_image_d02fe642.png"
-              alt="Chef"
-              style={{ height: '155px', width: 'auto', objectFit: 'contain', objectPosition: 'bottom' }}
-            />
-          </div>
+      <div className="rounded-b-[2.5rem] shadow-lg overflow-hidden">
+        <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
+          <img
+            src="https://media.base44.com/images/public/69c6057518b3fad7a690ceef/ca5a00515_image_d02fe642.png"
+            alt="Bite Boss header"
+            className="w-full"
+            style={{ display: 'block' }}
+          />
         </motion.div>
       </div>
       <div className="flex-1 px-5 py-6 overflow-y-auto space-y-6">
