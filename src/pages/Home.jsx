@@ -104,7 +104,7 @@ export default function Home() {
       <div className="bg-gradient-to-br from-teal-600 to-teal-700 rounded-b-[2.5rem] shadow-lg" style={{ padding: '20px 24px' }}>
         <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
           <div className="flex items-center gap-2" style={{ marginBottom: '8px' }}>
-            <img src="https://media.base44.com/images/public/69c6057518b3fad7a690ceef/81b423731_image_ee35052a.png" alt="Bite Boss" style={{ width: '28px', height: '28px', objectFit: 'contain' }} />
+            <img src="https://media.base44.com/images/public/69c6057518b3fad7a690ceef/81b423731_image_ee35052a.png" alt="Bite Boss" style={{ width: '42px', height: '42px', objectFit: 'contain' }} />
             <span className="text-white font-bold uppercase tracking-wide" style={{ fontSize: '14px' }}>Bite Boss</span>
           </div>
           <h1 className="font-playfair font-bold text-white leading-tight" style={{ fontSize: 'clamp(28px, 8vw, 36px)', marginBottom: '4px' }}>
