@@ -114,7 +114,7 @@ export default function Home() {
       <div className="flex-1 px-5 py-6 overflow-y-auto space-y-6">
         {/* Location */}
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
-          <h3 className="font-bold text-foreground mb-3">Where are you?</h3>
+          <h3 className="font-bold text-foreground mb-3">Select a location</h3>
           <div className="flex gap-2">
             <div className="flex-1 flex items-center bg-card border border-teal-600 rounded-2xl px-4 shadow-sm">
               <input
