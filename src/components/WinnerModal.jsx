@@ -4,6 +4,7 @@ import { X, Star, MapPin } from "lucide-react";
 import { haptics } from "@/utils/haptics";
 import { getImage } from "@/utils/foodImages";
 import { gtag } from "@/utils/gtag";
+import { base44 } from "@/api/base44Client";
 
 const PRICE_MAP = { 1: "$", 2: "$$", 3: "$$$", 4: "$$$$" };
 
@@ -124,6 +125,7 @@ export default function WinnerModal({ restaurant, maybes, onClose, onPickAgain, 
 
   async function handleShare() {
     gtag('event', 'share_tapped', { share_type: 'winner' });
+    base44.entities.ShareEvent.create({ share_type: 'winner', restaurant_name: name });
     const message = getShareMessage(restaurant);
     try {
       if (navigator.share) {

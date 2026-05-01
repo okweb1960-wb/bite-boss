@@ -8,9 +8,10 @@ Deno.serve(async (req) => {
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
     if (user.role !== 'admin') return Response.json({ error: 'Forbidden' }, { status: 403 });
 
-    const [users, sessions] = await Promise.all([
+    const [users, sessions, shareEvents] = await Promise.all([
       base44.asServiceRole.entities.User.list(),
       base44.asServiceRole.entities.Session.list('-created_date', 500),
+      base44.asServiceRole.entities.ShareEvent.list('-created_date', 1000),
     ]);
 
     // Basic session metrics
@@ -60,6 +61,9 @@ Deno.serve(async (req) => {
         completedSessions,
         swipingSessions,
         completionRate: totalSessions > 0 ? Math.round((completedSessions / totalSessions) * 100) : 0,
+        totalShares: shareEvents.length,
+        winnerShares: shareEvents.filter(e => e.share_type === 'winner').length,
+        maybesShares: shareEvents.filter(e => e.share_type === 'maybes_list').length,
       },
       sessionsByUser,
       topLocations,

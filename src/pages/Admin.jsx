@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { useAuth } from "@/lib/AuthContext";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
-import { Users, Activity, MapPin, CheckCircle, Loader2 } from "lucide-react";
+import { Users, Activity, MapPin, CheckCircle, Loader2, Share2 } from "lucide-react";
 
 function StatCard({ icon: Icon, label, value, color }) {
   return (
@@ -65,6 +65,7 @@ export default function Admin() {
         <StatCard icon={Activity} label="Total Sessions" value={stats.totalSessions} color="bg-orange-500" />
         <StatCard icon={CheckCircle} label="Completed" value={stats.completedSessions} color="bg-green-500" />
         <StatCard icon={Activity} label="Completion %" value={`${stats.completionRate}%`} color="bg-purple-500" />
+        <StatCard icon={Share2} label="Total Shares" value={stats.totalShares} color="bg-blue-500" />
       </div>
 
       {/* Sessions Over Time */}

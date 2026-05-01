@@ -6,6 +6,7 @@ import WinnerModal from "../components/WinnerModal";
 import RestaurantListCard from "../components/RestaurantListCard";
 import { haptics } from "@/utils/haptics";
 import { gtag } from "@/utils/gtag";
+import { base44 } from "@/api/base44Client";
 
 export default function Results() {
   const { state } = useLocation();
@@ -30,6 +31,7 @@ export default function Results() {
 
   async function handleShareMaybes() {
     gtag('event', 'share_tapped', { share_type: 'maybes_list' });
+    base44.entities.ShareEvent.create({ share_type: 'maybes_list' });
     const names = maybes.map(r => `• ${r.name}${r.cuisine ? ` (${r.cuisine})` : ''}`).join('\n');
     const message = `Deciding with someone? Here's my shortlist 👇\n\n${names}\n\nFind your perfect restaurant: ${window.location.origin}`;
     try {

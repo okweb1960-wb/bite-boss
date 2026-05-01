@@ -1,0 +1,15 @@
+{
+  "name": "ShareEvent",
+  "type": "object",
+  "properties": {
+    "share_type": {
+      "type": "string",
+      "title": "Share Type"
+    },
+    "restaurant_name": {
+      "type": "string",
+      "title": "Restaurant Name"
+    }
+  },
+  "required": []
+}
