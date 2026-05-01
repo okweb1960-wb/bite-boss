@@ -101,7 +101,7 @@ export default function Home() {
   return (
     <div className="flex flex-col min-h-screen">
       {/* Header */}
-      <div className="rounded-b-[2.5rem] shadow-lg overflow-hidden">
+      <div className="rounded-b-[2.5rem] shadow-lg overflow-hidden" style={{ borderTopLeftRadius: 0, borderTopRightRadius: 0 }}>
         <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
           <img
             src="https://media.base44.com/images/public/69c6057518b3fad7a690ceef/ca5a00515_image_d02fe642.png"
