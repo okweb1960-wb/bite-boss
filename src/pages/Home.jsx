@@ -167,6 +167,8 @@ export default function Home() {
           <Link to="/terms" style={{ color: '#9CA3AF', textDecoration: 'none' }} className="hover:underline">Terms of Service</Link>
           {' | '}
           <Link to="/privacy" style={{ color: '#9CA3AF', textDecoration: 'none' }} className="hover:underline">Privacy Policy</Link>
+          {' | '}
+          <a href="mailto:support@bitebossapp.com" style={{ color: '#9CA3AF', textDecoration: 'none' }} className="hover:underline">Contact</a>
         </div>
       </div>
     </div>
