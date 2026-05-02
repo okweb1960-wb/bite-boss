@@ -163,7 +163,7 @@ export default function Home() {
 
         {/* Footer */}
         <div style={{ paddingTop: '8px', paddingBottom: '16px', textAlign: 'center', fontSize: '11px', color: '#9CA3AF' }}>
-          © 2026 Bite Boss ·{' '}
+          © 2026 Bite Boss App ·{' '}
           <Link to="/terms" style={{ color: '#9CA3AF', textDecoration: 'none' }} className="hover:underline">Terms of Service</Link>
           {' | '}
           <Link to="/privacy" style={{ color: '#9CA3AF', textDecoration: 'none' }} className="hover:underline">Privacy Policy</Link>
