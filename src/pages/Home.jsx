@@ -33,7 +33,7 @@ export default function Home() {
         setDetecting(false);
       },
       () => { setDetecting(false); setError("Couldn't detect location. Type it in!"); },
-      { enableHighAccuracy: true }
+      { enableHighAccuracy: true, timeout: 10000 }
     );
   }
 
