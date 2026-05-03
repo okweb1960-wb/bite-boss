@@ -241,7 +241,7 @@ export default function Results() {
           restaurant={winner || selectedCard}
           maybes={maybes}
           onClose={() => { setWinner(null); setSelectedCard(null); }}
-          onPickAgain={() => { setSelectedCard(null); setTimeout(() => pickWinner(), 300); }}
+          onPickAgain={() => { setWinner(null); setSelectedCard(null); setTimeout(() => pickWinner(), 300); }}
           isCardTap={!!selectedCard}
         />
       )}
