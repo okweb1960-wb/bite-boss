@@ -31,7 +31,7 @@ const CUISINE_KEYWORDS = {
 // ALL cuisines use searchText with textQuery — no locked primary type doors
 const CUISINE_SEARCHES = {
   'american':      'american restaurant grill',
-  'burgers':       'burger hamburger',
+  'burgers':       'burger hamburger grill american restaurant pub',
   'mexican':       'mexican taco burrito',
   'italian':       'italian pasta trattoria',
   'pizza':         'pizza pizzeria',
