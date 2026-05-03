@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { X, RotateCcw } from "lucide-react";
 import WinnerModal from "../components/WinnerModal";
 import RestaurantListCard from "../components/RestaurantListCard";
+import RestaurantDetailModal from "../components/RestaurantDetailModal";
 import { haptics } from "@/utils/haptics";
 import { gtag } from "@/utils/gtag";
 import { base44 } from "@/api/base44Client";
@@ -14,6 +15,7 @@ export default function Results() {
 
   const [winner, setWinner] = useState(null);
   const [selectedCard, setSelectedCard] = useState(null);
+  const [detailRestaurant, setDetailRestaurant] = useState(null);
   const [lastWinner, setLastWinner] = useState(null);
   const [isShuffling, setIsShuffling] = useState(false);
   const [showUnseen, setShowUnseen] = useState(false);
@@ -128,7 +130,7 @@ export default function Results() {
         ) : (
           <div className="flex-1 overflow-y-auto px-5 py-4 space-y-3 pb-36">
             {maybes.map(r => (
-              <RestaurantListCard key={r.name} restaurant={r} onClick={() => setSelectedCard(r)} />
+              <RestaurantListCard key={r.name} restaurant={r} onClick={() => setDetailRestaurant(r)} />
             ))}
             {/* Share Maybes */}
             {maybes.length > 0 && (
@@ -215,7 +217,7 @@ export default function Results() {
                   <RestaurantListCard
                     key={r.name}
                     restaurant={r}
-                    onClick={() => { setShowUnseen(false); setSelectedCard(r); }}
+                    onClick={() => { setShowUnseen(false); setDetailRestaurant(r); }}
                   />
                 ))}
               </div>
@@ -223,6 +225,15 @@ export default function Results() {
           </>
         )}
       </AnimatePresence>
+
+      {/* Restaurant Detail Modal */}
+      {detailRestaurant && !winner && (
+        <RestaurantDetailModal
+          restaurant={detailRestaurant}
+          onClose={() => setDetailRestaurant(null)}
+          onSelect={(r) => { setDetailRestaurant(null); setSelectedCard(r); }}
+        />
+      )}
 
       {/* Winner Modal */}
       {(winner || selectedCard) && (
