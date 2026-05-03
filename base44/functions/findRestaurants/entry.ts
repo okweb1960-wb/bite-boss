@@ -31,7 +31,7 @@ const CUISINE_KEYWORDS = {
 // ALL cuisines use searchText with textQuery — no locked primary type doors
 const CUISINE_SEARCHES = {
   'american':      'american restaurant grill',
-  'burgers':       'burger hamburger grill american restaurant pub',
+  'burgers':       'burger hamburger',
   'mexican':       'mexican taco burrito',
   'italian':       'italian pasta trattoria',
   'pizza':         'pizza pizzeria',
@@ -169,10 +169,18 @@ Deno.serve(async (req) => {
       queryPromises = [runNearbySearch(['restaurant', 'fast_food_restaurant'], null)];
     } else {
       // Every cuisine filter uses textQuery — no primaryType locks
-      queryPromises = cuisineList.map(c => {
+      queryPromises = cuisineList.flatMap(c => {
         const key = c.toLowerCase();
+        if (key === 'burgers') {
+          // Run multiple targeted queries to capture both dedicated burger joints and places that serve burgers
+          return [
+            runTextSearch('burger hamburger', c),
+            runTextSearch('american grill smash burger', c),
+            runTextSearch('sports bar grill burgers', c),
+          ];
+        }
         const textQuery = CUISINE_SEARCHES[key] || `${key} restaurant`;
-        return runTextSearch(textQuery, c);
+        return [runTextSearch(textQuery, c)];
       });
     }
 
