@@ -174,6 +174,9 @@ Deno.serve(async (req) => {
             runTextSearch('burger hamburger', c),
             runTextSearch('american grill smash burger', c),
             runTextSearch('sports bar grill burgers', c),
+            runTextSearch('american kitchen burgers', c),
+            runTextSearch('american restaurant serves burgers', c),
+            runTextSearch('grill burgers american food', c),
           ];
         }
         const textQuery = CUISINE_SEARCHES[key] || `${key} restaurant`;
