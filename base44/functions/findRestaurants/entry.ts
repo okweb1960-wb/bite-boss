@@ -177,7 +177,7 @@ Deno.serve(async (req) => {
       rawPlaces = [...batch1, ...batch2, ...batch3];
     } else {
       // Specific cuisines — one call per selected cuisine, in parallel
-      const searchRadius = Math.max(radiusMeters, 4828);
+      const searchRadius = Math.max(radiusMeters, 8047);
       const results = await Promise.all(
         cuisineList.map(key => {
           const types = CUISINE_TYPE_MAP[key] || ['restaurant'];
