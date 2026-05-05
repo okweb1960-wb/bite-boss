@@ -76,9 +76,11 @@ const FIELD_MASK = [
   'places.photos.authorAttributions', 'places.servesWine', 'places.servesBeer', 'places.servesCocktails',
 ].join(',');
 
-async function searchNearby(includedPrimaryTypes, radiusMeters, lat, lng, open_now) {
+async function searchNearby(types, radiusMeters, lat, lng, open_now, usePrimaryTypes = true) {
   const body = {
-    includedPrimaryTypes,
+    ...(usePrimaryTypes
+      ? { includedPrimaryTypes: types }
+      : { includedTypes: types }),
     maxResultCount: 20,
     rankPreference: 'DISTANCE',
     locationRestriction: {
@@ -103,35 +105,6 @@ async function searchNearby(includedPrimaryTypes, radiusMeters, lat, lng, open_n
   return data.places || [];
 }
 
-async function searchText(textQuery, includedType, radiusMeters, lat, lng, open_now) {
-  const body = {
-    textQuery,
-    includedType,
-    strictTypeFiltering: false,
-    pageSize: 20,
-    rankPreference: 'DISTANCE',
-    locationBias: {
-      circle: {
-        center: { latitude: lat, longitude: lng },
-        radius: radiusMeters,
-      }
-    },
-    ...(open_now ? { openNow: true } : {}),
-  };
-  const res = await fetch('https://places.googleapis.com/v1/places:searchText', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'X-Goog-Api-Key': GMAPS_KEY || '',
-      'X-Goog-FieldMask': FIELD_MASK,
-    },
-    body: JSON.stringify(body),
-  });
-  const data = await res.json();
-  if (data.error) console.error('[searchText error]', JSON.stringify(data.error));
-  else console.log('[searchText ok]', textQuery, 'count:', (data.places || []).length);
-  return data.places || [];
-}
 
 function mapPlace(p, lat, lng) {
   const pLat = p.location?.latitude;
@@ -182,7 +155,7 @@ Deno.serve(async (req) => {
     const serviceList = Array.isArray(service) ? service : (service ? [service] : []);
     const excludeNames = (exclude || []).map(n => n.toLowerCase());
 
-    console.log('[findRestaurants] cuisineList:', JSON.stringify(cuisineList));
+
 
     if (isNaN(lat) || isNaN(lng)) {
       return Response.json({ error: 'Invalid coordinates' }, { status: 400 });
@@ -214,13 +187,7 @@ Deno.serve(async (req) => {
         cuisineList.map(key => {
           console.log('[cuisine key]', key);
           if (key === 'burgers') {
-            // Burgers: 3 parallel searchText calls to catch all burger places
-            console.log('[burgers] using searchText');
-            return Promise.all([
-              searchText('burger restaurant', 'hamburger_restaurant', searchRadius, lat, lng, open_now),
-              searchText('burger bar grill', 'restaurant', searchRadius, lat, lng, open_now),
-              searchText('hamburger smash burger', 'restaurant', searchRadius, lat, lng, open_now),
-            ]).then(r => r.flat());
+            return searchNearby(['hamburger_restaurant'], searchRadius, lat, lng, open_now, false);
           }
           const types = CUISINE_TYPE_MAP[key] || ['restaurant'];
           return searchNearby(types, searchRadius, lat, lng, open_now);
