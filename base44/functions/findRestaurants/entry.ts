@@ -32,30 +32,30 @@ const CUISINE_TYPE_MAP = {
 };
 
 const PRIMARY_TYPE_LABEL = {
-  'hamburger_restaurant':    'Burgers',
-  'fast_food_restaurant':    'Fast Food',
-  'american_restaurant':     'American',
-  'mexican_restaurant':      'Mexican',
-  'italian_restaurant':      'Italian',
-  'pizza_restaurant':        'Pizza',
-  'chinese_restaurant':      'Chinese',
-  'japanese_restaurant':     'Japanese',
-  'ramen_restaurant':        'Japanese',
-  'sushi_restaurant':        'Sushi',
-  'thai_restaurant':         'Thai',
-  'indian_restaurant':       'Indian',
-  'mediterranean_restaurant':'Mediterranean',
-  'greek_restaurant':        'Mediterranean',
+  'hamburger_restaurant':     'Burgers',
+  'fast_food_restaurant':     'Fast Food',
+  'american_restaurant':      'American',
+  'mexican_restaurant':       'Mexican',
+  'italian_restaurant':       'Italian',
+  'pizza_restaurant':         'Pizza',
+  'chinese_restaurant':       'Chinese',
+  'japanese_restaurant':      'Japanese',
+  'ramen_restaurant':         'Japanese',
+  'sushi_restaurant':         'Sushi',
+  'thai_restaurant':          'Thai',
+  'indian_restaurant':        'Indian',
+  'mediterranean_restaurant': 'Mediterranean',
+  'greek_restaurant':         'Mediterranean',
   'middle_eastern_restaurant':'Mediterranean',
-  'barbecue_restaurant':     'BBQ',
-  'seafood_restaurant':      'Seafood',
-  'breakfast_restaurant':    'Breakfast',
-  'brunch_restaurant':       'Breakfast',
-  'cafe':                    'Cafe',
-  'ice_cream_shop':          'Desserts',
-  'dessert_shop':            'Desserts',
-  'bakery':                  'Desserts',
-  'restaurant':              'Restaurant',
+  'barbecue_restaurant':      'BBQ',
+  'seafood_restaurant':       'Seafood',
+  'breakfast_restaurant':     'Breakfast',
+  'brunch_restaurant':        'Breakfast',
+  'cafe':                     'Cafe',
+  'ice_cream_shop':           'Desserts',
+  'dessert_shop':             'Desserts',
+  'bakery':                   'Desserts',
+  'restaurant':               'Restaurant',
 };
 
 const PRICE_MAP = {
@@ -100,6 +100,36 @@ async function searchNearby(includedPrimaryTypes, radiusMeters, lat, lng, open_n
   });
   const data = await res.json();
   if (data.error) console.error('[searchNearby error]', JSON.stringify(data.error));
+  return data.places || [];
+}
+
+async function searchText(textQuery, includedType, radiusMeters, lat, lng, open_now) {
+  const body = {
+    textQuery,
+    includedType,
+    strictTypeFiltering: false,
+    pageSize: 20,
+    rankPreference: 'DISTANCE',
+    locationBias: {
+      circle: {
+        center: { latitude: lat, longitude: lng },
+        radius: radiusMeters,
+      }
+    },
+    ...(open_now ? { openNow: true } : {}),
+  };
+  const res = await fetch('https://places.googleapis.com/v1/places:searchText', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Goog-Api-Key': GMAPS_KEY || '',
+      'X-Goog-FieldMask': FIELD_MASK,
+    },
+    body: JSON.stringify(body),
+  });
+  const data = await res.json();
+  if (data.error) console.error('[searchText error]', JSON.stringify(data.error));
+  else console.log('[searchText ok]', textQuery, 'count:', (data.places || []).length);
   return data.places || [];
 }
 
@@ -152,6 +182,8 @@ Deno.serve(async (req) => {
     const serviceList = Array.isArray(service) ? service : (service ? [service] : []);
     const excludeNames = (exclude || []).map(n => n.toLowerCase());
 
+    console.log('[findRestaurants] cuisineList:', JSON.stringify(cuisineList));
+
     if (isNaN(lat) || isNaN(lng)) {
       return Response.json({ error: 'Invalid coordinates' }, { status: 400 });
     }
@@ -159,7 +191,7 @@ Deno.serve(async (req) => {
     let rawPlaces = [];
 
     if (cuisineList.length === 0) {
-      // All cuisines — 3 parallel calls with broad radius
+      // All cuisines — 3 parallel searchNearby calls with broad radius
       const broadRadius = Math.max(radiusMeters, 8047);
       const [batch1, batch2, batch3] = await Promise.all([
         searchNearby(['restaurant', 'american_restaurant'], broadRadius, lat, lng, open_now),
@@ -180,12 +212,24 @@ Deno.serve(async (req) => {
       const searchRadius = Math.max(radiusMeters, 8047);
       const results = await Promise.all(
         cuisineList.map(key => {
+          console.log('[cuisine key]', key);
+          if (key === 'burgers') {
+            // Burgers: 3 parallel searchText calls to catch all burger places
+            console.log('[burgers] using searchText');
+            return Promise.all([
+              searchText('burger restaurant', 'hamburger_restaurant', searchRadius, lat, lng, open_now),
+              searchText('burger bar grill', 'restaurant', searchRadius, lat, lng, open_now),
+              searchText('hamburger smash burger', 'restaurant', searchRadius, lat, lng, open_now),
+            ]).then(r => r.flat());
+          }
           const types = CUISINE_TYPE_MAP[key] || ['restaurant'];
           return searchNearby(types, searchRadius, lat, lng, open_now);
         })
       );
       rawPlaces = results.flat();
     }
+
+    console.log('[findRestaurants] rawPlaces count:', rawPlaces.length);
 
     // Deduplicate by name + address
     const seen = new Set();
@@ -249,6 +293,7 @@ Deno.serve(async (req) => {
     });
 
   } catch (error) {
+    console.error('[findRestaurants error]', error.message);
     return Response.json({ error: error.message }, { status: 500 });
   }
 });
