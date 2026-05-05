@@ -1,6 +1,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 
 const GMAPS_KEY = Deno.env.get('GOOGLE_MAPS_API_KEY');
+const FSQ_KEY = Deno.env.get('FOURSQUARE_API_KEY');
 
 function distanceMiles(lat1, lon1, lat2, lon2) {
   const R = 3958.8;
@@ -29,6 +30,26 @@ const CUISINE_TYPE_MAP = {
   'breakfast':     ['breakfast_restaurant', 'brunch_restaurant'],
   'cafe':          ['cafe'],
   'desserts':      ['ice_cream_shop', 'dessert_shop', 'bakery'],
+};
+
+const FSQ_CATEGORY_MAP = {
+  'burgers':       '13064',
+  'fast food':     '13145',
+  'mexican':       '13303',
+  'italian':       '13236',
+  'pizza':         '13263',
+  'chinese':       '13099',
+  'japanese':      '13243',
+  'sushi':         '13355',
+  'thai':          '13358',
+  'indian':        '13199',
+  'mediterranean': '13291',
+  'bbq':           '13049',
+  'seafood':       '13338',
+  'breakfast':     '13060',
+  'cafe':          '13032',
+  'desserts':      '13040',
+  'american':      '13002',
 };
 
 const PRIMARY_TYPE_LABEL = {
@@ -132,6 +153,58 @@ async function searchNearby(types, radiusMeters, lat, lng, open_now, usePrimaryT
 }
 
 
+async function searchFoursquare(cuisine, radiusMeters, lat, lng, open_now) {
+  if (!FSQ_KEY) return [];
+  const categoryId = FSQ_CATEGORY_MAP[cuisine.toLowerCase()];
+  if (!categoryId) return [];
+
+  const params = new URLSearchParams({
+    ll: `${lat},${lng}`,
+    radius: String(Math.min(radiusMeters, 50000)),
+    limit: '50',
+    categories: categoryId,
+    sort: 'DISTANCE',
+    fields: 'name,location,geocodes,rating,stats,price,hours,photos,description,tel',
+  });
+
+  const res = await fetch(`https://api.foursquare.com/v3/places/search?${params}`, {
+    headers: {
+      'Authorization': FSQ_KEY,
+      'Accept': 'application/json',
+    },
+  });
+  const data = await res.json();
+  if (!data.results) { console.error('[FSQ error]', JSON.stringify(data)); return []; }
+
+  return data.results
+    .filter(p => open_now ? p.hours?.open_now : true)
+    .map(p => {
+      const geo = p.geocodes?.main;
+      const d = (geo?.latitude && geo?.longitude) ? distanceMiles(lat, lng, geo.latitude, geo.longitude) : null;
+      const cuisineLabel = FSQ_CATEGORY_MAP[cuisine.toLowerCase()] ? cuisine.charAt(0).toUpperCase() + cuisine.slice(1) : 'Restaurant';
+      const photoUrl = p.photos?.[0] ? `${p.photos[0].prefix}800${p.photos[0].suffix}` : null;
+      return {
+        name: p.name || 'Unknown Restaurant',
+        cuisine: cuisineLabel,
+        primaryType: '',
+        address: [p.location?.address, p.location?.city, p.location?.region].filter(Boolean).join(', '),
+        rating: p.rating ? parseFloat((p.rating / 2).toFixed(1)) : 0,
+        review_count: p.stats?.total_ratings || 0,
+        price_level: p.price || null,
+        open_now: p.hours?.open_now,
+        description: p.description || '',
+        distance_miles: d,
+        distance: d === null ? '' : d < 0.1 ? `${Math.round(d * 5280)} ft` : `${d.toFixed(1)} mi`,
+        photo_url: photoUrl,
+        dine_in: null,
+        dineIn: null,
+        takeout: null,
+        delivery: null,
+        _source: 'foursquare',
+      };
+    });
+}
+
 function mapPlace(p, lat, lng) {
   const pLat = p.location?.latitude;
   const pLng = p.location?.longitude;
@@ -212,12 +285,13 @@ Deno.serve(async (req) => {
       const results = await Promise.all(
         cuisineList.map(async key => {
           if (key === 'burgers') {
-            const [r1, r2, r3] = await Promise.all([
+            const [r1, r2, r3, fsq] = await Promise.all([
               searchText('burger restaurant', searchRadius, lat, lng, open_now),
               searchText('burger bar grill', searchRadius, lat, lng, open_now),
               searchText('hamburger smash burger', searchRadius, lat, lng, open_now),
+              searchFoursquare('burgers', searchRadius, lat, lng, open_now),
             ]);
-            return [...r1, ...r2, ...r3];
+            return [...r1, ...r2, ...r3, ...fsq];
           }
           const types = CUISINE_TYPE_MAP[key] || ['restaurant'];
           return searchNearby(types, searchRadius, lat, lng, open_now);
@@ -226,23 +300,37 @@ Deno.serve(async (req) => {
       rawPlaces = results.flat();
     }
 
-    // Deduplicate by name + address
+    // Separate Foursquare (already mapped) from Google places (need mapping)
+    const fsqPlaces = rawPlaces.filter(p => p._source === 'foursquare');
+    const googlePlaces = rawPlaces.filter(p => !p._source);
+
+    // Deduplicate Google places by name + address
     const seen = new Set();
-    const unique = rawPlaces.filter(p => {
+    const uniqueGoogle = googlePlaces.filter(p => {
       const key = `${p.displayName?.text}|${p.formattedAddress}`;
       if (seen.has(key)) return false;
       seen.add(key);
       return true;
     });
 
-    // Map to restaurant objects
-    const mapped = unique.map(p => mapPlace(p, lat, lng));
+    // Map Google places and merge with Foursquare
+    const mappedGoogle = uniqueGoogle.map(p => mapPlace(p, lat, lng));
+    const allMapped = [...mappedGoogle, ...fsqPlaces];
+
+    // Deduplicate merged results by name
+    const seenNames = new Set();
+    const mapped = allMapped.filter(r => {
+      const key = r.name.toLowerCase();
+      if (seenNames.has(key)) return false;
+      seenNames.add(key);
+      return true;
+    });
 
     // Filter
     const filtered = mapped
       .filter(r => {
-        const p = unique.find(u => u.displayName?.text === r.name && u.formattedAddress === r.address);
-        return p?.businessStatus !== 'CLOSED_PERMANENTLY';
+        const p = uniqueGoogle.find(u => u.displayName?.text === r.name && u.formattedAddress === r.address);
+        return !p || p?.businessStatus !== 'CLOSED_PERMANENTLY';
       })
       .filter(r => !(r.rating === 0 && r.review_count === 0))
       .filter(r => !EXCLUDED_KEYWORDS.test(r.name))
@@ -282,7 +370,8 @@ Deno.serve(async (req) => {
       restaurants: results,
       filterMismatch,
       debug: {
-        totalFromGoogle: unique.length,
+        totalFromGoogle: uniqueGoogle.length,
+        totalFromFoursquare: fsqPlaces.length,
         afterFiltering: results.length,
       }
     });
