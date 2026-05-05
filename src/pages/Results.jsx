@@ -35,7 +35,7 @@ export default function Results() {
     gtag('event', 'share_tapped', { share_type: 'maybes_list' });
     base44.entities.ShareEvent.create({ share_type: 'maybes_list' });
     const names = maybes.map(r => `• ${r.name}${r.cuisine ? ` (${r.cuisine})` : ''}`).join('\n');
-    const message = `Deciding with someone? Here's my shortlist 👇\n\n${names}\n\nFind your perfect restaurant: ${window.location.origin}`;
+    const message = `I found some great restaurants using Bite Boss! Check out my top picks 👇\n\n${names}\n\nTry it yourself: https://bitebossapp.com`;
     try {
       if (navigator.share) {
         await navigator.share({ text: message });
