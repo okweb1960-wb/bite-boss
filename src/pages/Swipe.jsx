@@ -100,6 +100,39 @@ export default function Swipe() {
 
   const allDone = currentIndex >= restaurants.length;
 
+  const RADIUS_OPTIONS = [1, 3, 5, 10, 20];
+  const currentRadius = state?.filters?.radius || 5;
+  const nextRadius = RADIUS_OPTIONS.find(r => r > currentRadius) || 20;
+  const cuisineLabel = (state?.filters?.cuisines || []).join(', ') || 'restaurant';
+  const count = restaurants.length;
+
+  if (count < 3) {
+    return (
+      <div className="flex flex-col min-h-screen bg-white items-center justify-center px-6 text-center">
+        <div className="text-7xl mb-5">🔍</div>
+        <h2 className="font-playfair text-3xl font-bold text-teal-700 mb-3">Not much nearby...</h2>
+        <p className="text-muted-foreground font-semibold text-base mb-8 max-w-xs">
+          We only found <span className="text-foreground font-bold">{count}</span> {cuisineLabel} spot{count !== 1 ? 's' : ''} within {currentRadius} mile{currentRadius !== 1 ? 's' : ''}. Try expanding your radius or changing your filters.
+        </p>
+        <div className="flex flex-col gap-3 w-full max-w-xs">
+          <button
+            onClick={() => navigate("/", { state: { prefillFilters: { ...state?.filters, radius: nextRadius } } })}
+            className="w-full py-4 rounded-2xl font-black text-white text-base shadow-lg active:scale-95 transition-all"
+            style={{ background: '#F97316', boxShadow: '0 4px 15px rgba(249,115,22,0.4)' }}
+          >
+            Expand to {nextRadius} miles 📍
+          </button>
+          <button
+            onClick={() => navigate("/")}
+            className="w-full py-4 rounded-2xl font-black text-base border-2 border-teal-600 text-teal-700 hover:bg-teal-50 transition-all"
+          >
+            Change Filters
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col min-h-screen bg-background">
       {/* Header with Maybe Count */}

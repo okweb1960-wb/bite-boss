@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, useLocation, Link } from "react-router-dom";
 import { MapPin, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
@@ -9,12 +9,13 @@ import { gtag } from "@/utils/gtag";
 
 export default function Home() {
   const navigate = useNavigate();
+  const { state: routeState } = useLocation();
   const [location, setLocation] = useState("");
   const [coords, setCoords] = useState(null);
   const [detecting, setDetecting] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [filters, setFilters] = useState({ radius: 5, cuisines: [], services: [], openNow: true });
+  const [filters, setFilters] = useState(routeState?.prefillFilters || { radius: 5, cuisines: [], services: [], openNow: true });
 
 
 
