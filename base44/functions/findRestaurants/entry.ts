@@ -143,21 +143,6 @@ Deno.serve(async (req) => {
 
     const allRawPlaces = allResults.flat();
 
-    // TEMPORARY DEBUG - remove after testing
-    if (cuisineList.some(c => c.toLowerCase() === 'fast food')) {
-      return Response.json({
-        debug: true,
-        rawResults: allRawPlaces.map(p => ({
-          name: p.displayName?.text,
-          primaryType: p.primaryType,
-          types: p.types,
-          distance: p.location ?
-            distanceMiles(lat, lng, p.location.latitude, p.location.longitude).toFixed(2) : 'unknown',
-          address: p.formattedAddress
-        }))
-      });
-    }
-
     // Deduplicate by name + address
     const seen = new Set();
     const uniquePlaces = allRawPlaces.filter(p => {
@@ -276,20 +261,25 @@ Deno.serve(async (req) => {
       const allCuisineTypes = new Set(cuisineList.flatMap(c => CUISINE_TYPE_MAP[c.toLowerCase()] || []));
       const cuisineLabelsLower = cuisineList.map(c => c.toLowerCase());
 
-      filteredByCuisine = mappedRestaurants
-        .map(r => {
-          // For fast food searches, reclassify hamburger_restaurant chains as "Fast Food"
-          if (isFastFoodSearch && r.primaryType === 'hamburger_restaurant') {
-            return { ...r, cuisine: 'Fast Food' };
-          }
-          return r;
-        })
-        .filter(r => {
+      if (isFastFoodSearch) {
+        const fastFoodTypes = new Set([
+          'fast_food_restaurant',
+          'hamburger_restaurant',
+          'chicken_restaurant',
+          'sandwich_shop',
+          'meal_takeaway',
+          'restaurant',
+        ]);
+        filteredByCuisine = mappedRestaurants
+          .filter(r => fastFoodTypes.has(r.primaryType))
+          .map(r => ({ ...r, cuisine: 'Fast Food' }));
+      } else {
+        filteredByCuisine = mappedRestaurants.filter(r => {
           if (allCuisineTypes.has(r.primaryType)) return true;
-          // Keep generic 'restaurant' primaryType if cuisine label matches word detection
           if (r.primaryType === 'restaurant' && cuisineLabelsLower.includes(r.cuisine.toLowerCase())) return true;
           return false;
         });
+      }
     }
 
     // FIX 2 — Name-based exclusion for burger/fast food searches
