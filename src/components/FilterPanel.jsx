@@ -1,7 +1,21 @@
 const CUISINES = [
-  "American", "Burgers", "Fast Food", "Mexican", "Italian", "Pizza",
-  "Chinese", "Japanese", "Sushi", "Thai", "Indian",
-  "Mediterranean", "BBQ", "Seafood", "Breakfast", "Cafe", "Desserts"
+  { value: "American", label: "American" },
+  { value: "Burgers", label: "Burgers" },
+  { value: "Fast Food", label: "Fast Food" },
+  { value: "Mexican", label: "Mexican" },
+  { value: "Italian", label: "Italian" },
+  { value: "Pizza", label: "Pizza" },
+  { value: "Chinese", label: "Chinese" },
+  { value: "Japanese", label: "Japanese" },
+  { value: "Sushi", label: "Sushi" },
+  { value: "Thai", label: "Thai" },
+  { value: "Indian", label: "Indian" },
+  { value: "Mediterranean", label: "Mediterranean" },
+  { value: "BBQ", label: "BBQ" },
+  { value: "Seafood", label: "Seafood" },
+  { value: "breakfast", label: "Breakfast & Brunch" },
+  { value: "Cafe", label: "Cafe" },
+  { value: "Desserts", label: "Desserts" },
 ];
 
 const SERVICE_TYPES = [
@@ -63,18 +77,18 @@ export default function FilterPanel({ filters, onChange }) {
             All
           </button>
           {CUISINES.map(c => {
-            const selected = (filters.cuisines || []).includes(c);
+            const selected = (filters.cuisines || []).includes(c.value);
             return (
               <button
-                key={c}
-                onClick={() => toggleCuisine(c)}
+                key={c.value}
+                onClick={() => toggleCuisine(c.value)}
                 className={`px-3 py-1.5 rounded-full font-semibold text-sm transition-all ${
                   selected
                     ? "bg-teal-600 text-white shadow-md scale-105"
                     : "border-2 border-teal-600 text-teal-600 hover:bg-teal-50"
                 }`}
               >
-                {c}
+                {c.label}
               </button>
             );
           })}
