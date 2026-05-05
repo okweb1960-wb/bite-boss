@@ -81,9 +81,9 @@ function Confetti() {
 const APP_LINK = window.location.origin;
 
 function getShareMessage(restaurant) {
-  const { name, cuisine, rating, distance, address } = restaurant;
+  const { name, cuisine, rating, distance } = restaurant;
   const details = [name, rating ? `${rating} ⭐` : null, cuisine, distance].filter(Boolean).join(' • ');
-  return `Bite Boss found the perfect spot! 🎯\n\n${details}\n\nWhat time should we meet there?\n\n📍 ${address || name}\n\nhttps://bitebossapp.com`;
+  return `Can't decide where to eat? Bite Boss picks for you 🎯\n\nTonight's pick: ${details}\n\n${APP_LINK}`;
 }
 
 function getSessionShareCount() {
