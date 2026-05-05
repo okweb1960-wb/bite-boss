@@ -1,7 +1,7 @@
 const CUISINES = [
   "American", "Burgers", "Fast Food", "Mexican", "Italian", "Pizza",
   "Chinese", "Japanese", "Sushi", "Thai", "Indian",
-  "Mediterranean", "BBQ", "Seafood", "Breakfast & Brunch", "Cafe", "Desserts"
+  "Mediterranean", "BBQ", "Seafood", "Breakfast", "Cafe", "Desserts"
 ];
 
 const SERVICE_TYPES = [
