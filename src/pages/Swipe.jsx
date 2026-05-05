@@ -236,6 +236,9 @@ export default function Swipe() {
                     maybe_count: maybes.length,
                     completion_rate: Math.round((currentIndex / restaurants.length) * 100)
                   });
+                  if (state?.sessionId) {
+                    base44.entities.Session.update(state.sessionId, { status: 'results', maybes: JSON.stringify(maybes.map(r => r.name)), nopes: JSON.stringify([]) }).catch(() => {});
+                  }
                   navigate("/results", { state: { maybes, allRestaurants: restaurants } });
                 }}
                 className="w-full max-w-xs py-3 rounded-2xl font-black text-white text-base shadow-lg active:scale-95 transition-all"
@@ -313,6 +316,9 @@ export default function Swipe() {
                     maybe_count: maybes.length,
                     completion_rate: Math.round((currentIndex / restaurants.length) * 100)
                   });
+                  if (state?.sessionId) {
+                    base44.entities.Session.update(state.sessionId, { status: 'results', maybes: JSON.stringify(maybes.map(r => r.name)), nopes: JSON.stringify([]) }).catch(() => {});
+                  }
                   navigate("/results", { state: { maybes, allRestaurants: restaurants } });
                 }}
                 className="bg-green-600 text-white font-black px-8 py-4 rounded-2xl shadow-lg hover:opacity-90 transition-all flex items-center gap-2 mb-3 text-lg"

@@ -92,7 +92,25 @@ export default function Home() {
         service_count: filters.services.length,
         open_now: filters.openNow
       });
-      navigate("/swipe", { state: { restaurants, filters, location, coords } });
+
+      // Save session record
+      let sessionId = null;
+      try {
+        const session = await base44.entities.Session.create({
+          location_text: location,
+          latitude: resolvedCoords.latitude,
+          longitude: resolvedCoords.longitude,
+          radius_miles: filters.radius,
+          cuisine_filter: filters.cuisines.join(','),
+          service_filter: filters.services.join(','),
+          open_now_filter: filters.openNow,
+          restaurants: JSON.stringify(restaurants.map(r => r.name)),
+          status: 'swiping',
+        });
+        sessionId = session.id;
+      } catch (e) { /* non-critical */ }
+
+      navigate("/swipe", { state: { restaurants, filters, location, coords, sessionId } });
     } catch (err) {
       setError("Failed to find restaurants. Please try again.");
     }
