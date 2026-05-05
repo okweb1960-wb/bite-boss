@@ -131,6 +131,14 @@ Deno.serve(async (req) => {
           ];
         }
 
+        // For burgers, only search by specific types — no broad 'restaurant' call
+        if (key === 'burgers') {
+          return [
+            runNearbySearch(['hamburger_restaurant'], c, true),
+            runNearbySearch(['hamburger_restaurant', 'fast_food_restaurant'], c, false),
+          ];
+        }
+
         const types = CUISINE_TYPE_MAP[key] || ['restaurant'];
         return [
           runNearbySearch(types, c, true),           // Call 1: primaryType match (strict)
@@ -276,7 +284,14 @@ Deno.serve(async (req) => {
       } else {
         filteredByCuisine = mappedRestaurants.filter(r => {
           if (allCuisineTypes.has(r.primaryType)) return true;
-          if (r.primaryType === 'restaurant' && cuisineLabelsLower.includes(r.cuisine.toLowerCase())) return true;
+          // For generic 'restaurant' primaryType, require a name-level match for burger searches
+          if (r.primaryType === 'restaurant') {
+            const isBurgerCuisine = cuisineLabelsLower.includes('burgers');
+            if (isBurgerCuisine) {
+              return /burger|hamburger/i.test(r.name);
+            }
+            return cuisineLabelsLower.includes(r.cuisine.toLowerCase());
+          }
           return false;
         });
       }
