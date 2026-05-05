@@ -10,7 +10,7 @@ function distanceMiles(lat1, lon1, lat2, lon2) {
 
 const CUISINE_KEYWORDS = {
   'american':      { words: ['american grill', 'american kitchen', 'american food', 'american cuisine'], types: ['american_restaurant'] },
-  'burgers':       { words: ['burger', 'hamburger', 'smash burger', 'fast food', 'wendy', 'mcdonald', 'whataburger', 'five guys', 'shake shack', 'culver', 'in-n-out', 'sonic'], types: ['hamburger_restaurant', 'fast_food_restaurant'] },
+  'burgers':       { words: ['burger', 'hamburger', 'smash burger'], types: ['hamburger_restaurant', 'fast_food_restaurant'] },
   'mexican':       { words: ['mexican', 'taco', 'burrito', 'tex-mex', 'tamale', 'quesadilla', 'enchilada', 'tortilla', 'taqueria', 'cantina'], types: ['mexican_restaurant'] },
   'italian':       { words: ['italian', 'trattoria', 'pasta', 'osteria'], types: ['italian_restaurant'] },
   'pizza':         { words: ['pizza', 'pizzeria'], types: ['pizza_restaurant'] },
@@ -25,55 +25,30 @@ const CUISINE_KEYWORDS = {
   'breakfast':     { words: ['breakfast', 'brunch', 'pancake', 'waffle', 'omelette', 'diner', 'ihop', 'denny'], types: ['breakfast_restaurant', 'brunch_restaurant'] },
   'cafe':          { words: ['cafe', 'coffee', 'espresso', 'coffeehouse'], types: ['cafe', 'coffee_shop'] },
   'desserts':      { words: ['dessert', 'ice cream', 'bakery', 'cake', 'pastry', 'donut', 'yogurt', 'gelato'], types: ['ice_cream_shop', 'bakery', 'dessert_shop'] },
-  'fast food':     { words: ['mcdonald', 'burger king', 'wendy', 'taco bell', 'kfc', 'chick-fil-a', 'subway', 'fast food', 'whataburger', 'sonic', 'popeyes', 'dairy queen', 'jack in the box', 'five guys', 'in-n-out', 'culver', 'shake shack'], types: ['fast_food_restaurant'] },
+  'fast food':     { words: ['fast food', 'mcdonald', 'burger king', 'wendy', 'taco bell', 'kfc', 'chick-fil-a', 'subway', 'popeyes'], types: ['fast_food_restaurant'] },
 };
 
-const CUISINE_SEARCHES = {
-  'american':      'american restaurant grill',
-  'burgers':       'burger hamburger',
-  'mexican':       'mexican taco burrito',
-  'italian':       'italian pasta trattoria',
-  'pizza':         'pizza pizzeria',
-  'chinese':       'chinese food dim sum',
-  'japanese':      'japanese restaurant ramen hibachi',
-  'sushi':         'sushi and japanese restaurants',
-  'thai':          'thai food curry',
-  'indian':        'indian curry tandoor',
-  'mediterranean': 'mediterranean greek middle eastern',
-  'bbq':           'bbq barbecue smokehouse',
-  'seafood':       'seafood fish crab lobster',
-  'breakfast':     'breakfast brunch pancake diner',
-  'cafe':          'cafe coffee espresso',
-  'desserts':      'dessert ice cream bakery',
-  'fast food':     'fast food',
+const CUISINE_SEARCH_MAP = {
+  'burgers':       { textQuery: 'burger hamburger restaurant',        includedType: 'hamburger_restaurant' },
+  'fast food':     { textQuery: 'fast food restaurant',              includedType: 'fast_food_restaurant' },
+  'mexican':       { textQuery: 'mexican restaurant',                includedType: 'mexican_restaurant' },
+  'italian':       { textQuery: 'italian restaurant',                includedType: 'italian_restaurant' },
+  'pizza':         { textQuery: 'pizza restaurant pizzeria',         includedType: 'pizza_restaurant' },
+  'chinese':       { textQuery: 'chinese restaurant',                includedType: 'chinese_restaurant' },
+  'japanese':      { textQuery: 'japanese restaurant ramen',         includedType: 'japanese_restaurant' },
+  'sushi':         { textQuery: 'sushi restaurant',                  includedType: 'sushi_restaurant' },
+  'thai':          { textQuery: 'thai restaurant',                   includedType: 'thai_restaurant' },
+  'indian':        { textQuery: 'indian restaurant curry',           includedType: 'indian_restaurant' },
+  'mediterranean': { textQuery: 'mediterranean greek restaurant',    includedType: 'mediterranean_restaurant' },
+  'bbq':           { textQuery: 'bbq barbecue restaurant',           includedType: 'barbecue_restaurant' },
+  'seafood':       { textQuery: 'seafood restaurant fish',           includedType: 'seafood_restaurant' },
+  'breakfast':     { textQuery: 'breakfast brunch restaurant',       includedType: 'breakfast_restaurant' },
+  'cafe':          { textQuery: 'cafe coffee shop',                  includedType: 'cafe' },
+  'desserts':      { textQuery: 'dessert ice cream bakery',          includedType: 'ice_cream_shop' },
+  'american':      { textQuery: 'american restaurant grill diner',   includedType: 'american_restaurant' },
 };
 
 const PRICE_MAP = { PRICE_LEVEL_FREE: 1, PRICE_LEVEL_INEXPENSIVE: 1, PRICE_LEVEL_MODERATE: 2, PRICE_LEVEL_EXPENSIVE: 3, PRICE_LEVEL_VERY_EXPENSIVE: 4 };
-
-// Broad set of food-related types — used to validate a place is actually food
-const FOOD_TYPES = new Set([
-  'restaurant', 'food', 'meal_takeaway', 'meal_delivery', 'cafe', 'bakery',
-  'fast_food_restaurant', 'hamburger_restaurant', 'barbecue_restaurant',
-  'pizza_restaurant', 'sandwich_shop', 'american_restaurant', 'mexican_restaurant',
-  'italian_restaurant', 'chinese_restaurant', 'japanese_restaurant', 'thai_restaurant',
-  'indian_restaurant', 'seafood_restaurant', 'sushi_restaurant', 'ramen_restaurant',
-  'breakfast_restaurant', 'brunch_restaurant', 'mediterranean_restaurant',
-  'greek_restaurant', 'middle_eastern_restaurant', 'steak_house',
-  'ice_cream_shop', 'dessert_shop', 'vegan_restaurant', 'vegetarian_restaurant',
-  'coffee_shop', 'bar_and_grill', 'gastropub', 'food_court', 'deli',
-  'noodle_restaurant', 'korean_restaurant', 'vietnamese_restaurant', 'spanish_restaurant',
-  'french_restaurant', 'latin_american_restaurant', 'caribbean_restaurant',
-  'african_restaurant', 'turkish_restaurant', 'lebanese_restaurant',
-  'buffet_restaurant', 'soup_restaurant', 'fondue_restaurant', 'winery',
-  'fine_dining_restaurant',
-]);
-
-// Only exclude if NONE of the food types are present alongside these
-const HARD_INVALID_TYPES = new Set([
-  'miniature_golf', 'amusement_center', 'bowling_alley', 'movie_theater',
-  'stadium', 'sports_club', 'gym', 'shopping_mall', 'grocery_store',
-  'convenience_store', 'gas_station', 'hotel', 'lodging',
-]);
 
 const EXCLUDED_KEYWORDS = /putt|golf|bowling|cinema|theater|theatre|arcade|trampoline|escape room|laser tag|axe throwing|mini golf|go kart|water park|amusement/i;
 
@@ -85,19 +60,12 @@ const FIELD_MASK = [
   'places.servesWine', 'places.servesBeer', 'places.servesCocktails',
 ].join(',');
 
+// FIX 4 — Simplified validator: trust Google's type filtering, just exclude obvious junk
 function isValidRestaurant(place) {
-  const types = place.types || [];
   const name = (place.displayName?.text || '').toLowerCase();
-
   if (EXCLUDED_KEYWORDS.test(name)) return false;
-
-  const hasFoodType = types.some(t => FOOD_TYPES.has(t));
-  if (!hasFoodType) return false;
-
-  // Only discard if it has a hard invalid type AND has no overlapping food types
-  const hasHardInvalid = types.some(t => HARD_INVALID_TYPES.has(t));
-  if (hasHardInvalid && !hasFoodType) return false;
-
+  // Exclude ghost listings with zero social proof
+  if ((place.rating || 0) === 0 && (place.userRatingCount || 0) === 0) return false;
   return true;
 }
 
@@ -117,18 +85,21 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Invalid coordinates' }, { status: 400 });
     }
 
-    // Use the actual user radius — no artificial floor
-    const SEARCH_RADIUS = radiusMeters;
+    // Always search at least 5mi (8047m) from Google, then apply our own distance filter
+    const searchRadius = Math.max(radiusMeters, 8047);
 
-    async function runTextSearch(textQuery, cuisineLabel) {
+    // FIX 1 — searchText uses pageSize (not maxResultCount)
+    async function runTextSearch(textQuery, cuisineLabel, includedType) {
       const body = {
         textQuery,
-        maxResultCount: 20, // Google Places Text Search max is 20 per call
+        pageSize: 60, // FIX 2 — maximum allowed, was 20
         rankPreference: 'RELEVANCE',
-        locationBias: { circle: { center: { latitude: lat, longitude: lng }, radius: SEARCH_RADIUS } },
+        strictTypeFiltering: false,
+        locationBias: { circle: { center: { latitude: lat, longitude: lng }, radius: searchRadius } },
+        ...(includedType ? { includedType } : {}),
         ...(open_now ? { openNow: true } : {}),
       };
-      console.log(`[${cuisineLabel || 'broad'}] textQuery: "${textQuery}" | radius: ${SEARCH_RADIUS}m`);
+      console.log(`[textSearch][${cuisineLabel || 'broad'}] query: "${textQuery}" includedType: ${includedType || 'none'}`);
       const res = await fetch('https://places.googleapis.com/v1/places:searchText', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'X-Goog-Api-Key': GMAPS_KEY || '', 'X-Goog-FieldMask': FIELD_MASK },
@@ -139,14 +110,16 @@ Deno.serve(async (req) => {
       return (data.places || []).map(p => ({ ...p, _sourceCuisine: cuisineLabel }));
     }
 
-    // Broad nearby search — runs multiple type buckets in parallel to maximize results
-    async function runNearbySearch(includedPrimaryTypes, cuisineLabel) {
+    // FIX 3 — searchNearby uses rankPreference: DISTANCE
+    async function runNearbySearch(includedTypes, cuisineLabel) {
       const body = {
-        includedPrimaryTypes,
+        includedTypes,
         maxResultCount: 20,
-        locationRestriction: { circle: { center: { latitude: lat, longitude: lng }, radius: SEARCH_RADIUS } },
+        rankPreference: 'DISTANCE',
+        locationRestriction: { circle: { center: { latitude: lat, longitude: lng }, radius: searchRadius } },
         ...(open_now ? { openNow: true } : {}),
       };
+      console.log(`[nearbySearch][${cuisineLabel || 'broad'}] types: ${includedTypes.join(',')}`);
       const res = await fetch('https://places.googleapis.com/v1/places:searchNearby', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'X-Goog-Api-Key': GMAPS_KEY || '', 'X-Goog-FieldMask': FIELD_MASK },
@@ -158,33 +131,27 @@ Deno.serve(async (req) => {
     }
 
     let queryPromises;
+
     if (cuisineList.length === 0) {
-      // Broad search: run multiple type buckets in parallel to capture more variety
+      // PATH A — No cuisine filter: 3 parallel searchNearby calls for diversity
       queryPromises = [
-        runNearbySearch(['restaurant', 'fast_food_restaurant'], null),
-        runNearbySearch(['cafe', 'bakery', 'coffee_shop'], null),
-        runNearbySearch(['meal_takeaway', 'meal_delivery'], null),
-        runTextSearch('restaurant food near me', null),
+        runNearbySearch(['restaurant'], null),
+        runNearbySearch(['fast_food_restaurant', 'cafe', 'bakery'], null),
+        runNearbySearch([
+          'hamburger_restaurant', 'pizza_restaurant', 'mexican_restaurant',
+          'chinese_restaurant', 'japanese_restaurant', 'thai_restaurant',
+          'indian_restaurant', 'mediterranean_restaurant', 'barbecue_restaurant',
+          'seafood_restaurant', 'breakfast_restaurant', 'sushi_restaurant', 'ramen_restaurant',
+        ], null),
       ];
     } else {
-      queryPromises = cuisineList.flatMap(c => {
+      // PATH B — Cuisine filter: one optimized searchText per cuisine with pageSize: 60
+      queryPromises = cuisineList.map(c => {
         const key = c.toLowerCase();
-        if (key === 'burgers') {
-          return [
-            runTextSearch('burger hamburger', c),
-            runTextSearch('american grill smash burger', c),
-            runTextSearch('sports bar grill burgers', c),
-            runTextSearch('american kitchen burgers', c),
-            runTextSearch('american restaurant serves burgers', c),
-            runTextSearch('grill burgers american food', c),
-          ];
-        }
-        const textQuery = CUISINE_SEARCHES[key] || `${key} restaurant`;
-        // Run both a text search AND a broad nearby for extra coverage
-        return [
-          runTextSearch(textQuery, c),
-          runTextSearch(`best ${key} near me`, c),
-        ];
+        const mapping = CUISINE_SEARCH_MAP[key];
+        const textQuery = mapping?.textQuery || `${key} restaurant`;
+        const includedType = mapping?.includedType || null;
+        return runTextSearch(textQuery, c, includedType);
       });
     }
 
@@ -235,10 +202,7 @@ Deno.serve(async (req) => {
       if (p.photos && p.photos.length > 0) {
         const userPhoto = p.photos.find(ph => {
           const attribution = ph.authorAttributions?.[0];
-          return attribution &&
-                 attribution.displayName !== 'Google' &&
-                 attribution.uri &&
-                 !attribution.uri.includes('google.com/maps');
+          return attribution && attribution.displayName !== 'Google' && attribution.uri && !attribution.uri.includes('google.com/maps');
         });
         const selectedPhoto = userPhoto || p.photos[Math.min(1, p.photos.length - 1)];
         photoUrl = `https://places.googleapis.com/v1/${selectedPhoto.name}/media?maxWidthPx=800&key=${GMAPS_KEY}`;
@@ -263,7 +227,6 @@ Deno.serve(async (req) => {
       };
     }
 
-    // Filter: valid restaurants, not permanently closed, not excluded
     const validPlaces = uniquePlaces
       .filter(p => p.businessStatus !== 'CLOSED_PERMANENTLY')
       .filter(p => isValidRestaurant(p))
@@ -271,9 +234,9 @@ Deno.serve(async (req) => {
 
     const mappedRestaurants = validPlaces.map(mapPlaceToRestaurant);
 
-    // Filter by actual user-selected distance
+    // FIX 5 — 10% distance buffer to catch boundary restaurants
     const allRestaurants = mappedRestaurants.filter(
-      r => r.distance_miles !== null && r.distance_miles <= (radius_miles || 5)
+      r => r.distance_miles !== null && r.distance_miles <= ((radius_miles || 5) * 1.1)
     );
 
     const cuisineCounts = {};
@@ -283,13 +246,12 @@ Deno.serve(async (req) => {
 
     const availableCuisines = [
       'Restaurant',
-      ...Object.keys(cuisineCounts)
-        .filter(c => c !== 'Restaurant' && cuisineCounts[c] >= 1)
-    ].sort();
+      ...Object.keys(cuisineCounts).filter(c => c !== 'Restaurant').sort(),
+    ];
 
-    console.log('Total unique places fetched:', uniquePlaces.length);
-    console.log('After isValidRestaurant filter:', validPlaces.length);
-    console.log('After distance filter (<= ' + (radius_miles || 5) + 'mi):', allRestaurants.length);
+    console.log('Total from Google:', uniquePlaces.length);
+    console.log('After validation:', validPlaces.length);
+    console.log('After distance filter (<= ' + ((radius_miles || 5) * 1.1).toFixed(2) + 'mi):', allRestaurants.length);
     console.log('Cuisine counts:', cuisineCounts);
 
     let filteredRestaurants = allRestaurants;
@@ -317,7 +279,7 @@ Deno.serve(async (req) => {
       return (a.distance_miles || 0) - (b.distance_miles || 0);
     });
 
-    return Response.json({ 
+    return Response.json({
       restaurants: filteredRestaurants,
       filterMismatch,
       availableCuisines,
