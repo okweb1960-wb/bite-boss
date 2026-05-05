@@ -85,9 +85,10 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Invalid coordinates' }, { status: 400 });
     }
 
-    async function runNearbySearch(includedTypes, cuisineLabel) {
+    async function runNearbySearch(includedTypes, cuisineLabel, usePrimaryTypes = false) {
+      const typeKey = usePrimaryTypes ? 'includedPrimaryTypes' : 'includedTypes';
       const body = {
-        includedTypes,
+        [typeKey]: includedTypes,
         maxResultCount: 20,
         rankPreference: 'DISTANCE',
         locationRestriction: { circle: { center: { latitude: lat, longitude: lng }, radius: radiusMeters } },
@@ -124,8 +125,8 @@ Deno.serve(async (req) => {
         const key = c.toLowerCase();
         const types = CUISINE_TYPE_MAP[key] || ['restaurant'];
         return [
-          runNearbySearch(types, c),                // Call 1: specific cuisine types
-          runNearbySearch(['restaurant'], c),        // Call 2: broad restaurant type
+          runNearbySearch(types, c, true),           // Call 1: primaryType match (strict)
+          runNearbySearch(['restaurant'], c, false), // Call 2: broad restaurant type
         ];
       });
     }
@@ -141,6 +142,33 @@ Deno.serve(async (req) => {
       return true;
     });
 
+    const PRIMARY_TYPE_LABEL_MAP = {
+      'hamburger_restaurant': 'Burgers',
+      'fast_food_restaurant': 'Fast Food',
+      'mexican_restaurant': 'Mexican',
+      'italian_restaurant': 'Italian',
+      'pizza_restaurant': 'Pizza',
+      'chinese_restaurant': 'Chinese',
+      'japanese_restaurant': 'Japanese',
+      'korean_restaurant': 'Korean',
+      'thai_restaurant': 'Thai',
+      'indian_restaurant': 'Indian',
+      'mediterranean_restaurant': 'Mediterranean',
+      'greek_restaurant': 'Mediterranean',
+      'middle_eastern_restaurant': 'Mediterranean',
+      'barbecue_restaurant': 'BBQ',
+      'seafood_restaurant': 'Seafood',
+      'breakfast_restaurant': 'Breakfast',
+      'brunch_restaurant': 'Breakfast',
+      'sushi_restaurant': 'Sushi',
+      'ramen_restaurant': 'Japanese',
+      'american_restaurant': 'American',
+      'cafe': 'Cafe',
+      'ice_cream_shop': 'Desserts',
+      'dessert_shop': 'Desserts',
+      'bakery': 'Desserts',
+    };
+
     function mapPlaceToRestaurant(p) {
       const pLat = p.location?.latitude;
       const pLng = p.location?.longitude;
@@ -149,10 +177,16 @@ Deno.serve(async (req) => {
       const nameLower = (p.displayName?.text || '').toLowerCase();
       const descLower = (p.editorialSummary?.text || '').toLowerCase();
       const typesArr = p.types || [];
+      const primaryType = p.primaryType || '';
 
-      let cuisineLabel = p._sourceCuisine
-        ? p._sourceCuisine.charAt(0).toUpperCase() + p._sourceCuisine.slice(1)
-        : 'Restaurant';
+      // FIX 3 — Use primaryType first for accurate cuisine label
+      let cuisineLabel = PRIMARY_TYPE_LABEL_MAP[primaryType] || null;
+
+      if (!cuisineLabel) {
+        cuisineLabel = p._sourceCuisine
+          ? p._sourceCuisine.charAt(0).toUpperCase() + p._sourceCuisine.slice(1)
+          : 'Restaurant';
+      }
 
       if (cuisineLabel === 'Restaurant') {
         for (const [key, val] of Object.entries(CUISINE_KEYWORDS)) {
@@ -186,6 +220,7 @@ Deno.serve(async (req) => {
       return {
         name: p.displayName?.text || 'Unknown Restaurant',
         cuisine: cuisineLabel,
+        primaryType,
         address: p.formattedAddress || '',
         rating: p.rating || 0,
         review_count: p.userRatingCount || 0,
@@ -207,22 +242,33 @@ Deno.serve(async (req) => {
       .filter(p => isValidRestaurant(p))
       .filter(p => !excludeNames.includes(p.displayName?.text?.toLowerCase()));
 
-    // For cuisine-filtered searches, keep only places whose types match OR whose label matches
+    const mappedRestaurants = validPlaces.map(mapPlaceToRestaurant);
+
+    // FIX 4 — For cuisine searches, filter by primaryType OR matching cuisine label
+    let filteredByCuisine = mappedRestaurants;
     if (cuisineList.length > 0) {
       const allCuisineTypes = new Set(cuisineList.flatMap(c => CUISINE_TYPE_MAP[c.toLowerCase()] || []));
-      validPlaces = validPlaces.filter(p => {
-        const placeTypes = p.types || [];
-        if (placeTypes.some(t => allCuisineTypes.has(t))) return true;
-        // Also keep if the cuisine label matches (caught by broad restaurant call)
-        const label = (p._sourceCuisine || '').toLowerCase();
-        return cuisineList.map(c => c.toLowerCase()).includes(label);
+      const cuisineLabelsLower = cuisineList.map(c => c.toLowerCase());
+      filteredByCuisine = mappedRestaurants.filter(r => {
+        if (allCuisineTypes.has(r.primaryType)) return true;
+        // Keep generic 'restaurant' primaryType if cuisine label matches word detection
+        if (r.primaryType === 'restaurant' && cuisineLabelsLower.includes(r.cuisine.toLowerCase())) return true;
+        return false;
       });
     }
 
-    const mappedRestaurants = validPlaces.map(mapPlaceToRestaurant);
+    // FIX 2 — Name-based exclusion for burger/fast food searches
+    const isBurgerSearch = cuisineList.some(c => ['burgers', 'fast food'].includes(c.toLowerCase()));
+    if (isBurgerSearch) {
+      const NON_BURGER_WORDS = ['taqueria', 'taco', 'oyster', 'sushi', 'ramen', 'pho', 'thai', 'indian', 'curry', 'chinese', 'korean', 'dim sum', 'mediterranean', 'greek', 'italian', 'pizza', 'seafood', 'fish', 'crab', 'lobster'];
+      filteredByCuisine = filteredByCuisine.filter(r => {
+        const name = r.name.toLowerCase();
+        return !NON_BURGER_WORDS.some(w => name.includes(w));
+      });
+    }
 
     // locationRestriction guarantees results within radius — no buffer needed
-    const allRestaurants = mappedRestaurants.filter(
+    const allRestaurants = filteredByCuisine.filter(
       r => r.distance_miles !== null && r.distance_miles <= (radius_miles || 5)
     );
 
