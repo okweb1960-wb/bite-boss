@@ -30,7 +30,7 @@ const CUISINE_KEYWORDS = {
 
 const CUISINE_TYPE_MAP = {
   'burgers':       ['hamburger_restaurant', 'fast_food_restaurant'],
-  'fast food':     ['fast_food_restaurant', 'hamburger_restaurant'],
+  'fast food':     ['fast_food_restaurant', 'hamburger_restaurant'], // used for post-filter label matching
   'mexican':       ['mexican_restaurant'],
   'italian':       ['italian_restaurant'],
   'pizza':         ['pizza_restaurant'],
@@ -85,6 +85,26 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Invalid coordinates' }, { status: 400 });
     }
 
+    async function runSearchText(textQuery, includedType, cuisineLabel) {
+      const body = {
+        textQuery,
+        includedType,
+        strictTypeFiltering: false,
+        pageSize: 20,
+        locationBias: { circle: { center: { latitude: lat, longitude: lng }, radius: radiusMeters } },
+        ...(open_now ? { openNow: true } : {}),
+      };
+      console.log(`[searchText][${cuisineLabel}] query: "${textQuery}"`);
+      const res = await fetch('https://places.googleapis.com/v1/places:searchText', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Goog-Api-Key': GMAPS_KEY || '', 'X-Goog-FieldMask': FIELD_MASK },
+        body: JSON.stringify(body),
+      });
+      const data = await res.json();
+      if (data.error) console.error(`[searchText error] ${JSON.stringify(data.error)}`);
+      return (data.places || []).map(p => ({ ...p, _sourceCuisine: cuisineLabel }));
+    }
+
     async function runNearbySearch(includedTypes, cuisineLabel, usePrimaryTypes = false) {
       const typeKey = usePrimaryTypes ? 'includedPrimaryTypes' : 'includedTypes';
       const body = {
@@ -120,9 +140,20 @@ Deno.serve(async (req) => {
         ], null),
       ];
     } else {
-      // PATH B — Cuisine filter: two parallel searchNearby calls per cuisine
+      // PATH B — Cuisine filter: special handling for fast food, otherwise searchNearby
       queryPromises = cuisineList.flatMap(c => {
         const key = c.toLowerCase();
+
+        if (key === 'fast food') {
+          // Fast food uses searchText to catch chains like McDonald's, Wendy's, Burger King
+          // which use 'hamburger_restaurant' primaryType, not 'fast_food_restaurant'
+          return [
+            runSearchText("mcdonalds wendys burger king whataburger sonic dairy queen freddy's five guys", 'hamburger_restaurant', c),
+            runSearchText("chick fil a popeyes kfc raising canes wingstop zaxbys church's chicken", 'fast_food_restaurant', c),
+            runSearchText('fast food restaurant', 'fast_food_restaurant', c),
+          ];
+        }
+
         const types = CUISINE_TYPE_MAP[key] || ['restaurant'];
         return [
           runNearbySearch(types, c, true),           // Call 1: primaryType match (strict)
@@ -244,17 +275,27 @@ Deno.serve(async (req) => {
 
     const mappedRestaurants = validPlaces.map(mapPlaceToRestaurant);
 
-    // FIX 4 — For cuisine searches, filter by primaryType OR matching cuisine label
+    // For cuisine searches, filter by primaryType OR matching cuisine label
     let filteredByCuisine = mappedRestaurants;
     if (cuisineList.length > 0) {
+      const isFastFoodSearch = cuisineList.some(c => c.toLowerCase() === 'fast food');
       const allCuisineTypes = new Set(cuisineList.flatMap(c => CUISINE_TYPE_MAP[c.toLowerCase()] || []));
       const cuisineLabelsLower = cuisineList.map(c => c.toLowerCase());
-      filteredByCuisine = mappedRestaurants.filter(r => {
-        if (allCuisineTypes.has(r.primaryType)) return true;
-        // Keep generic 'restaurant' primaryType if cuisine label matches word detection
-        if (r.primaryType === 'restaurant' && cuisineLabelsLower.includes(r.cuisine.toLowerCase())) return true;
-        return false;
-      });
+
+      filteredByCuisine = mappedRestaurants
+        .map(r => {
+          // For fast food searches, reclassify hamburger_restaurant chains as "Fast Food"
+          if (isFastFoodSearch && r.primaryType === 'hamburger_restaurant') {
+            return { ...r, cuisine: 'Fast Food' };
+          }
+          return r;
+        })
+        .filter(r => {
+          if (allCuisineTypes.has(r.primaryType)) return true;
+          // Keep generic 'restaurant' primaryType if cuisine label matches word detection
+          if (r.primaryType === 'restaurant' && cuisineLabelsLower.includes(r.cuisine.toLowerCase())) return true;
+          return false;
+        });
     }
 
     // FIX 2 — Name-based exclusion for burger/fast food searches
