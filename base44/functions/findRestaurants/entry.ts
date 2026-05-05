@@ -300,11 +300,6 @@ Deno.serve(async (req) => {
       ...Object.keys(cuisineCounts).filter(c => c !== 'Restaurant').sort(),
     ];
 
-    console.log('Total from Google:', uniquePlaces.length);
-    console.log('After validation:', validPlaces.length);
-    console.log('After distance filter (<= ' + (radius_miles || 5) + 'mi):', allRestaurants.length);
-    console.log('Cuisine counts:', cuisineCounts);
-
     let filteredRestaurants = allRestaurants;
 
     if (serviceList.length > 0) {
