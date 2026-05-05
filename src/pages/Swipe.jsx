@@ -21,6 +21,7 @@ export default function Swipe() {
   const [lastSwiped, setLastSwiped] = useState(null);
   const [loadingMore, setLoadingMore] = useState(false);
   const [noMore, setNoMore] = useState(false);
+  const [expandingRadius, setExpandingRadius] = useState(false);
 
   function getBlocked() {
     try { return JSON.parse(localStorage.getItem('blockedRestaurants') || '[]'); } catch { return []; }
@@ -106,6 +107,40 @@ export default function Swipe() {
   const cuisineLabel = (state?.filters?.cuisines || []).join(', ') || 'restaurant';
   const count = restaurants.length;
 
+  async function handleExpandRadius() {
+    setExpandingRadius(true);
+    try {
+      const response = await base44.functions.invoke('findRestaurants', {
+        latitude: state.coords?.latitude,
+        longitude: state.coords?.longitude,
+        radius_miles: nextRadius,
+        cuisine: state.filters?.cuisines,
+        service: state.filters?.services,
+        open_now: state.filters?.openNow,
+      });
+      const newRestaurants = (response.data?.restaurants || []).filter(r => !getBlocked().includes(r.name));
+      if (newRestaurants.length > 0) {
+        // Replace navigation state with updated radius so back/undo works correctly
+        navigate("/swipe", {
+          replace: true,
+          state: {
+            ...state,
+            restaurants: newRestaurants,
+            filters: { ...state.filters, radius: nextRadius },
+          }
+        });
+        setRestaurants(newRestaurants);
+        setCurrentIndex(0);
+        setMaybes([]);
+        setLastSwiped(null);
+      }
+    } catch (e) {
+      // fall back to home if something goes wrong
+      navigate("/", { state: { prefillFilters: { ...state?.filters, radius: nextRadius } } });
+    }
+    setExpandingRadius(false);
+  }
+
   if (count < 3) {
     return (
       <div className="flex flex-col min-h-screen bg-white items-center justify-center px-6 text-center">
@@ -116,11 +151,12 @@ export default function Swipe() {
         </p>
         <div className="flex flex-col gap-3 w-full max-w-xs">
           <button
-            onClick={() => navigate("/", { state: { prefillFilters: { ...state?.filters, radius: nextRadius } } })}
-            className="w-full py-4 rounded-2xl font-black text-white text-base shadow-lg active:scale-95 transition-all"
+            onClick={handleExpandRadius}
+            disabled={expandingRadius}
+            className="w-full py-4 rounded-2xl font-black text-white text-base shadow-lg active:scale-95 transition-all disabled:opacity-60"
             style={{ background: '#F97316', boxShadow: '0 4px 15px rgba(249,115,22,0.4)' }}
           >
-            Expand to {nextRadius} miles 📍
+            {expandingRadius ? 'Searching...' : `Expand to ${nextRadius} miles 📍`}
           </button>
           <button
             onClick={() => navigate("/")}
