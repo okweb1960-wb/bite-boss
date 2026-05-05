@@ -85,45 +85,15 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Invalid coordinates' }, { status: 400 });
     }
 
-    async function runSearchText(textQuery, includedType, cuisineLabel) {
-      const body = {
-        textQuery,
-        includedType,
-        strictTypeFiltering: false,
-        pageSize: 20,
-        locationBias: { circle: { center: { latitude: lat, longitude: lng }, radius: Math.max(radiusMeters, 4828) } },
-        rankPreference: 'DISTANCE',
-        ...(open_now ? { openNow: true } : {}),
-      };
-      console.log(`[searchText][${cuisineLabel}] query: "${textQuery}"`);
-      console.log('[searchText] request body:', JSON.stringify(body, null, 2));
-      const res = await fetch('https://places.googleapis.com/v1/places:searchText', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-Goog-Api-Key': GMAPS_KEY || '', 'X-Goog-FieldMask': FIELD_MASK },
-        body: JSON.stringify(body),
-      });
-      const data = await res.json();
-      console.log('[searchText] response status:', res.status);
-      console.log('[searchText] places returned:', (data.places || []).length);
-      console.log('[searchText] first 3 places:', (data.places || []).slice(0, 3).map(p => ({
-        name: p.displayName?.text,
-        primaryType: p.primaryType,
-        distance: p.location ? 'has location' : 'no location'
-      })));
-      if (data.error) console.error(`[searchText error] ${JSON.stringify(data.error)}`);
-      return (data.places || []).map(p => ({ ...p, _sourceCuisine: cuisineLabel }));
-    }
-
     async function runNearbySearch(includedTypes, cuisineLabel, usePrimaryTypes = false) {
       const typeKey = usePrimaryTypes ? 'includedPrimaryTypes' : 'includedTypes';
       const body = {
         [typeKey]: includedTypes,
         maxResultCount: 20,
         rankPreference: 'DISTANCE',
-        locationRestriction: { circle: { center: { latitude: lat, longitude: lng }, radius: radiusMeters } },
+        locationRestriction: { circle: { center: { latitude: lat, longitude: lng }, radius: Math.max(radiusMeters, 4828) } },
         ...(open_now ? { openNow: true } : {}),
       };
-      console.log(`[nearbySearch][${cuisineLabel || 'broad'}] types: ${includedTypes.join(',')}`);
       const res = await fetch('https://places.googleapis.com/v1/places:searchNearby', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'X-Goog-Api-Key': GMAPS_KEY || '', 'X-Goog-FieldMask': FIELD_MASK },
@@ -154,12 +124,10 @@ Deno.serve(async (req) => {
         const key = c.toLowerCase();
 
         if (key === 'fast food') {
-          // Fast food uses searchText to catch chains like McDonald's, Wendy's, Burger King
-          // which use 'hamburger_restaurant' primaryType, not 'fast_food_restaurant'
           return [
-            runSearchText("mcdonalds wendys burger king whataburger sonic dairy queen freddy's five guys", 'hamburger_restaurant', c),
-            runSearchText("chick fil a popeyes kfc raising canes wingstop zaxbys church's chicken", 'fast_food_restaurant', c),
-            runSearchText('fast food restaurant', 'fast_food_restaurant', c),
+            runNearbySearch(['hamburger_restaurant'], c, true),
+            runNearbySearch(['fast_food_restaurant'], c, true),
+            runNearbySearch(['hamburger_restaurant', 'fast_food_restaurant'], c, false),
           ];
         }
 
