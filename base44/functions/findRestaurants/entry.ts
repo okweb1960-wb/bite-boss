@@ -96,12 +96,20 @@ Deno.serve(async (req) => {
         ...(open_now ? { openNow: true } : {}),
       };
       console.log(`[searchText][${cuisineLabel}] query: "${textQuery}"`);
+      console.log('[searchText] request body:', JSON.stringify(body, null, 2));
       const res = await fetch('https://places.googleapis.com/v1/places:searchText', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'X-Goog-Api-Key': GMAPS_KEY || '', 'X-Goog-FieldMask': FIELD_MASK },
         body: JSON.stringify(body),
       });
       const data = await res.json();
+      console.log('[searchText] response status:', res.status);
+      console.log('[searchText] places returned:', (data.places || []).length);
+      console.log('[searchText] first 3 places:', (data.places || []).slice(0, 3).map(p => ({
+        name: p.displayName?.text,
+        primaryType: p.primaryType,
+        distance: p.location ? 'has location' : 'no location'
+      })));
       if (data.error) console.error(`[searchText error] ${JSON.stringify(data.error)}`);
       return (data.places || []).map(p => ({ ...p, _sourceCuisine: cuisineLabel }));
     }
