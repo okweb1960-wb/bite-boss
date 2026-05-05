@@ -76,6 +76,32 @@ const FIELD_MASK = [
   'places.photos.authorAttributions', 'places.servesWine', 'places.servesBeer', 'places.servesCocktails',
 ].join(',');
 
+async function searchText(textQuery, radiusMeters, lat, lng, open_now) {
+  const body = {
+    textQuery,
+    pageSize: 60,
+    locationBias: {
+      circle: {
+        center: { latitude: lat, longitude: lng },
+        radius: radiusMeters,
+      }
+    },
+    ...(open_now ? { openNow: true } : {}),
+  };
+  const res = await fetch('https://places.googleapis.com/v1/places:searchText', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Goog-Api-Key': GMAPS_KEY || '',
+      'X-Goog-FieldMask': FIELD_MASK,
+    },
+    body: JSON.stringify(body),
+  });
+  const data = await res.json();
+  if (data.error) console.error('[searchText error]', JSON.stringify(data.error));
+  return data.places || [];
+}
+
 async function searchNearby(types, radiusMeters, lat, lng, open_now, usePrimaryTypes = true) {
   const body = {
     ...(usePrimaryTypes
@@ -184,10 +210,14 @@ Deno.serve(async (req) => {
       // Specific cuisines — one call per selected cuisine, in parallel
       const searchRadius = Math.max(radiusMeters, 8047);
       const results = await Promise.all(
-        cuisineList.map(key => {
-          console.log('[cuisine key]', key);
+        cuisineList.map(async key => {
           if (key === 'burgers') {
-            return searchNearby(['hamburger_restaurant'], searchRadius, lat, lng, open_now, false);
+            const [r1, r2, r3] = await Promise.all([
+              searchText('burger restaurant', searchRadius, lat, lng, open_now),
+              searchText('burger bar grill', searchRadius, lat, lng, open_now),
+              searchText('hamburger smash burger', searchRadius, lat, lng, open_now),
+            ]);
+            return [...r1, ...r2, ...r3];
           }
           const types = CUISINE_TYPE_MAP[key] || ['restaurant'];
           return searchNearby(types, searchRadius, lat, lng, open_now);
@@ -195,8 +225,6 @@ Deno.serve(async (req) => {
       );
       rawPlaces = results.flat();
     }
-
-    console.log('[findRestaurants] rawPlaces count:', rawPlaces.length);
 
     // Deduplicate by name + address
     const seen = new Set();
