@@ -219,6 +219,13 @@ Deno.serve(async (req) => {
             ]);
             return [...r1, ...r2, ...r3];
           }
+          if (key === 'breakfast') {
+            const [nearbyResults, textResults] = await Promise.all([
+              searchNearby(['breakfast_restaurant', 'brunch_restaurant'], searchRadius, lat, lng, open_now, true),
+              searchText('breakfast brunch restaurant', searchRadius, lat, lng, open_now),
+            ]);
+            return [...nearbyResults, ...textResults];
+          }
           const types = CUISINE_TYPE_MAP[key] || ['restaurant'];
           return searchNearby(types, searchRadius, lat, lng, open_now);
         })
