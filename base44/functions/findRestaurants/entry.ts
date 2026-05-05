@@ -141,9 +141,26 @@ Deno.serve(async (req) => {
 
     const allResults = await Promise.all(queryPromises);
 
+    const allRawPlaces = allResults.flat();
+
+    // TEMPORARY DEBUG - remove after testing
+    if (cuisineList.some(c => c.toLowerCase() === 'fast food')) {
+      return Response.json({
+        debug: true,
+        rawResults: allRawPlaces.map(p => ({
+          name: p.displayName?.text,
+          primaryType: p.primaryType,
+          types: p.types,
+          distance: p.location ?
+            distanceMiles(lat, lng, p.location.latitude, p.location.longitude).toFixed(2) : 'unknown',
+          address: p.formattedAddress
+        }))
+      });
+    }
+
     // Deduplicate by name + address
     const seen = new Set();
-    const uniquePlaces = allResults.flat().filter(p => {
+    const uniquePlaces = allRawPlaces.filter(p => {
       const key = `${p.displayName?.text}|${p.formattedAddress}`;
       if (seen.has(key)) return false;
       seen.add(key);
