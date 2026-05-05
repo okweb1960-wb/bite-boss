@@ -91,7 +91,8 @@ Deno.serve(async (req) => {
         includedType,
         strictTypeFiltering: false,
         pageSize: 20,
-        locationBias: { circle: { center: { latitude: lat, longitude: lng }, radius: radiusMeters } },
+        locationRestriction: { circle: { center: { latitude: lat, longitude: lng }, radius: Math.max(radiusMeters, 4828) } },
+        rankPreference: 'DISTANCE',
         ...(open_now ? { openNow: true } : {}),
       };
       console.log(`[searchText][${cuisineLabel}] query: "${textQuery}"`);
