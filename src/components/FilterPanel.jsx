@@ -13,7 +13,7 @@ const CUISINE_GROUPS = [
     ]
   },
   {
-    label: '🍽️ What You\'re Craving',
+    label: '😋 What You\'re Craving',
     cuisines: [
       { value: 'Burgers', label: '🍔 Burgers' },
       { value: 'Fast Food', label: '⚡ Fast Food' },
@@ -36,7 +36,7 @@ const CUISINE_GROUPS = [
 ];
 
 const SERVICE_TYPES = [
-  { value: "dine_in", label: "🍽️ Dine In" },
+  { value: "dine_in", label: "🪑 Dine In" },
   { value: "takeout", label: "🥡 Takeout" },
   { value: "delivery", label: "🚗 Delivery" },
 ];
