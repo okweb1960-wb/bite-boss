@@ -269,10 +269,12 @@ Deno.serve(async (req) => {
       .filter(r => r.distance_miles !== null && r.distance_miles <= (radius_miles || 5) * 1.1);
 
     // Price filter
-    if (price_levels && price_levels.length > 0) {
-      filtered = filtered.filter(r =>
-        r.price_level === null || r.price_level === undefined || price_levels.includes(r.price_level)
-      );
+    console.log('price_levels received:', price_levels, typeof price_levels?.[0]);
+    if (price_levels && price_levels.length > 0 && price_levels.length < 4) {
+      filtered = filtered.filter(r => {
+        if (r.price_level === null || r.price_level === undefined) return true;
+        return price_levels.some(p => Number(p) === Number(r.price_level));
+      });
     }
 
     // Sports bar post-filter
