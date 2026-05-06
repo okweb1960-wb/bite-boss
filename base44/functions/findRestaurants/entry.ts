@@ -271,7 +271,6 @@ Deno.serve(async (req) => {
       .filter(r => r.distance_miles !== null && r.distance_miles <= (radius_miles || 5) * 1.1);
 
     // Price filter
-    console.log('price_levels received:', price_levels, typeof price_levels?.[0]);
     if (price_levels && price_levels.length > 0 && price_levels.length < 4) {
       filtered = filtered.filter(r => {
         if (r.price_level === null || r.price_level === undefined) return true;
@@ -316,20 +315,11 @@ Deno.serve(async (req) => {
       })).length === 0;
 
     return Response.json({
+      restaurants: results,
+      filterMismatch,
       debug: {
         totalFromGoogle: unique.length,
         afterFiltering: results.length,
-        priceDistribution: {
-          null: results.filter(r => r.price_level === null).length,
-          dollar1: results.filter(r => r.price_level === 1).length,
-          dollar2: results.filter(r => r.price_level === 2).length,
-          dollar3: results.filter(r => r.price_level === 3).length,
-          dollar4: results.filter(r => r.price_level === 4).length,
-        },
-        samplePrices: results.slice(0, 20).map(r => ({
-          name: r.name,
-          price_level: r.price_level
-        }))
       }
     });
 
