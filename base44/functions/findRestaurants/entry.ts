@@ -29,6 +29,8 @@ const CUISINE_TYPE_MAP = {
   'breakfast':     ['breakfast_restaurant', 'brunch_restaurant'],
   'cafe':          ['cafe'],
   'desserts':      ['ice_cream_shop', 'dessert_shop', 'bakery'],
+  'bars':          ['bar', 'pub'],
+  'sports bar':    ['bar', 'pub'],
 };
 
 const PRIMARY_TYPE_LABEL = {
@@ -56,6 +58,8 @@ const PRIMARY_TYPE_LABEL = {
   'dessert_shop':             'Desserts',
   'bakery':                   'Desserts',
   'restaurant':               'Restaurant',
+  'bar':                      'Bar & Pub',
+  'pub':                      'Bar & Pub',
 };
 
 const PRICE_MAP = {
@@ -74,6 +78,7 @@ const FIELD_MASK = [
   'places.types', 'places.primaryType', 'places.editorialSummary', 'places.businessStatus',
   'places.photos', 'places.delivery', 'places.takeout', 'places.dineIn',
   'places.photos.authorAttributions', 'places.servesWine', 'places.servesBeer', 'places.servesCocktails',
+  'places.goodForWatchingSports',
 ].join(',');
 
 async function searchText(textQuery, radiusMeters, lat, lng, open_now) {
@@ -166,6 +171,7 @@ function mapPlace(p, lat, lng) {
     dineIn: p.dineIn,
     takeout: p.takeout,
     delivery: p.delivery,
+    good_for_sports: p.goodForWatchingSports || false,
   };
 }
 
@@ -226,6 +232,12 @@ Deno.serve(async (req) => {
             ]);
             return [...nearbyResults, ...textResults];
           }
+          if (key === 'bars') {
+            return searchNearby(['bar', 'pub'], searchRadius, lat, lng, open_now, false);
+          }
+          if (key === 'sports bar') {
+            return searchNearby(['bar', 'pub'], searchRadius, lat, lng, open_now, false);
+          }
           const types = CUISINE_TYPE_MAP[key] || ['restaurant'];
           return searchNearby(types, searchRadius, lat, lng, open_now);
         })
@@ -256,10 +268,17 @@ Deno.serve(async (req) => {
       .filter(r => !excludeNames.includes(r.name.toLowerCase()))
       .filter(r => r.distance_miles !== null && r.distance_miles <= (radius_miles || 5) * 1.1);
 
+    // Sports bar post-filter
+    let filteredFinal = filtered;
+    if (cuisineList.includes('sports bar')) {
+      const sportsFiltered = filtered.filter(r => r.good_for_sports === true);
+      filteredFinal = sportsFiltered.length >= 3 ? sportsFiltered : filtered;
+    }
+
     // Service filter
-    let results = filtered;
+    let results = filteredFinal;
     if (serviceList.length > 0) {
-      const serviceFiltered = filtered.filter(r =>
+      const serviceFiltered = filteredFinal.filter(r =>
         serviceList.some(s => {
           if (s === 'dine_in') return r.dine_in === true;
           if (s === 'takeout') return r.takeout === true;
@@ -267,7 +286,7 @@ Deno.serve(async (req) => {
           return true;
         })
       );
-      results = serviceFiltered.length > 0 ? serviceFiltered : filtered;
+      results = serviceFiltered.length > 0 ? serviceFiltered : filteredFinal;
     }
 
     // Sort: rating desc, then distance asc
@@ -278,7 +297,7 @@ Deno.serve(async (req) => {
     });
 
     const filterMismatch = serviceList.length > 0 &&
-      filtered.filter(r => serviceList.some(s => {
+      filteredFinal.filter(r => serviceList.some(s => {
         if (s === 'dine_in') return r.dine_in === true;
         if (s === 'takeout') return r.takeout === true;
         if (s === 'delivery') return r.delivery === true;

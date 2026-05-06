@@ -17,6 +17,7 @@ export default function RestaurantCard({ restaurant, onSwipe, onBlock, isTop }) 
   const hasTakeout = takeout;
   const hasDelivery = delivery;
   const hasDineIn = restaurant?.dineIn || restaurant?.dine_in;
+  const hasSportsTV = restaurant?.good_for_sports;
   const priceLevel = price_level ? PRICE_MAP[price_level] || PRICE_MAP[price_level.toString()] : null;
   const isOpen = open_now;
   const x = useMotionValue(0);
@@ -107,11 +108,12 @@ export default function RestaurantCard({ restaurant, onSwipe, onBlock, isTop }) 
           )}
 
           {/* Row 5: Service Tags */}
-          {(hasTakeout || hasDelivery || hasDineIn) && (
+          {(hasTakeout || hasDelivery || hasDineIn || hasSportsTV) && (
             <div className="flex gap-1.5 mb-3 flex-wrap">
               {hasTakeout && <span style={{ background: '#F3F4F6', color: '#6B7280', fontSize: '11px', padding: '4px 8px', borderRadius: '12px', fontWeight: 500 }}>🥡 Takeout</span>}
               {hasDelivery && <span style={{ background: '#F3F4F6', color: '#6B7280', fontSize: '11px', padding: '4px 8px', borderRadius: '12px', fontWeight: 500 }}>🚗 Delivery</span>}
               {hasDineIn && <span style={{ background: '#F3F4F6', color: '#6B7280', fontSize: '11px', padding: '4px 8px', borderRadius: '12px', fontWeight: 500 }}>🍽️ Dine-in</span>}
+              {hasSportsTV && <span style={{ background: '#EFF6FF', color: '#3B82F6', fontSize: '11px', padding: '4px 8px', borderRadius: '12px', fontWeight: 500 }}>📺 Sports TV</span>}
             </div>
           )}
 

@@ -16,6 +16,8 @@ const CUISINES = [
   { value: "breakfast", label: "Breakfast & Brunch" },
   { value: "Cafe", label: "Cafe" },
   { value: "Desserts", label: "Desserts" },
+  { value: "bars", label: "🍺 Bars & Pubs" },
+  { value: "sports bar", label: "📺 Sports Bar" },
 ];
 
 const SERVICE_TYPES = [
