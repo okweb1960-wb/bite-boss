@@ -72,6 +72,7 @@ export default function Home() {
         cuisine: filters.cuisines,
         service: filters.services,
         open_now: filters.openNow,
+        price_levels: filters.price_levels || [],
         location_text: location,
       });
 
