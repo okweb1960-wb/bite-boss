@@ -13,7 +13,7 @@ const CUISINE_GROUPS = [
     ]
   },
   {
-    label: '😋 What You\'re Craving',
+    label: '😋 Cravings',
     cuisines: [
       { value: 'Burgers', label: '🍔 Burgers' },
       { value: 'Fast Food', label: '⚡ Fast Food' },
