@@ -81,7 +81,10 @@ export default function RestaurantCard({ restaurant, onSwipe, onBlock, isTop }) 
           {/* Row 1: Name + Price */}
           <div className="flex items-start justify-between mb-1">
             <h2 className="font-black leading-tight" style={{ fontSize: '22px', color: '#111827', margin: 0, flex: 1 }}>{name}</h2>
-            {restaurant.price_level && <span className="font-bold ml-2 shrink-0" style={{ color: '#059669', fontSize: '14px' }}>{getPriceDisplay(restaurant.price_level)}</span>}
+            {restaurant.price_level
+              ? <span className="font-bold ml-2 shrink-0" style={{ color: '#059669', fontSize: '14px' }}>{getPriceDisplay(restaurant.price_level)}</span>
+              : <span className="ml-2 shrink-0" style={{ color: '#9CA3AF', fontSize: '12px' }}>–</span>
+            }
           </div>
 
           {/* Row 2: Cuisine + Distance */}
