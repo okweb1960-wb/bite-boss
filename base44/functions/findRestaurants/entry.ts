@@ -315,12 +315,21 @@ Deno.serve(async (req) => {
         return true;
       })).length === 0;
 
+    const priceDistribution = {
+      null: results.filter(r => r.price_level === null).length,
+      dollar1: results.filter(r => r.price_level === 1).length,
+      dollar2: results.filter(r => r.price_level === 2).length,
+      dollar3: results.filter(r => r.price_level === 3).length,
+      dollar4: results.filter(r => r.price_level === 4).length,
+    };
+
     return Response.json({
       restaurants: results,
       filterMismatch,
       debug: {
         totalFromGoogle: unique.length,
         afterFiltering: results.length,
+        priceDistribution,
       }
     });
 
