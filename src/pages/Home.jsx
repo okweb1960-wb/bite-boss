@@ -15,7 +15,7 @@ export default function Home() {
   const [detecting, setDetecting] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [filters, setFilters] = useState(routeState?.prefillFilters || { radius: 5, cuisines: [], services: [], openNow: true, maxPrice: 4 });
+  const [filters, setFilters] = useState(routeState?.prefillFilters || { radius: 5, cuisines: [], services: [], openNow: true });
 
 
 
@@ -72,7 +72,6 @@ export default function Home() {
         cuisine: filters.cuisines,
         service: filters.services,
         open_now: filters.openNow,
-        price_level_max: filters.maxPrice,
         location_text: location,
       });
 
