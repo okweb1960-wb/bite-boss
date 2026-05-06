@@ -39,6 +39,7 @@ export default function Swipe() {
         cuisine: state.filters?.cuisines,
         service: state.filters?.services,
         open_now: state.filters?.openNow,
+        price_levels: state.filters?.price_levels || [],
         exclude: seenNames,
       });
       const newOnes = (response.data?.restaurants || []).filter(r => !getBlocked().includes(r.name));
