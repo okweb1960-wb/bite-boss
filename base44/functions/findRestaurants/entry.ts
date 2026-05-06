@@ -178,7 +178,7 @@ function mapPlace(p, lat, lng) {
 Deno.serve(async (req) => {
   try {
     const payload = await req.json();
-    const { latitude, longitude, radius_miles, cuisine, service, open_now, exclude } = payload;
+    const { latitude, longitude, radius_miles, cuisine, service, open_now, exclude, price_level_max } = payload;
 
     const lat = parseFloat(Number(latitude).toFixed(6));
     const lng = parseFloat(Number(longitude).toFixed(6));
@@ -267,6 +267,11 @@ Deno.serve(async (req) => {
       .filter(r => !EXCLUDED_KEYWORDS.test(r.name))
       .filter(r => !excludeNames.includes(r.name.toLowerCase()))
       .filter(r => r.distance_miles !== null && r.distance_miles <= (radius_miles || 5) * 1.1);
+
+    // Price filter
+    if (price_level_max && price_level_max < 4) {
+      filtered = filtered.filter(r => r.price_level === null || r.price_level <= price_level_max);
+    }
 
     // Sports bar post-filter
     let filteredFinal = filtered;
