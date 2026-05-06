@@ -35,12 +35,7 @@ const SERVICE_TYPES = [
 ];
 
 const RADIUS_OPTIONS = [1, 3, 5, 10, 20];
-const PRICE_OPTIONS = [
-  { value: 1, label: "$" },
-  { value: 2, label: "$$" },
-  { value: 3, label: "$$$" },
-  { value: 4, label: "$$$$" },
-];
+
 
 export default function FilterPanel({ filters, onChange }) {
   const [showMoreSheet, setShowMoreSheet] = useState(false);
@@ -55,12 +50,6 @@ export default function FilterPanel({ filters, onChange }) {
     const current = filters.services || [];
     const updated = current.includes(s) ? current.filter(x => x !== s) : [...current, s];
     onChange({ ...filters, services: updated });
-  }
-
-  function togglePrice(p) {
-    const current = filters.price_levels || [];
-    const updated = current.includes(p) ? current.filter(x => x !== p) : [...current, p];
-    onChange({ ...filters, price_levels: updated });
   }
 
   const selectedCuisines = filters.cuisines || [];
@@ -132,34 +121,6 @@ export default function FilterPanel({ filters, onChange }) {
             {hasMoreSelected ? "More ✓" : "More +"}
           </button>
         </div>
-      </div>
-
-      {/* Price Filter */}
-      <div>
-        <h3 className="font-bold text-foreground mb-1">What's your budget?</h3>
-        <div className="flex gap-2 mb-1">
-          {PRICE_OPTIONS.map(p => {
-            const selected = (filters.price_levels || []).includes(p.value);
-            return (
-              <button
-                key={p.value}
-                onClick={() => togglePrice(p.value)}
-                className="py-1.5 rounded-full font-semibold text-sm transition-all flex-1"
-                style={{
-                  maxWidth: '70px',
-                  background: selected ? '#0D9488' : '#ffffff',
-                  color: selected ? '#ffffff' : '#6B7280',
-                  border: selected ? '2px solid #0D9488' : '2px solid #E5E7EB',
-                }}
-              >
-                {p.label}
-              </button>
-            );
-          })}
-        </div>
-        <p style={{ fontSize: '10px', color: '#9CA3AF', fontStyle: 'italic' }}>
-          $ = under $15 · $$$$ = fine dining
-        </p>
       </div>
 
       {/* Service */}

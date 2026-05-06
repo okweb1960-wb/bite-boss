@@ -178,7 +178,7 @@ function mapPlace(p, lat, lng) {
 Deno.serve(async (req) => {
   try {
     const payload = await req.json();
-    const { latitude, longitude, radius_miles, cuisine, service, open_now, exclude, price_levels } = payload;
+    const { latitude, longitude, radius_miles, cuisine, service, open_now, exclude } = payload;
 
     const lat = parseFloat(Number(latitude).toFixed(6));
     const lng = parseFloat(Number(longitude).toFixed(6));
@@ -186,8 +186,6 @@ Deno.serve(async (req) => {
     const cuisineList = (Array.isArray(cuisine) ? cuisine : (cuisine ? [cuisine] : [])).map(c => c.toLowerCase());
     const serviceList = Array.isArray(service) ? service : (service ? [service] : []);
     const excludeNames = (exclude || []).map(n => n.toLowerCase());
-
-
 
     if (isNaN(lat) || isNaN(lng)) {
       return Response.json({ error: 'Invalid coordinates' }, { status: 400 });
@@ -269,14 +267,6 @@ Deno.serve(async (req) => {
       .filter(r => !EXCLUDED_KEYWORDS.test(r.name))
       .filter(r => !excludeNames.includes(r.name.toLowerCase()))
       .filter(r => r.distance_miles !== null && r.distance_miles <= (radius_miles || 5) * 1.1);
-
-    // Price filter
-    if (price_levels && price_levels.length > 0 && price_levels.length < 4) {
-      filtered = filtered.filter(r => {
-        if (r.price_level === null || r.price_level === undefined) return true;
-        return price_levels.some(p => Number(p) === Number(r.price_level));
-      });
-    }
 
     // Sports bar post-filter
     let filteredFinal = filtered;
