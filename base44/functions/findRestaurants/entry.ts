@@ -77,7 +77,7 @@ const FIELD_MASK = [
   'places.userRatingCount', 'places.priceLevel', 'places.currentOpeningHours',
   'places.types', 'places.primaryType', 'places.editorialSummary', 'places.businessStatus',
   'places.photos', 'places.delivery', 'places.takeout', 'places.dineIn',
-  'places.photos.authorAttributions', 'places.servesWine', 'places.servesBeer', 'places.servesCocktails',
+  'places.photos.authorAttributions',
   'places.goodForWatchingSports',
 ].join(',');
 
@@ -236,7 +236,7 @@ Deno.serve(async (req) => {
             return searchNearby(['bar', 'pub'], searchRadius, lat, lng, open_now, false);
           }
           if (key === 'sports bar') {
-            return searchNearby(['bar', 'pub'], searchRadius, lat, lng, open_now, false);
+            return searchText('sports bar with food tv screens', searchRadius, lat, lng, open_now);
           }
           const types = CUISINE_TYPE_MAP[key] || ['restaurant'];
           return searchNearby(types, searchRadius, lat, lng, open_now);
@@ -255,14 +255,16 @@ Deno.serve(async (req) => {
     });
 
     // Map to restaurant objects
+    const closedNames = new Set(
+      unique
+        .filter(p => p.businessStatus === 'CLOSED_PERMANENTLY')
+        .map(p => p.displayName?.text)
+    );
     const mapped = unique.map(p => mapPlace(p, lat, lng));
 
     // Filter
-    const filtered = mapped
-      .filter(r => {
-        const p = unique.find(u => u.displayName?.text === r.name && u.formattedAddress === r.address);
-        return p?.businessStatus !== 'CLOSED_PERMANENTLY';
-      })
+    let filtered = mapped
+      .filter(r => !closedNames.has(r.name))
       .filter(r => !(r.rating === 0 && r.review_count === 0))
       .filter(r => !EXCLUDED_KEYWORDS.test(r.name))
       .filter(r => !excludeNames.includes(r.name.toLowerCase()))
