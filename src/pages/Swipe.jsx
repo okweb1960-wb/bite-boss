@@ -204,7 +204,7 @@ export default function Swipe() {
           className="flex items-center gap-2 px-5 py-2.5 rounded-2xl font-black text-white text-sm shadow-lg active:scale-95 transition-all disabled:opacity-30"
           style={{ background: '#EF4444', boxShadow: '0 4px 15px rgba(239,68,68,0.4)' }}
         >
-          Nope
+          ← Nope
         </button>
         <button
           onClick={handleUndo}
@@ -220,7 +220,7 @@ export default function Swipe() {
           className="flex items-center gap-2 px-5 py-2.5 rounded-2xl font-black text-white text-sm shadow-lg active:scale-95 transition-all disabled:opacity-30"
           style={{ background: '#10B981', boxShadow: '0 4px 15px rgba(16,185,129,0.4)' }}
         >
-          Maybe
+          Maybe →
         </button>
       </div>
 
