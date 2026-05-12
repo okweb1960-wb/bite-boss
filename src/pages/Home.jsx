@@ -119,10 +119,6 @@ export default function Home() {
 
   return (
     <div className="flex flex-col min-h-screen">
-      {/* Compact header logo */}
-      <div className="bg-teal-600 px-5 py-3 flex items-center justify-center">
-        <span className="text-white font-black text-2xl font-playfair tracking-wide">🍔 Bite Boss</span>
-      </div>
 
       <div className="flex-1 px-5 py-6 overflow-y-auto space-y-6">
         {/* Location */}
