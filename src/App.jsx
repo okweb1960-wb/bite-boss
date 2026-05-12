@@ -1,7 +1,7 @@
 import { Toaster } from "@/components/ui/toaster"
 import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClientInstance } from '@/lib/query-client'
-import { BrowserRouter as Router, Route, Routes, Navigate, useLocation } from 'react-router-dom';
+import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
@@ -12,13 +12,6 @@ import Results from './pages/Results.jsx';
 import Admin from './pages/Admin';
 import Terms from './pages/Terms';
 import Privacy from './pages/Privacy';
-
-// Guard routes that require navigation state (e.g. /swipe, /results)
-function RequireState({ children }) {
-  const { state } = useLocation();
-  if (!state) return <Navigate to="/" replace />;
-  return children;
-}
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -44,8 +37,8 @@ const AuthenticatedApp = () => {
     <Routes>
       <Route element={<Layout />}>
         <Route path="/" element={<Home />} />
-        <Route path="/swipe" element={<RequireState><Swipe /></RequireState>} />
-        <Route path="/results" element={<RequireState><Results /></RequireState>} />
+        <Route path="/swipe" element={<Swipe />} />
+        <Route path="/results" element={<Results />} />
         <Route path="/admin" element={<Admin />} />
         <Route path="/terms" element={<Terms />} />
         <Route path="/privacy" element={<Privacy />} />

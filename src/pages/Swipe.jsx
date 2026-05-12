@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useNavigate, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
@@ -10,6 +10,11 @@ import { gtag } from "@/utils/gtag";
 export default function Swipe() {
   const navigate = useNavigate();
   const { state } = useLocation();
+
+  useEffect(() => {
+    if (!state?.restaurants) navigate("/", { replace: true });
+  }, []);
+
   const allRaw = state?.restaurants || [];
   const blocked = (() => { try { return JSON.parse(localStorage.getItem('blockedRestaurants') || '[]'); } catch { return []; } })();
   const initialRestaurants = allRaw.filter(r => !blocked.includes(r.name));
