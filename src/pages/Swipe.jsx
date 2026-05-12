@@ -96,7 +96,7 @@ export default function Swipe() {
   }, [lastSwiped]);
 
   const handleStartOver = useCallback(() => {
-    navigate("/");
+    navigate("/home");
   }, [navigate]);
 
   const allDone = currentIndex >= restaurants.length;
@@ -136,7 +136,7 @@ export default function Swipe() {
       }
     } catch (e) {
       // fall back to home if something goes wrong
-      navigate("/", { state: { prefillFilters: { ...state?.filters, radius: nextRadius } } });
+      navigate("/home", { state: { prefillFilters: { ...state?.filters, radius: nextRadius } } });
     }
     setExpandingRadius(false);
   }
@@ -159,7 +159,7 @@ export default function Swipe() {
             {expandingRadius ? 'Searching...' : `Expand to ${nextRadius} miles 📍`}
           </button>
           <button
-            onClick={() => navigate("/")}
+            onClick={() => navigate("/home")}
             className="w-full py-4 rounded-2xl font-black text-base border-2 border-teal-600 text-teal-700 hover:bg-teal-50 transition-all"
           >
             Change Filters
@@ -327,7 +327,7 @@ export default function Swipe() {
               </button>
             )}
             <button
-              onClick={() => navigate("/")}
+              onClick={() => navigate("/home")}
               className="text-teal-700 font-bold px-8 py-3 rounded-2xl border-2 border-teal-600 hover:bg-teal-50 transition-all text-base"
             >
               🔄 Start Over & Adjust Filters

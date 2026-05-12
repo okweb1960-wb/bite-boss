@@ -7,6 +7,7 @@ import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import Layout from './components/Layout';
 import Home from './pages/Home';
+import Splash from './pages/Splash';
 import Swipe from './pages/Swipe';
 import Results from './pages/Results.jsx';
 import Admin from './pages/Admin';
@@ -36,7 +37,8 @@ const AuthenticatedApp = () => {
   return (
     <Routes>
       <Route element={<Layout />}>
-        <Route path="/" element={<Home />} />
+        <Route path="/" element={<Splash />} />
+        <Route path="/home" element={<Home />} />
         <Route path="/swipe" element={<Swipe />} />
         <Route path="/results" element={<Results />} />
         <Route path="/admin" element={<Admin />} />
