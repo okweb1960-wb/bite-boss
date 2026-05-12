@@ -110,7 +110,7 @@ export default function Home() {
         sessionId = session.id;
       } catch (e) { /* non-critical */ }
 
-      navigate("/swipe", { state: { restaurants, filters, location, coords: resolvedCoords, sessionId } });
+      navigate("/swipe", { state: { restaurants, filters, location, coords, sessionId } });
     } catch (err) {
       setError("Failed to find restaurants. Please try again.");
     }
@@ -119,7 +119,17 @@ export default function Home() {
 
   return (
     <div className="flex flex-col min-h-screen">
-
+      {/* Header */}
+      <div className="rounded-b-[2.5rem] shadow-lg overflow-hidden bg-teal-600" style={{ borderTopLeftRadius: 0, borderTopRightRadius: 0 }}>
+        <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
+          <img
+            src="https://media.base44.com/images/public/69c6057518b3fad7a690ceef/8c2b5da37_image_b15af7e4.png"
+            alt="Bite Boss header"
+            className="w-full"
+            style={{ display: 'block' }}
+          />
+        </motion.div>
+      </div>
       <div className="flex-1 px-5 py-6 overflow-y-auto space-y-6">
         {/* Location */}
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
