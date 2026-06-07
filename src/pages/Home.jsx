@@ -229,30 +229,32 @@ export default function Home() {
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
           <h3 className="font-bold text-foreground mb-3">Select a location</h3>
           <div className="flex gap-2">
-            <div className="flex-1 flex items-center bg-card border border-teal-600 rounded-2xl px-4 shadow-sm overflow-hidden">
+            <div className="flex-1 flex items-center bg-card border border-teal-600 rounded-2xl px-4 shadow-sm">
               <input
                 value={location}
                 onChange={e => { setLocation(e.target.value); setCoords(null); setConfirmed(false); setResolvedAddress(""); }}
                 onKeyDown={e => { if (e.key === 'Enter' && !confirmed) confirmLocation(); }}
                 placeholder="City, neighborhood, or address..."
-                className="flex-1 py-3 bg-transparent outline-none text-foreground font-semibold placeholder:text-muted-foreground text-sm"
+                className="flex-1 min-w-0 py-3 bg-transparent outline-none text-foreground font-semibold placeholder:text-muted-foreground text-sm"
               />
               {location && (
-                <>
+                <div className="flex items-center flex-shrink-0">
+                  <div className="w-px h-5 bg-border mx-2" />
                   <button
                     onClick={clearLocation}
-                    className="text-muted-foreground hover:text-destructive transition-colors px-2"
+                    className="text-red-500 hover:text-red-600 transition-colors"
                     aria-label="Clear location"
                   >
                     <X className="w-4 h-4" />
                   </button>
-                  <div className="w-px h-5 bg-border mx-1" />
-                </>
+                  <div className="w-px h-5 bg-border mx-2" />
+                </div>
               )}
+              {!location && <div className="w-px h-5 bg-border mx-2 flex-shrink-0" />}
               <button
                 onClick={() => { if (!confirmed) confirmLocation(); }}
                 disabled={confirming}
-                className="pl-3 border-l border-teal-200 flex items-center justify-center h-full py-3 ml-1"
+                className="flex items-center justify-center py-3 flex-shrink-0"
               >
                 {confirming
                   ? <Loader2 className="w-5 h-5 animate-spin text-teal-600" />
