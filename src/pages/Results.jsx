@@ -246,7 +246,7 @@ export default function Results() {
         <RestaurantDetailModal
           restaurant={detailRestaurant}
           onClose={() => setDetailRestaurant(null)}
-          onSelect={(r) => { setDetailRestaurant(null); setSelectedCard(r); }}
+          onSelect={(r) => { setDetailRestaurant(null); addToMaybes(r); setShowUnseen(false); }}
         />
       )}
 

@@ -146,7 +146,7 @@ export default function RestaurantDetailModal({ restaurant, onClose, onSelect })
               onClick={() => onSelect(restaurant)}
               className="flex-1 py-3 bg-orange-500 text-white font-bold rounded-2xl shadow-lg hover:shadow-xl transition-all text-sm"
             >
-              Select This Place 🎉
+              Add to Maybes 💚
             </button>
           </div>
         </motion.div>
