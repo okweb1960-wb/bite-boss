@@ -6,7 +6,7 @@ import { getImage } from "@/utils/foodImages";
 
 const PRICE_MAP = { 1: "$", 2: "$$", 3: "$$$", 4: "$$$$" };
 
-export default function SwipeableFomoCard({ restaurant, onAddToMaybes, onViewDetail, isInMaybes }) {
+export default function SwipeableFomoCard({ restaurant, onAddToMaybes, onViewDetail, isInMaybes, isVisible }) {
   const [dismissed, setDismissed] = useState(false);
   const [added, setAdded] = useState(isInMaybes);
   const [imageLoaded, setImageLoaded] = useState(false);
@@ -50,7 +50,7 @@ export default function SwipeableFomoCard({ restaurant, onAddToMaybes, onViewDet
   return (
     <motion.div
       style={{ x, rotate, opacity }}
-      drag="x"
+      drag={isVisible ? "x" : false}
       dragConstraints={{ left: 0, right: 0 }}
       onDragEnd={handleDragEnd}
       whileDrag={{ scale: 1.02 }}

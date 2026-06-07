@@ -245,6 +245,7 @@ export default function Results() {
                     onAddToMaybes={addToMaybes}
                     onViewDetail={() => { setShowUnseen(false); setDetailRestaurant(r); }}
                     isInMaybes={maybes.some(m => m.name === r.name)}
+                    isVisible={showUnseen}
                   />
                 ))}
               </div>
