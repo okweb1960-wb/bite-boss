@@ -27,7 +27,7 @@ export default function RestaurantDetailModal({ restaurant, onClose, onSelect })
   return (
     <AnimatePresence>
       <motion.div
-        className="fixed inset-0 bg-black/70 z-50 flex items-end justify-center"
+        className="fixed inset-0 bg-black/70 z-50 flex items-end justify-center overflow-hidden"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
@@ -35,7 +35,7 @@ export default function RestaurantDetailModal({ restaurant, onClose, onSelect })
       >
         <motion.div
           className="w-full bg-white flex flex-col overflow-hidden"
-          style={{ borderRadius: "24px 24px 0 0", maxHeight: "90vh" }}
+          style={{ borderRadius: "24px 24px 0 0", maxHeight: "90vh", maxWidth: "480px", width: "100%" }}
           initial={{ y: "100%" }}
           animate={{ y: 0 }}
           exit={{ y: "100%" }}
