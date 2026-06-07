@@ -139,35 +139,33 @@ export default function Results() {
             {maybes.map(r => (
               <RestaurantListCard key={r.name} restaurant={r} onClick={() => setDetailRestaurant(r)} />
             ))}
-            {/* Share Maybes */}
-            {maybes.length > 0 && (
-              <div className="mt-4 py-4 flex flex-col items-center gap-2 border-t border-gray-100">
-                <p className="text-sm font-semibold text-gray-500 text-center">Deciding with someone? Send them this list 👇</p>
-                <button
-                  onClick={handleShareMaybes}
-                  className="pointer-events-auto w-full max-w-sm flex items-center justify-center gap-3 px-6 py-4 bg-teal-600 text-white font-black text-base rounded-2xl shadow-lg hover:bg-teal-700 transition-all"
-                >
-                  <Share2 className="w-5 h-5" />
-                  <span>Send This List to a Friend</span>
-                </button>
-              </div>
-            )}
           </div>
         )}
       </div>
 
 
 
-      {/* Pull indicator for unseen sheet */}
-      {!showUnseen && unseenRestaurants.length > 0 && (
-        <div
-          onClick={() => setShowUnseen(true)}
-          className="fixed bottom-0 left-0 right-0 flex justify-center pb-4 pt-2 bg-gradient-to-t from-white to-transparent cursor-pointer z-30"
-        >
-          <div className="flex items-center gap-2 px-5 py-2 bg-teal-600 text-white font-bold text-sm rounded-full shadow-lg">
-            <span>😱</span>
-            <span>FOMO Alert — see {unseenRestaurants.length} more places</span>
-          </div>
+      {/* Fixed footer */}
+      {!showUnseen && (
+        <div className="fixed bottom-0 left-0 right-0 z-30 flex flex-col items-center gap-2 pb-5 pt-8 bg-gradient-to-t from-white via-white to-transparent pointer-events-none">
+          {maybes.length > 0 && (
+            <button
+              onClick={handleShareMaybes}
+              className="pointer-events-auto w-full max-w-sm flex items-center justify-center gap-3 px-6 py-4 bg-teal-600 text-white font-black text-base rounded-2xl shadow-lg hover:bg-teal-700 transition-all"
+            >
+              <Share2 className="w-5 h-5" />
+              <span>Send This List to a Friend</span>
+            </button>
+          )}
+          {unseenRestaurants.length > 0 && (
+            <button
+              onClick={() => setShowUnseen(true)}
+              className="pointer-events-auto flex items-center gap-2 px-5 py-2 bg-orange-500 text-white font-bold text-sm rounded-full shadow-lg hover:bg-orange-600 transition-all"
+            >
+              <span>😱</span>
+              <span>FOMO Alert — see {unseenRestaurants.length} more places</span>
+            </button>
+          )}
         </div>
       )}
 
