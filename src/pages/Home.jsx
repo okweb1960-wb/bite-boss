@@ -10,8 +10,9 @@ import { gtag } from "@/utils/gtag";
 export default function Home() {
   const navigate = useNavigate();
   const { state: routeState } = useLocation();
-  const [location, setLocation] = useState("");
-  const [coords, setCoords] = useState(null);
+  const savedLocation = (() => { try { return JSON.parse(localStorage.getItem('biteboss_last_location')); } catch { return null; } })();
+  const [location, setLocation] = useState(savedLocation?.locationText || "");
+  const [coords, setCoords] = useState(savedLocation?.coords || null);
   const [detecting, setDetecting] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -110,7 +111,8 @@ export default function Home() {
         sessionId = session.id;
       } catch (e) { /* non-critical */ }
 
-      navigate("/swipe", { state: { restaurants, filters, location, coords, sessionId } });
+      localStorage.setItem('biteboss_last_location', JSON.stringify({ locationText: location, coords: resolvedCoords }));
+      navigate("/swipe", { state: { restaurants, filters, location, coords: resolvedCoords, sessionId } });
     } catch (err) {
       setError("Failed to find restaurants. Please try again.");
     }
