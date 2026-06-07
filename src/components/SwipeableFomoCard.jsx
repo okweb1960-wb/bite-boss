@@ -8,7 +8,6 @@ const PRICE_MAP = { 1: "$", 2: "$$", 3: "$$$", 4: "$$$$" };
 
 export default function SwipeableFomoCard({ restaurant, onAddToMaybes, onViewDetail, isInMaybes, isVisible }) {
   const [dismissed, setDismissed] = useState(false);
-  const [added, setAdded] = useState(isInMaybes);
   const [imageLoaded, setImageLoaded] = useState(false);
 
   const x = useMotionValue(0);
@@ -28,7 +27,6 @@ export default function SwipeableFomoCard({ restaurant, onAddToMaybes, onViewDet
   function handleDragEnd(_, info) {
     if (info.offset.x > 100) {
       haptics.maybe();
-      setAdded(true);
       onAddToMaybes(restaurant);
     } else if (info.offset.x < -100) {
       haptics.nope();
@@ -38,9 +36,8 @@ export default function SwipeableFomoCard({ restaurant, onAddToMaybes, onViewDet
 
   function handleAddButton(e) {
     e.stopPropagation();
-    if (!added) {
+    if (!isInMaybes) {
       haptics.maybe();
-      setAdded(true);
       onAddToMaybes(restaurant);
     }
   }
@@ -126,12 +123,12 @@ export default function SwipeableFomoCard({ restaurant, onAddToMaybes, onViewDet
           <button
             onClick={handleAddButton}
             className={`ml-2 shrink-0 px-3 py-1.5 rounded-full font-bold text-xs transition-all ${
-              added
+              isInMaybes
                 ? "bg-green-100 text-green-600 border border-green-300"
                 : "bg-teal-600 text-white hover:bg-teal-700"
             }`}
           >
-            {added ? "✓ Added" : "+ Maybes"}
+            {isInMaybes ? "✓ Added" : "+ Maybes"}
           </button>
         </div>
       </div>
