@@ -1,38 +1,51 @@
 import { useState } from "react";
-import { motion, useMotionValue, useTransform, AnimatePresence } from "framer-motion";
-import { Star } from "lucide-react";
+import { motion, useMotionValue, useTransform } from "framer-motion";
+import { Star, MapPin } from "lucide-react";
+import { haptics } from "@/utils/haptics";
 import { getImage } from "@/utils/foodImages";
+
+const PRICE_MAP = { 1: "$", 2: "$$", 3: "$$$", 4: "$$$$" };
 
 export default function SwipeableFomoCard({ restaurant, onAddToMaybes, onViewDetail, isInMaybes }) {
   const [dismissed, setDismissed] = useState(false);
   const [added, setAdded] = useState(isInMaybes);
-  const x = useMotionValue(0);
-  const rotate = useTransform(x, [-150, 150], [-10, 10]);
-  const opacity = useTransform(x, [-150, -80, 0, 80, 150], [0, 1, 1, 1, 0]);
+  const [imageLoaded, setImageLoaded] = useState(false);
 
-  const greenOverlay = useTransform(x, [0, 100], [0, 0.6]);
-  const redOverlay = useTransform(x, [-100, 0], [0.6, 0]);
+  const x = useMotionValue(0);
+  const rotate = useTransform(x, [-200, 200], [-8, 8]);
+  const opacity = useTransform(x, [-200, -100, 0, 100, 200], [0, 1, 1, 1, 0]);
+  const greenOpacity = useTransform(x, [0, 100], [0, 1]);
+  const redOpacity = useTransform(x, [-100, 0], [1, 0]);
+
+  const {
+    name = "Unknown", cuisine, rating, review_count,
+    price_level, open_now, distance, delivery, takeout
+  } = restaurant || {};
+
+  const priceLevel = price_level ? PRICE_MAP[price_level] : null;
+  const hasDineIn = restaurant?.dineIn || restaurant?.dine_in;
 
   function handleDragEnd(_, info) {
-    if (info.offset.x > 80) {
-      // Swiped right — add to maybes
-      handleAdd();
-    } else if (info.offset.x < -80) {
-      // Swiped left — dismiss
+    if (info.offset.x > 100) {
+      haptics.maybe();
+      setAdded(true);
+      onAddToMaybes(restaurant);
+    } else if (info.offset.x < -100) {
+      haptics.nope();
       setDismissed(true);
     }
   }
 
-  function handleAdd() {
+  function handleAddButton(e) {
+    e.stopPropagation();
     if (!added) {
+      haptics.maybe();
       setAdded(true);
       onAddToMaybes(restaurant);
     }
   }
 
   if (dismissed) return null;
-
-  const imgSrc = getImage(restaurant);
 
   return (
     <motion.div
@@ -41,72 +54,87 @@ export default function SwipeableFomoCard({ restaurant, onAddToMaybes, onViewDet
       dragConstraints={{ left: 0, right: 0 }}
       onDragEnd={handleDragEnd}
       whileDrag={{ scale: 1.02 }}
-      className="relative cursor-grab active:cursor-grabbing"
+      className="relative bg-white rounded-2xl shadow-md border border-gray-100 overflow-hidden cursor-grab active:cursor-grabbing"
+      onClick={onViewDetail}
     >
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden flex">
-        {/* Image */}
-        <div className="w-20 h-20 flex-shrink-0 relative">
-          <img
-            src={imgSrc}
-            alt={restaurant.name}
-            className="w-full h-full object-cover"
-          />
-        </div>
+      {/* Swipe indicators */}
+      <motion.div
+        style={{ opacity: greenOpacity }}
+        className="absolute inset-0 bg-green-400/20 z-10 rounded-2xl flex items-center justify-start pl-6 pointer-events-none"
+      >
+        <span className="text-green-600 font-black text-2xl">+ Maybes 💚</span>
+      </motion.div>
+      <motion.div
+        style={{ opacity: redOpacity }}
+        className="absolute inset-0 bg-red-400/20 z-10 rounded-2xl flex items-center justify-end pr-6 pointer-events-none"
+      >
+        <span className="text-red-500 font-black text-2xl">Nope 👎</span>
+      </motion.div>
 
-        {/* Info */}
-        <div className="flex-1 px-3 py-2 min-w-0">
-          <p className="font-black text-sm text-foreground truncate">{restaurant.name}</p>
-          {restaurant.cuisine && (
-            <p className="text-xs text-orange-500 font-semibold">{restaurant.cuisine}</p>
-          )}
-          <div className="flex items-center gap-2 mt-0.5">
-            {restaurant.rating > 0 && (
-              <span className="flex items-center gap-0.5 text-xs text-gray-500">
-                <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
-                {restaurant.rating}
-              </span>
-            )}
-            {restaurant.distance && (
-              <span className="text-xs text-gray-400">📍 {restaurant.distance}</span>
-            )}
+      {/* Photo */}
+      <div className="relative w-full overflow-hidden" style={{ height: "140px" }}>
+        {!imageLoaded && (
+          <div className="absolute inset-0 bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200 animate-pulse" />
+        )}
+        <img
+          src={getImage(restaurant)}
+          alt={name}
+          className="w-full h-full object-cover"
+          style={{ opacity: imageLoaded ? 1 : 0, transition: "opacity 0.3s" }}
+          onLoad={() => setImageLoaded(true)}
+        />
+        {open_now === true && (
+          <div className="absolute top-2 left-2 flex items-center gap-1 px-2 py-1 rounded-full text-white text-xs font-semibold" style={{ background: "#10B981" }}>
+            <span className="w-1.5 h-1.5 rounded-full bg-white inline-block" />
+            Open Now
           </div>
+        )}
+      </div>
+
+      {/* Info */}
+      <div className="p-4">
+        <div className="flex items-start justify-between mb-1">
+          <h3 className="font-black text-foreground text-base flex-1 leading-tight">{name}</h3>
+          {priceLevel && (
+            <span className="text-xs font-bold text-teal-600 ml-2 shrink-0">{priceLevel}</span>
+          )}
         </div>
 
-        {/* Actions */}
-        <div className="flex flex-col justify-center gap-1 pr-3 pl-1">
+        {cuisine && <p className="text-orange-500 font-semibold text-sm mb-2">{cuisine}</p>}
+
+        <div className="flex flex-wrap gap-3 text-xs text-gray-500 mb-3">
+          {rating && (
+            <span className="flex items-center gap-1">
+              <Star className="w-3 h-3" style={{ fill: "#f59e0b", color: "#f59e0b" }} />
+              <span className="font-bold text-gray-700">{rating}</span>
+              {review_count && <span>({review_count})</span>}
+            </span>
+          )}
+          {distance && (
+            <span className="flex items-center gap-1">
+              <MapPin className="w-3 h-3" />{distance}
+            </span>
+          )}
+        </div>
+
+        <div className="flex items-center justify-between">
+          <div className="flex gap-1.5 flex-wrap">
+            {takeout && <span className="text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-500 font-medium">🥡 Takeout</span>}
+            {delivery && <span className="text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-500 font-medium">🚗 Delivery</span>}
+            {hasDineIn && <span className="text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-500 font-medium">🍽️ Dine-in</span>}
+          </div>
           <button
-            onClick={onViewDetail}
-            className="text-xs text-teal-600 font-bold px-2 py-1 rounded-lg bg-teal-50 hover:bg-teal-100 transition-all"
-          >
-            Info
-          </button>
-          <button
-            onClick={handleAdd}
-            disabled={added}
-            className={`text-xs font-bold px-2 py-1 rounded-lg transition-all ${
+            onClick={handleAddButton}
+            className={`ml-2 shrink-0 px-3 py-1.5 rounded-full font-bold text-xs transition-all ${
               added
-                ? 'bg-green-100 text-green-600'
-                : 'bg-orange-50 text-orange-500 hover:bg-orange-100'
+                ? "bg-green-100 text-green-600 border border-green-300"
+                : "bg-teal-600 text-white hover:bg-teal-700"
             }`}
           >
-            {added ? '💚 Added' : '+ Maybe'}
+            {added ? "✓ Added" : "+ Maybes"}
           </button>
         </div>
       </div>
-
-      {/* Swipe overlays */}
-      <motion.div
-        className="absolute inset-0 rounded-2xl pointer-events-none flex items-center justify-center"
-        style={{ backgroundColor: 'rgb(16,185,129)', opacity: greenOverlay }}
-      >
-        <span className="text-white font-black text-lg">💚 Adding!</span>
-      </motion.div>
-      <motion.div
-        className="absolute inset-0 rounded-2xl pointer-events-none flex items-center justify-center"
-        style={{ backgroundColor: 'rgb(239,68,68)', opacity: redOverlay }}
-      >
-        <span className="text-white font-black text-lg">👎 Nope</span>
-      </motion.div>
     </motion.div>
   );
 }
