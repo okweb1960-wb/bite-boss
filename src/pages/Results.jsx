@@ -139,6 +139,18 @@ export default function Results() {
             {maybes.map(r => (
               <RestaurantListCard key={r.name} restaurant={r} onClick={() => setDetailRestaurant(r)} />
             ))}
+            {unseenRestaurants.length > 0 && (
+              <div className="pt-4 pb-2 flex flex-col items-center gap-2 border-t border-gray-100 mt-2">
+                <p className="text-xs text-muted-foreground font-semibold text-center">Not feeling any of these?</p>
+                <button
+                  onClick={() => setShowUnseen(true)}
+                  className="flex items-center gap-2 px-5 py-3 bg-orange-500 text-white font-bold text-sm rounded-full shadow-lg hover:bg-orange-600 transition-all"
+                >
+                  <span>😱</span>
+                  <span>FOMO Alert — see {unseenRestaurants.length} more places</span>
+                </button>
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -157,15 +169,7 @@ export default function Results() {
               <span>Send This List to a Friend</span>
             </button>
           )}
-          {unseenRestaurants.length > 0 && (
-            <button
-              onClick={() => setShowUnseen(true)}
-              className="pointer-events-auto flex items-center gap-2 px-5 py-2 bg-orange-500 text-white font-bold text-sm rounded-full shadow-lg hover:bg-orange-600 transition-all"
-            >
-              <span>😱</span>
-              <span>FOMO Alert — see {unseenRestaurants.length} more places</span>
-            </button>
-          )}
+
         </div>
       )}
 
