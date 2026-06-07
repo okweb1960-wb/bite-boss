@@ -5,6 +5,7 @@ import { X, RotateCcw } from "lucide-react";
 import WinnerModal from "../components/WinnerModal";
 import RestaurantListCard from "../components/RestaurantListCard";
 import RestaurantDetailModal from "../components/RestaurantDetailModal";
+import SwipeableFomoCard from "../components/SwipeableFomoCard";
 import { haptics } from "@/utils/haptics";
 import { gtag } from "@/utils/gtag";
 import { base44 } from "@/api/base44Client";
@@ -19,17 +20,23 @@ export default function Results() {
   const [lastWinner, setLastWinner] = useState(null);
   const [isShuffling, setIsShuffling] = useState(false);
   const [showUnseen, setShowUnseen] = useState(false);
+  const [maybes, setMaybes] = useState(state?.maybes || []);
 
   if (!state?.maybes) {
     navigate("/", { replace: true });
     return null;
   }
-
-  const maybes = state?.maybes || [];
   const allRestaurants = state?.allRestaurants || [];
   const unseenRestaurants = allRestaurants.filter(
     r => !maybes.some(m => m.name === r.name)
   );
+
+  function addToMaybes(restaurant) {
+    if (!maybes.some(m => m.name === restaurant.name)) {
+      haptics.maybe();
+      setMaybes(prev => [...prev, restaurant]);
+    }
+  }
 
   async function handleShareMaybes() {
     gtag('event', 'share_tapped', { share_type: 'maybes_list' });
@@ -151,14 +158,14 @@ export default function Results() {
 
 
       {/* Pull indicator for unseen sheet */}
-      {!showUnseen && unseenRestaurants.length > 0 && maybes.length > 0 && (
+      {!showUnseen && unseenRestaurants.length > 0 && (
         <div
           onClick={() => setShowUnseen(true)}
           className="fixed bottom-0 left-0 right-0 flex justify-center pb-4 pt-2 bg-gradient-to-t from-white to-transparent cursor-pointer z-30"
         >
           <div className="flex items-center gap-2 px-5 py-2 bg-teal-600 text-white font-bold text-sm rounded-full shadow-lg">
-            <span>↑</span>
-            <span>{unseenRestaurants.length} more restaurants</span>
+            <span>😱</span>
+            <span>FOMO Alert — see {unseenRestaurants.length} more places</span>
           </div>
         </div>
       )}
@@ -192,16 +199,22 @@ export default function Results() {
               </div>
 
               {/* Header */}
-              <div className="px-5 py-3 flex items-center justify-between border-b border-gray-100">
-                <div>
-                  <h2 className="font-bold text-lg text-foreground">Restaurants You Haven't Seen</h2>
-                  <p className="text-sm text-muted-foreground">{unseenRestaurants.length} places</p>
+              <div className="px-5 py-3 border-b border-gray-100">
+                <div className="flex items-center justify-between mb-1">
+                  <h2 className="font-bold text-lg text-foreground">Second Look 👀</h2>
+                  <button
+                    onClick={() => setShowUnseen(false)}
+                    className="p-2 rounded-full bg-gray-100 hover:bg-gray-200 transition-all"
+                  >
+                    <X className="w-5 h-5 text-foreground" />
+                  </button>
                 </div>
+                <p className="text-sm text-muted-foreground">You haven't seen these yet — add any that catch your eye</p>
                 <button
                   onClick={() => setShowUnseen(false)}
-                  className="p-2 rounded-full bg-gray-100 hover:bg-gray-200 transition-all"
+                  className="mt-3 w-full py-3 rounded-2xl font-black text-white text-sm bg-teal-600 hover:bg-teal-700 transition-all"
                 >
-                  <X className="w-5 h-5 text-foreground" />
+                  Back to Maybes 💚 ({maybes.length})
                 </button>
               </div>
 
@@ -214,10 +227,12 @@ export default function Results() {
                     <p className="text-muted-foreground text-sm">Every restaurant made it into your Maybes or Nopes.</p>
                   </div>
                 ) : unseenRestaurants.map(r => (
-                  <RestaurantListCard
+                  <SwipeableFomoCard
                     key={r.name}
                     restaurant={r}
-                    onClick={() => { setShowUnseen(false); setDetailRestaurant(r); }}
+                    onAddToMaybes={addToMaybes}
+                    onViewDetail={() => { setShowUnseen(false); setDetailRestaurant(r); }}
+                    isInMaybes={maybes.some(m => m.name === r.name)}
                   />
                 ))}
               </div>
