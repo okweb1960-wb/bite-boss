@@ -178,14 +178,17 @@ function mapPlace(p, lat, lng) {
 Deno.serve(async (req) => {
   try {
     const payload = await req.json();
-    const { latitude, longitude, radius_miles, cuisine, service, open_now, exclude } = payload;
+    const { latitude, longitude, radius_miles, cuisine, service, open_now, exclude, exclude_chains } = payload;
 
     const lat = parseFloat(Number(latitude).toFixed(6));
     const lng = parseFloat(Number(longitude).toFixed(6));
     const radiusMeters = Math.round((radius_miles || 5) * 1609.34);
     const cuisineList = (Array.isArray(cuisine) ? cuisine : (cuisine ? [cuisine] : [])).map(c => c.toLowerCase());
     const serviceList = Array.isArray(service) ? service : (service ? [service] : []);
-    const excludeNames = (exclude || []).map(n => n.toLowerCase());
+    const excludeNames = [
+      ...(exclude || []),
+      ...(exclude_chains || []),
+    ].map(n => n.toLowerCase());
 
     if (isNaN(lat) || isNaN(lng)) {
       return Response.json({ error: 'Invalid coordinates' }, { status: 400 });
