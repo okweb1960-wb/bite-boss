@@ -72,33 +72,29 @@ const PRICE_MAP = {
 
 const EXCLUDED_KEYWORDS = /putt|golf|bowling|cinema|theater|theatre|arcade|trampoline|escape room|laser tag|axe throwing|mini golf|go kart|water park|amusement/i;
 
-const CHAIN_RESTAURANT_NAMES = [
+const CHAIN_NAMES = [
   "mcdonald", "burger king", "wendy's", "sonic", "five guys", "shake shack",
   "in-n-out", "whataburger", "jack in the box", "carl's jr", "hardee's",
   "culver's", "steak 'n shake", "fatburger", "smashburger", "freddy's",
-  "habit burger",
-  "pizza hut", "domino's", "little caesar", "papa john", "papa murphy",
-  "round table pizza", "godfather's pizza", "cici's", "cicis", "sbarro",
-  "hungry howie",
-  "kfc", "chick-fil-a", "popeyes", "church's chicken", "raising cane",
-  "wingstop", "buffalo wild wings", "zaxby's", "el pollo loco", "slim chickens",
-  "taco bell", "chipotle", "moe's southwest", "qdoba", "del taco",
-  "taco john", "taco bueno",
+  "habit burger", "pizza hut", "domino's", "little caesar", "papa john",
+  "papa murphy", "round table pizza", "godfather's pizza", "cici's", "cicis",
+  "sbarro", "hungry howie", "kfc", "chick-fil-a", "popeyes",
+  "church's chicken", "raising cane", "wingstop", "buffalo wild wings",
+  "zaxby's", "el pollo loco", "slim chickens", "taco bell", "chipotle",
+  "moe's southwest", "qdoba", "del taco", "taco john", "taco bueno",
   "subway", "jimmy john", "jersey mike", "firehouse subs", "potbelly",
-  "quiznos", "arby's", "mcalister's",
-  "applebee's", "chili's", "tgi friday", "olive garden", "red lobster",
-  "outback steakhouse", "longhorn steakhouse", "texas roadhouse",
-  "logan's roadhouse", "ruby tuesday", "denny's", "ihop", "cracker barrel",
-  "bob evans", "perkins restaurant", "shari's", "red robin", "friendly's",
-  "cheesecake factory", "bj's restaurant", "bj's brewhouse",
-  "panda express", "pei wei", "p.f. chang", "noodles & company",
-  "long john silver", "captain d's",
+  "quiznos", "arby's", "mcalister's", "applebee's", "chili's",
+  "tgi friday", "olive garden", "red lobster", "outback steakhouse",
+  "longhorn steakhouse", "texas roadhouse", "logan's roadhouse",
+  "ruby tuesday", "denny's", "ihop", "cracker barrel", "bob evans",
+  "perkins", "shari's", "red robin", "friendly's", "cheesecake factory",
+  "bj's restaurant", "bj's brewhouse", "panda express", "pei wei",
+  "p.f. chang", "noodles & company", "long john silver", "captain d's",
   "golden corral", "sizzler", "black angus steakhouse", "ponderosa",
   "panera", "einstein bros", "corner bakery", "au bon pain", "jason's deli",
-  "waffle house", "first watch",
-  "dairy queen", "baskin-robbins", "cold stone creamery", "marble slab",
-  "yogurtland", "menchie's", "orange julius",
-  "starbucks", "dunkin", "tim hortons", "caribou coffee",
+  "waffle house", "first watch", "dairy queen", "baskin-robbins",
+  "cold stone creamery", "marble slab", "yogurtland", "menchie's",
+  "orange julius", "starbucks", "dunkin", "tim hortons", "caribou coffee",
   "hooters", "twin peaks", "walk-on's",
 ];
 
@@ -166,7 +162,6 @@ async function searchNearby(types, radiusMeters, lat, lng, open_now, usePrimaryT
   return data.places || [];
 }
 
-
 function mapPlace(p, lat, lng) {
   const pLat = p.location?.latitude;
   const pLng = p.location?.longitude;
@@ -205,21 +200,23 @@ function mapPlace(p, lat, lng) {
   };
 }
 
+function isChain(name) {
+  const lower = name.toLowerCase();
+  return CHAIN_NAMES.some(chain => lower.includes(chain));
+}
+
 Deno.serve(async (req) => {
   try {
     const payload = await req.json();
     const { latitude, longitude, radius_miles, cuisine, service, open_now, exclude, exclude_chains } = payload;
-    const chainNamesToExclude = exclude_chains === true ? CHAIN_RESTAURANT_NAMES : (Array.isArray(exclude_chains) ? exclude_chains.map(n => n.toLowerCase()) : []);
 
     const lat = parseFloat(Number(latitude).toFixed(6));
     const lng = parseFloat(Number(longitude).toFixed(6));
     const radiusMeters = Math.round((radius_miles || 5) * 1609.34);
     const cuisineList = (Array.isArray(cuisine) ? cuisine : (cuisine ? [cuisine] : [])).map(c => c.toLowerCase());
     const serviceList = Array.isArray(service) ? service : (service ? [service] : []);
-    const excludeNames = [
-      ...(exclude || []).map(n => n.toLowerCase()),
-      ...chainNamesToExclude,
-    ];
+    const excludeNames = (exclude || []).map(n => n.toLowerCase());
+    const shouldExcludeChains = exclude_chains === true;
 
     if (isNaN(lat) || isNaN(lng)) {
       return Response.json({ error: 'Invalid coordinates' }, { status: 400 });
@@ -228,7 +225,6 @@ Deno.serve(async (req) => {
     let rawPlaces = [];
 
     if (cuisineList.length === 0) {
-      // All cuisines — 3 parallel searchNearby calls with broad radius
       const broadRadius = Math.max(radiusMeters, 8047);
       const [batch1, batch2, batch3] = await Promise.all([
         searchNearby(['restaurant', 'american_restaurant'], broadRadius, lat, lng, open_now),
@@ -245,7 +241,6 @@ Deno.serve(async (req) => {
       ]);
       rawPlaces = [...batch1, ...batch2, ...batch3];
     } else {
-      // Specific cuisines — one call per selected cuisine, in parallel
       const searchRadius = Math.max(radiusMeters, 8047);
       const results = await Promise.all(
         cuisineList.map(async key => {
@@ -277,7 +272,7 @@ Deno.serve(async (req) => {
       rawPlaces = results.flat();
     }
 
-    // Deduplicate by name + address
+    // Deduplicate
     const seen = new Set();
     const unique = rawPlaces.filter(p => {
       const key = `${p.displayName?.text}|${p.formattedAddress}`;
@@ -286,7 +281,6 @@ Deno.serve(async (req) => {
       return true;
     });
 
-    // Map to restaurant objects
     const closedNames = new Set(
       unique
         .filter(p => p.businessStatus === 'CLOSED_PERMANENTLY')
@@ -299,7 +293,8 @@ Deno.serve(async (req) => {
       .filter(r => !closedNames.has(r.name))
       .filter(r => !(r.rating === 0 && r.review_count === 0))
       .filter(r => !EXCLUDED_KEYWORDS.test(r.name))
-      .filter(r => !excludeNames.some(chain => r.name.toLowerCase().includes(chain.toLowerCase())))
+      .filter(r => excludeNames.length === 0 || !excludeNames.some(n => r.name.toLowerCase().includes(n)))
+      .filter(r => !shouldExcludeChains || !isChain(r.name))
       .filter(r => r.distance_miles !== null && r.distance_miles <= (radius_miles || 5) * 1.1);
 
     // Sports bar post-filter
@@ -323,7 +318,7 @@ Deno.serve(async (req) => {
       results = serviceFiltered.length > 0 ? serviceFiltered : filteredFinal;
     }
 
-    // Sort: rating desc, then distance asc
+    // Sort
     results.sort((a, b) => {
       const ratingDiff = (b.rating || 0) - (a.rating || 0);
       if (Math.abs(ratingDiff) > 0.3) return ratingDiff;
@@ -344,6 +339,7 @@ Deno.serve(async (req) => {
       debug: {
         totalFromGoogle: unique.length,
         afterFiltering: results.length,
+        chainsExcluded: shouldExcludeChains,
       }
     });
 
