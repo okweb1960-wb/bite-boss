@@ -7,6 +7,77 @@ import { base44 } from "@/api/base44Client";
 import FilterPanel from "../components/FilterPanel";
 import { gtag } from "@/utils/gtag";
 
+const CHAIN_RESTAURANT_NAMES = [
+  // BURGERS & FAST FOOD
+  "McDonald's", "Burger King", "Wendy's", "Sonic Drive-In", "Sonic",
+  "Five Guys", "Shake Shack", "In-N-Out Burger", "In-N-Out",
+  "Whataburger", "Jack in the Box", "Carl's Jr.", "Hardee's",
+  "Culver's", "Steak 'n Shake", "Fatburger", "Smashburger",
+  "The Habit Burger Grill", "Habit Burger",
+
+  // PIZZA CHAINS
+  "Pizza Hut", "Domino's", "Domino's Pizza", "Little Caesars",
+  "Little Caesar's", "Papa John's", "Papa Johns", "Papa Murphy's",
+  "Papa Murphy's Take 'N' Bake", "Round Table Pizza",
+  "Godfather's Pizza", "CiCi's Pizza", "Cicis",
+  "Sbarro", "Hungry Howie's",
+
+  // CHICKEN
+  "KFC", "Chick-fil-A", "Popeyes", "Popeyes Louisiana Kitchen",
+  "Church's Chicken", "Raising Cane's", "Wingstop", "Buffalo Wild Wings",
+  "Zaxby's", "El Pollo Loco", "Slim Chickens",
+
+  // MEXICAN / TEX-MEX CHAINS
+  "Taco Bell", "Chipotle", "Chipotle Mexican Grill",
+  "Moe's Southwest Grill", "Moe's", "Qdoba", "Qdoba Mexican Eats",
+  "Del Taco", "Taco John's", "Taco Bueno",
+
+  // SANDWICHES & SUBS
+  "Subway", "Jimmy John's", "Jersey Mike's", "Jersey Mike's Subs",
+  "Firehouse Subs", "Potbelly", "Potbelly Sandwich Shop",
+  "Quiznos", "Arby's", "McAlister's Deli",
+
+  // CASUAL DINING CHAINS
+  "Applebee's", "Chili's", "TGI Fridays", "TGI Friday's",
+  "Olive Garden", "Red Lobster", "Outback Steakhouse", "Outback",
+  "LongHorn Steakhouse", "Texas Roadhouse", "Logan's Roadhouse",
+  "Ruby Tuesday", "Denny's", "IHOP", "Cracker Barrel",
+  "Bob Evans", "Perkins", "Shari's",
+  "Red Robin", "Friendly's", "The Cheesecake Factory",
+  "BJ's Restaurant", "BJ's Brewhouse", "Dave & Buster's",
+
+  // ASIAN CHAINS
+  "Panda Express", "Pei Wei", "P.F. Chang's", "P.F. Changs",
+  "Noodles & Company",
+
+  // SEAFOOD CHAINS
+  "Long John Silver's", "Captain D's",
+
+  // STEAK CHAINS
+  "Golden Corral", "Sizzler", "Black Angus Steakhouse",
+  "Ryan's", "Ponderosa Steakhouse",
+
+  // CAFES & BAKERY CHAINS
+  "Panera Bread", "Panera", "Einstein Bros. Bagels", "Einstein Bagels",
+  "Corner Bakery Cafe", "Corner Bakery", "Au Bon Pain",
+  "Jason's Deli", "McAlister's",
+
+  // BREAKFAST CHAINS
+  "Waffle House", "IHOP", "First Watch", "Egg Harbor Cafe",
+  "Original Pancake House",
+
+  // DESSERT / ICE CREAM CHAINS
+  "Dairy Queen", "DQ", "Baskin-Robbins", "Cold Stone Creamery",
+  "Marble Slab Creamery", "Yogurtland", "Menchie's", "Orange Julius",
+
+  // COFFEE / FAST CASUAL (if appearing as restaurant results)
+  "Starbucks", "Dunkin'", "Dunkin Donuts", "Tim Hortons",
+  "Caribou Coffee",
+
+  // WINGS / SPORTS BARS (chains)
+  "Hooters", "Twin Peaks", "Walk-On's",
+];
+
 export default function Home() {
   const navigate = useNavigate();
   const { state: routeState } = useLocation();
@@ -86,6 +157,7 @@ export default function Home() {
         service: filters.services,
         open_now: filters.openNow,
         location_text: location,
+        exclude_chains: filters.excludeChains ? CHAIN_RESTAURANT_NAMES : [],
       });
 
       const restaurants = response.data?.restaurants || [];
