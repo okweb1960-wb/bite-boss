@@ -186,13 +186,24 @@ export default function Results() {
 
             {/* Sheet */}
             <motion.div
-              className="fixed bottom-0 left-0 right-0 z-50 bg-white flex flex-col"
-              style={{ height: '85vh', borderRadius: '24px 24px 0 0' }}
+              className="fixed bottom-0 left-0 right-0 z-50 flex flex-col items-center"
+              style={{ pointerEvents: 'none' }}
               initial={{ y: '100%' }}
               animate={{ y: 0 }}
               exit={{ y: '100%' }}
               transition={{ type: 'spring', damping: 30, stiffness: 300 }}
             >
+              <div
+                className="w-full bg-white flex flex-col"
+                style={{
+                  maxWidth: '480px',
+                  width: '100%',
+                  height: '85vh',
+                  borderRadius: '24px 24px 0 0',
+                  margin: '0 auto',
+                  pointerEvents: 'all',
+                }}
+              >
               {/* Drag handle */}
               <div className="flex justify-center pt-3 pb-1">
                 <div className="w-10 h-1 rounded-full bg-teal-400" />
@@ -235,6 +246,7 @@ export default function Results() {
                     isInMaybes={maybes.some(m => m.name === r.name)}
                   />
                 ))}
+              </div>
               </div>
             </motion.div>
           </>
