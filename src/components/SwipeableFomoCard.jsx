@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { motion, useMotionValue, useTransform } from "framer-motion";
+import { motion, useMotionValue, useTransform, animate } from "framer-motion";
 import { Star, MapPin } from "lucide-react";
 import { haptics } from "@/utils/haptics";
 import { getImage } from "@/utils/foodImages";
@@ -12,7 +12,6 @@ export default function SwipeableFomoCard({ restaurant, onAddToMaybes, onViewDet
 
   const x = useMotionValue(0);
   const rotate = useTransform(x, [-200, 200], [-8, 8]);
-  const opacity = useTransform(x, [-200, -100, 0, 100, 200], [0, 1, 1, 1, 0]);
   const greenOpacity = useTransform(x, [0, 100], [0, 1]);
   const redOpacity = useTransform(x, [-100, 0], [1, 0]);
 
@@ -31,14 +30,24 @@ export default function SwipeableFomoCard({ restaurant, onAddToMaybes, onViewDet
     } else if (info.offset.x < -100) {
       haptics.nope();
       setDismissed(true);
+    } else {
+      animate(x, 0, { type: "spring", stiffness: 300, damping: 30 });
     }
   }
 
   function handleAddButton(e) {
     e.stopPropagation();
+    e.preventDefault();
     if (!isInMaybes) {
       haptics.maybe();
       onAddToMaybes(restaurant);
+    }
+  }
+
+  function handleCardClick(e) {
+    // Only fire onViewDetail if not dragging
+    if (Math.abs(x.get()) < 5) {
+      onViewDetail();
     }
   }
 
@@ -46,13 +55,13 @@ export default function SwipeableFomoCard({ restaurant, onAddToMaybes, onViewDet
 
   return (
     <motion.div
-      style={{ x, rotate, opacity }}
+      style={{ x, rotate }}
       drag={isVisible ? "x" : false}
       dragConstraints={{ left: 0, right: 0 }}
+      dragElastic={0.7}
       onDragEnd={handleDragEnd}
       whileDrag={{ scale: 1.02 }}
-      className="relative bg-white rounded-2xl shadow-md border border-gray-100 overflow-hidden cursor-grab active:cursor-grabbing"
-      onClick={onViewDetail}
+      className="relative bg-white rounded-2xl shadow-md border border-gray-100 overflow-hidden cursor-grab active:cursor-grabbing select-none"
     >
       {/* Swipe indicators */}
       <motion.div
@@ -68,8 +77,12 @@ export default function SwipeableFomoCard({ restaurant, onAddToMaybes, onViewDet
         <span className="text-red-500 font-black text-2xl">Nope 👎</span>
       </motion.div>
 
-      {/* Photo */}
-      <div className="relative w-full overflow-hidden" style={{ height: "140px" }}>
+      {/* Photo — clickable to view detail */}
+      <div
+        className="relative w-full overflow-hidden"
+        style={{ height: "140px" }}
+        onClick={handleCardClick}
+      >
         {!imageLoaded && (
           <div className="absolute inset-0 bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200 animate-pulse" />
         )}
@@ -88,8 +101,8 @@ export default function SwipeableFomoCard({ restaurant, onAddToMaybes, onViewDet
         )}
       </div>
 
-      {/* Info */}
-      <div className="p-4">
+      {/* Info — clickable to view detail */}
+      <div className="p-4" onClick={handleCardClick}>
         <div className="flex items-start justify-between mb-1">
           <h3 className="font-black text-foreground text-base flex-1 leading-tight">{name}</h3>
           {priceLevel && (
@@ -114,13 +127,15 @@ export default function SwipeableFomoCard({ restaurant, onAddToMaybes, onViewDet
           )}
         </div>
 
-        <div className="flex items-center justify-between">
+        {/* Bottom row — service tags + Add button */}
+        <div className="flex items-center justify-between" onClick={e => e.stopPropagation()}>
           <div className="flex gap-1.5 flex-wrap">
             {takeout && <span className="text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-500 font-medium">🥡 Takeout</span>}
             {delivery && <span className="text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-500 font-medium">🚗 Delivery</span>}
             {hasDineIn && <span className="text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-500 font-medium">🍽️ Dine-in</span>}
           </div>
           <button
+            onPointerDown={e => e.stopPropagation()}
             onClick={handleAddButton}
             className={`ml-2 shrink-0 px-3 py-1.5 rounded-full font-bold text-xs transition-all ${
               isInMaybes
