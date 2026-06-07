@@ -181,6 +181,7 @@ export default function Results() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setShowUnseen(false)}
+              pointerEvents={showUnseen ? "auto" : "none"}
             />
 
             {/* Sheet */}
@@ -200,7 +201,7 @@ export default function Results() {
                   height: '85vh',
                   borderRadius: '24px 24px 0 0',
                   margin: '0 auto',
-                  pointerEvents: 'all',
+                  pointerEvents: showUnseen ? 'all' : 'none',
                 }}
               >
               {/* Drag handle */}
