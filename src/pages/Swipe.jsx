@@ -45,6 +45,7 @@ export default function Swipe() {
         service: state.filters?.services,
         open_now: state.filters?.openNow,
         exclude: seenNames,
+        exclude_chains: state.filters?.excludeChains || false,
       });
       const newOnes = (response.data?.restaurants || []).filter(r => !getBlocked().includes(r.name));
       if (newOnes.length === 0) {
@@ -122,6 +123,7 @@ export default function Swipe() {
         cuisine: state.filters?.cuisines,
         service: state.filters?.services,
         open_now: state.filters?.openNow,
+        exclude_chains: state.filters?.excludeChains || false,
       });
       const newRestaurants = (response.data?.restaurants || []).filter(r => !getBlocked().includes(r.name));
       if (newRestaurants.length > 0) {
