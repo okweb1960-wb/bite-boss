@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, RotateCcw } from "lucide-react";
+import { X, RotateCcw, Share2 } from "lucide-react";
 import WinnerModal from "../components/WinnerModal";
 import RestaurantListCard from "../components/RestaurantListCard";
 import RestaurantDetailModal from "../components/RestaurantDetailModal";
@@ -145,9 +145,10 @@ export default function Results() {
                 <p className="text-sm font-semibold text-gray-500 text-center">Deciding with someone? Send them this list 👇</p>
                 <button
                   onClick={handleShareMaybes}
-                  className="px-6 py-3 bg-teal-600 text-white font-black rounded-2xl shadow hover:shadow-md transition-all text-sm"
+                  className="pointer-events-auto w-full max-w-sm flex items-center justify-center gap-3 px-6 py-4 bg-teal-600 text-white font-black text-base rounded-2xl shadow-lg hover:bg-teal-700 transition-all"
                 >
-                  Share My Maybes 📲
+                  <Share2 className="w-5 h-5" />
+                  <span>Send This List to a Friend</span>
                 </button>
               </div>
             )}
