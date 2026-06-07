@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
-import { MapPin, Loader2, CornerDownLeft, Check } from "lucide-react";
+import { MapPin, Loader2, CornerDownLeft, Check, X } from "lucide-react";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 import { base44 } from "@/api/base44Client";
@@ -93,6 +93,14 @@ export default function Home() {
   const [confirming, setConfirming] = useState(false);
 
 
+
+  function clearLocation() {
+    setLocation("");
+    setCoords(null);
+    setConfirmed(false);
+    setResolvedAddress("");
+    setError("");
+  }
 
   async function confirmLocation() {
     if (!location.trim()) { setError("Please enter a location first!"); return; }
@@ -229,6 +237,18 @@ export default function Home() {
                 placeholder="City, neighborhood, or address..."
                 className="flex-1 py-3 bg-transparent outline-none text-foreground font-semibold placeholder:text-muted-foreground text-sm"
               />
+              {location && (
+                <>
+                  <button
+                    onClick={clearLocation}
+                    className="text-muted-foreground hover:text-destructive transition-colors px-2"
+                    aria-label="Clear location"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                  <div className="w-px h-5 bg-border mx-1" />
+                </>
+              )}
               <button
                 onClick={() => { if (!confirmed) confirmLocation(); }}
                 disabled={confirming}
