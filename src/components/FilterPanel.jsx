@@ -153,6 +153,24 @@ export default function FilterPanel({ filters, onChange }) {
         </div>
       </div>
 
+      {/* Exclude Chains */}
+      <div className="flex items-center justify-between bg-teal-50 rounded-2xl px-4 py-3">
+        <div>
+          <p className="font-bold text-foreground">Exclude chain restaurants</p>
+          <p className="text-sm text-muted-foreground">Only show local & independent spots</p>
+        </div>
+        <button
+          onClick={() => onChange({ ...filters, excludeChains: !filters.excludeChains })}
+          className={`w-12 h-6 rounded-full transition-all relative ${
+            filters.excludeChains ? "bg-green-500" : "bg-gray-300"
+          }`}
+        >
+          <span className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-all ${
+            filters.excludeChains ? "left-7" : "left-1"
+          }`} />
+        </button>
+      </div>
+
       {/* Open Now */}
       <div className="flex items-center justify-between bg-teal-50 rounded-2xl px-4 py-3">
         <div>

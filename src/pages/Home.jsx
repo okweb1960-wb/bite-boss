@@ -16,7 +16,7 @@ export default function Home() {
   const [detecting, setDetecting] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [filters, setFilters] = useState(routeState?.prefillFilters || { radius: 5, cuisines: [], services: [], openNow: true });
+  const [filters, setFilters] = useState(routeState?.prefillFilters || { radius: 5, cuisines: [], services: [], openNow: true, excludeChains: false });
   const [confirmed, setConfirmed] = useState(!!(savedLocation?.coords));
   const [resolvedAddress, setResolvedAddress] = useState(savedLocation?.locationText || "");
   const [confirming, setConfirming] = useState(false);
