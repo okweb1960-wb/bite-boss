@@ -26,7 +26,10 @@ export default function Results() {
     navigate("/", { replace: true });
     return null;
   }
-  const allRestaurants = state?.allRestaurants || [];
+  // Deduplicate allRestaurants by name
+  const allRestaurants = (state?.allRestaurants || []).filter(
+    (r, index, self) => index === self.findIndex(t => t.name === r.name)
+  );
   const unseenRestaurants = allRestaurants.filter(
     r => !maybes.some(m => m.name === r.name)
   );
@@ -34,7 +37,10 @@ export default function Results() {
   function addToMaybes(restaurant) {
     if (!maybes.some(m => m.name === restaurant.name)) {
       haptics.maybe();
-      setMaybes(prev => [...prev, restaurant]);
+      setMaybes(prev => {
+        const deduped = prev.filter(m => m.name !== restaurant.name);
+        return [...deduped, restaurant];
+      });
     }
   }
 
