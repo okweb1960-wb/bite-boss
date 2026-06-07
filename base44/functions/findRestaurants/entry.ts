@@ -268,7 +268,7 @@ Deno.serve(async (req) => {
       .filter(r => !closedNames.has(r.name))
       .filter(r => !(r.rating === 0 && r.review_count === 0))
       .filter(r => !EXCLUDED_KEYWORDS.test(r.name))
-      .filter(r => !excludeNames.includes(r.name.toLowerCase()))
+      .filter(r => !excludeNames.some(chain => r.name.toLowerCase().includes(chain.toLowerCase())))
       .filter(r => r.distance_miles !== null && r.distance_miles <= (radius_miles || 5) * 1.1);
 
     // Sports bar post-filter

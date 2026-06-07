@@ -12,7 +12,7 @@ const CHAIN_RESTAURANT_NAMES = [
   "McDonald's", "Burger King", "Wendy's", "Sonic Drive-In", "Sonic",
   "Five Guys", "Shake Shack", "In-N-Out Burger", "In-N-Out",
   "Whataburger", "Jack in the Box", "Carl's Jr.", "Hardee's",
-  "Culver's", "Steak 'n Shake", "Fatburger", "Smashburger",
+  "Culver's", "Steak 'n Shake", "Fatburger", "Smashburger", "Freddy's", "Freddy's Frozen Custard", "Freddy's Frozen Custard & Steakburgers",
   "The Habit Burger Grill", "Habit Burger",
 
   // PIZZA CHAINS
@@ -24,7 +24,7 @@ const CHAIN_RESTAURANT_NAMES = [
 
   // CHICKEN
   "KFC", "Chick-fil-A", "Popeyes", "Popeyes Louisiana Kitchen",
-  "Church's Chicken", "Raising Cane's", "Wingstop", "Buffalo Wild Wings",
+  "Church's Chicken", "Raising Cane's", "Raising Cane's Chicken Fingers", "Wingstop", "Buffalo Wild Wings",
   "Zaxby's", "El Pollo Loco", "Slim Chickens",
 
   // MEXICAN / TEX-MEX CHAINS
@@ -67,7 +67,7 @@ const CHAIN_RESTAURANT_NAMES = [
   "Original Pancake House",
 
   // DESSERT / ICE CREAM CHAINS
-  "Dairy Queen", "DQ", "Baskin-Robbins", "Cold Stone Creamery",
+  "Dairy Queen", "Dairy Queen Grill & Chill", "DQ Grill & Chill", "DQ", "Baskin-Robbins", "Cold Stone Creamery",
   "Marble Slab Creamery", "Yogurtland", "Menchie's", "Orange Julius",
 
   // COFFEE / FAST CASUAL (if appearing as restaurant results)
