@@ -171,11 +171,18 @@ function mapPlace(p, lat, lng) {
 
   let photoUrl = null;
   if (p.photos && p.photos.length > 0) {
-    const userPhoto = p.photos.find(ph => {
+    // Skip the first photo — it's most likely to be a recent user upload
+    // (screenshots, jokes, irrelevant images). Start from index 1 when available.
+    const candidates = p.photos.length > 1 ? p.photos.slice(1) : p.photos;
+
+    // Prefer photos attributed to a real user (not Google Street View)
+    const userPhoto = candidates.find(ph => {
       const attr = ph.authorAttributions?.[0];
       return attr && attr.displayName !== 'Google' && attr.uri && !attr.uri.includes('google.com/maps');
     });
-    const selected = userPhoto || p.photos[Math.min(1, p.photos.length - 1)];
+
+    // Fall back to first candidate if no user photo found
+    const selected = userPhoto || candidates[0];
     photoUrl = `https://places.googleapis.com/v1/${selected.name}/media?maxWidthPx=800&key=${GMAPS_KEY}`;
   }
 
