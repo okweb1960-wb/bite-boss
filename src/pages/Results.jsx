@@ -181,13 +181,11 @@ export default function Results() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setShowUnseen(false)}
-              pointerEvents={showUnseen ? "auto" : "none"}
             />
 
             {/* Sheet */}
             <motion.div
               className="fixed bottom-0 left-0 right-0 z-50 flex flex-col items-center"
-              style={{ pointerEvents: 'none' }}
               initial={{ y: '100%' }}
               animate={{ y: 0 }}
               exit={{ y: '100%' }}
@@ -201,7 +199,6 @@ export default function Results() {
                   height: '85vh',
                   borderRadius: '24px 24px 0 0',
                   margin: '0 auto',
-                  pointerEvents: showUnseen ? 'all' : 'none',
                 }}
               >
               {/* Drag handle */}
