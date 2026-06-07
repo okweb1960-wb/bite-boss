@@ -72,6 +72,36 @@ const PRICE_MAP = {
 
 const EXCLUDED_KEYWORDS = /putt|golf|bowling|cinema|theater|theatre|arcade|trampoline|escape room|laser tag|axe throwing|mini golf|go kart|water park|amusement/i;
 
+const CHAIN_RESTAURANT_NAMES = [
+  "mcdonald", "burger king", "wendy's", "sonic", "five guys", "shake shack",
+  "in-n-out", "whataburger", "jack in the box", "carl's jr", "hardee's",
+  "culver's", "steak 'n shake", "fatburger", "smashburger", "freddy's",
+  "habit burger",
+  "pizza hut", "domino's", "little caesar", "papa john", "papa murphy",
+  "round table pizza", "godfather's pizza", "cici's", "cicis", "sbarro",
+  "hungry howie",
+  "kfc", "chick-fil-a", "popeyes", "church's chicken", "raising cane",
+  "wingstop", "buffalo wild wings", "zaxby's", "el pollo loco", "slim chickens",
+  "taco bell", "chipotle", "moe's southwest", "qdoba", "del taco",
+  "taco john", "taco bueno",
+  "subway", "jimmy john", "jersey mike", "firehouse subs", "potbelly",
+  "quiznos", "arby's", "mcalister's",
+  "applebee's", "chili's", "tgi friday", "olive garden", "red lobster",
+  "outback steakhouse", "longhorn steakhouse", "texas roadhouse",
+  "logan's roadhouse", "ruby tuesday", "denny's", "ihop", "cracker barrel",
+  "bob evans", "perkins restaurant", "shari's", "red robin", "friendly's",
+  "cheesecake factory", "bj's restaurant", "bj's brewhouse",
+  "panda express", "pei wei", "p.f. chang", "noodles & company",
+  "long john silver", "captain d's",
+  "golden corral", "sizzler", "black angus steakhouse", "ponderosa",
+  "panera", "einstein bros", "corner bakery", "au bon pain", "jason's deli",
+  "waffle house", "first watch",
+  "dairy queen", "baskin-robbins", "cold stone creamery", "marble slab",
+  "yogurtland", "menchie's", "orange julius",
+  "starbucks", "dunkin", "tim hortons", "caribou coffee",
+  "hooters", "twin peaks", "walk-on's",
+];
+
 const FIELD_MASK = [
   'places.displayName', 'places.formattedAddress', 'places.location', 'places.rating',
   'places.userRatingCount', 'places.priceLevel', 'places.currentOpeningHours',
@@ -179,6 +209,7 @@ Deno.serve(async (req) => {
   try {
     const payload = await req.json();
     const { latitude, longitude, radius_miles, cuisine, service, open_now, exclude, exclude_chains } = payload;
+    const chainNamesToExclude = exclude_chains === true ? CHAIN_RESTAURANT_NAMES : (Array.isArray(exclude_chains) ? exclude_chains.map(n => n.toLowerCase()) : []);
 
     const lat = parseFloat(Number(latitude).toFixed(6));
     const lng = parseFloat(Number(longitude).toFixed(6));
@@ -186,9 +217,9 @@ Deno.serve(async (req) => {
     const cuisineList = (Array.isArray(cuisine) ? cuisine : (cuisine ? [cuisine] : [])).map(c => c.toLowerCase());
     const serviceList = Array.isArray(service) ? service : (service ? [service] : []);
     const excludeNames = [
-      ...(exclude || []),
-      ...(exclude_chains || []),
-    ].map(n => n.toLowerCase());
+      ...(exclude || []).map(n => n.toLowerCase()),
+      ...chainNamesToExclude,
+    ];
 
     if (isNaN(lat) || isNaN(lng)) {
       return Response.json({ error: 'Invalid coordinates' }, { status: 400 });
