@@ -174,7 +174,7 @@ export default function Results() {
       )}
 
       {/* Unseen Bottom Sheet */}
-      <AnimatePresence>
+      <AnimatePresence mode="wait">
         {showUnseen && (
           <>
             {/* Overlay */}
@@ -183,7 +183,8 @@ export default function Results() {
               style={{ background: 'rgba(0,0,0,0.3)' }}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
+              exit={{ opacity: 0, pointerEvents: 'none' }}
+              transition={{ duration: 0.15 }}
               onClick={() => setShowUnseen(false)}
             />
 
@@ -192,8 +193,8 @@ export default function Results() {
               className="fixed bottom-0 left-0 right-0 z-50 flex flex-col items-center"
               initial={{ y: '100%' }}
               animate={{ y: 0 }}
-              exit={{ y: '100%' }}
-              transition={{ type: 'spring', damping: 30, stiffness: 300 }}
+              exit={{ y: '100%', pointerEvents: 'none' }}
+              transition={{ type: 'tween', duration: 0.2, ease: 'easeIn' }}
             >
               <div
                 className="w-full bg-white flex flex-col"
