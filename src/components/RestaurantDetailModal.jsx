@@ -4,7 +4,7 @@ import { getImage } from "@/utils/foodImages";
 
 const PRICE_MAP = { 1: "$", 2: "$$", 3: "$$$", 4: "$$$$" };
 
-export default function RestaurantDetailModal({ restaurant, onClose, onSelect }) {
+export default function RestaurantDetailModal({ restaurant, onClose, onSelect, isInMaybes }) {
   if (!restaurant) return null;
 
   const {
@@ -142,12 +142,23 @@ export default function RestaurantDetailModal({ restaurant, onClose, onSelect })
             >
               Back to Maybes
             </button>
-            <button
-              onClick={() => onSelect(restaurant)}
-              className="flex-1 py-3 bg-orange-500 text-white font-bold rounded-2xl shadow-lg hover:shadow-xl transition-all text-sm"
-            >
-              Add to Maybes 💚
-            </button>
+            {isInMaybes ? (
+              <a
+                href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent((restaurant.name || '') + ' ' + (restaurant.address || ''))}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex-1 py-3 bg-teal-600 text-white font-bold rounded-2xl shadow-lg hover:shadow-xl transition-all text-sm text-center"
+              >
+                📍 Get Directions
+              </a>
+            ) : (
+              <button
+                onClick={() => onSelect(restaurant)}
+                className="flex-1 py-3 bg-orange-500 text-white font-bold rounded-2xl shadow-lg hover:shadow-xl transition-all text-sm"
+              >
+                Add to Maybes 💚
+              </button>
+            )}
           </div>
         </motion.div>
       </motion.div>

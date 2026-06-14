@@ -268,6 +268,7 @@ export default function Results() {
           restaurant={detailRestaurant}
           onClose={() => setDetailRestaurant(null)}
           onSelect={(r) => { setDetailRestaurant(null); addToMaybes(r); setShowUnseen(false); }}
+          isInMaybes={maybes.some(m => m.name === detailRestaurant.name)}
         />
       )}
 
