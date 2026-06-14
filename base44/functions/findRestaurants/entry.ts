@@ -267,10 +267,20 @@ Deno.serve(async (req) => {
             return [...nearbyResults, ...textResults];
           }
           if (key === 'bars') {
-            return searchNearby(['bar', 'pub'], searchRadius, lat, lng, open_now, false);
+            const [nearbyBars, textBars1, textBars2] = await Promise.all([
+              searchNearby(['bar', 'pub'], searchRadius, lat, lng, open_now, false),
+              searchText('bar pub craft beer tap room', searchRadius, lat, lng, open_now),
+              searchText('gastropub bar and grill', searchRadius, lat, lng, open_now),
+            ]);
+            return [...nearbyBars, ...textBars1, ...textBars2];
           }
           if (key === 'sports bar') {
-            return searchText('sports bar with food tv screens', searchRadius, lat, lng, open_now);
+            const [textSports1, textSports2, nearbyBars] = await Promise.all([
+              searchText('sports bar with food tv screens', searchRadius, lat, lng, open_now),
+              searchText('sports bar grill beer', searchRadius, lat, lng, open_now),
+              searchNearby(['bar', 'pub'], searchRadius, lat, lng, open_now, false),
+            ]);
+            return [...textSports1, ...textSports2, ...nearbyBars];
           }
           const types = CUISINE_TYPE_MAP[key] || ['restaurant'];
           return searchNearby(types, searchRadius, lat, lng, open_now);
