@@ -262,7 +262,7 @@ export default function Swipe() {
                 if (idx >= restaurants.length) return null;
                 return (
                   <motion.div
-                    key={idx}
+                    key={offset}
                     className="absolute inset-0 rounded-3xl shadow-lg"
                     animate={{
                       scale: 1 - offset * 0.04,
@@ -274,7 +274,7 @@ export default function Swipe() {
                 );
               })}
 
-              <AnimatePresence>
+              <AnimatePresence mode="popLayout">
                 {current && (
                   <RestaurantCard
                     key={currentIndex}

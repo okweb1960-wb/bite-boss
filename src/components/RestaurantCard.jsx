@@ -37,6 +37,8 @@ export default function RestaurantCard({ restaurant, onSwipe, onBlock, isTop }) 
   return (
     <motion.div
       style={{ x, rotate }}
+      initial={{ scale: 1, opacity: 1 }}
+      exit={{ opacity: 0, transition: { duration: 0 } }}
       drag={isTop ? "x" : false}
       dragConstraints={{ left: 0, right: 0 }}
       dragElastic={0.7}
