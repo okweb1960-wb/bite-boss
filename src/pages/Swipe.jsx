@@ -261,14 +261,15 @@ export default function Swipe() {
                 const idx = currentIndex + offset;
                 if (idx >= restaurants.length) return null;
                 return (
-                  <div
+                  <motion.div
                     key={idx}
                     className="absolute inset-0 rounded-3xl shadow-lg"
-                    style={{
-                      background: 'white',
-                      transform: `scale(${1 - offset * 0.04}) translateY(${offset * 8}px)`,
-                      zIndex: 10 - offset,
+                    animate={{
+                      scale: 1 - offset * 0.04,
+                      y: offset * 8,
                     }}
+                    transition={{ type: "tween", duration: 0.2, ease: "easeOut" }}
+                    style={{ background: 'white', zIndex: 10 - offset }}
                   />
                 );
               })}
