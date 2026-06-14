@@ -143,14 +143,12 @@ export default function RestaurantDetailModal({ restaurant, onClose, onSelect, i
               Back to Maybes
             </button>
             {isInMaybes ? (
-              <a
-                href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent((restaurant.name || '') + ' ' + (restaurant.address || ''))}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex-1 py-3 bg-teal-600 text-white font-bold rounded-2xl shadow-lg hover:shadow-xl transition-all text-sm text-center"
+              <button
+                onClick={() => onSelect(restaurant)}
+                className="flex-1 py-3 bg-orange-500 text-white font-bold rounded-2xl shadow-lg hover:shadow-xl transition-all text-sm"
               >
-                📍 Get Directions
-              </a>
+                Select This Place 🎲
+              </button>
             ) : (
               <button
                 onClick={() => onSelect(restaurant)}

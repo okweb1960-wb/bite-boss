@@ -267,7 +267,16 @@ export default function Results() {
         <RestaurantDetailModal
           restaurant={detailRestaurant}
           onClose={() => setDetailRestaurant(null)}
-          onSelect={(r) => { setDetailRestaurant(null); addToMaybes(r); setShowUnseen(false); }}
+          onSelect={(r) => {
+            const alreadyInMaybes = maybes.some(m => m.name === r.name);
+            setDetailRestaurant(null);
+            setShowUnseen(false);
+            if (alreadyInMaybes) {
+              setSelectedCard(r);
+            } else {
+              addToMaybes(r);
+            }
+          }}
           isInMaybes={maybes.some(m => m.name === detailRestaurant.name)}
         />
       )}
