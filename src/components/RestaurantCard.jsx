@@ -26,6 +26,7 @@ export default function RestaurantCard({ restaurant, onSwipe, onBlock, isTop }) 
   function handleDragEnd(_, info) {
     if (info.offset.x > 100) onSwipe("maybe");
     else if (info.offset.x < -100) onSwipe("nope");
+    else x.set(0);
   }
 
   if (!restaurant) return null;
@@ -38,6 +39,8 @@ export default function RestaurantCard({ restaurant, onSwipe, onBlock, isTop }) 
       style={{ x, rotate }}
       drag={isTop ? "x" : false}
       dragConstraints={{ left: 0, right: 0 }}
+      dragElastic={0.7}
+      dragMomentum={false}
       onDragEnd={handleDragEnd}
       whileDrag={{ scale: 1.03 }}
       className="absolute inset-0 z-20 cursor-grab active:cursor-grabbing"
