@@ -22,7 +22,6 @@ export default function RestaurantCard({ restaurant, onSwipe, onBlock, isTop }) 
   const isOpen = open_now;
   const x = useMotionValue(0);
   const rotate = useTransform(x, [-200, 200], [-25, 25]);
-  const cardOpacity = useTransform(x, [-200, -100, 0, 100, 200], [0, 1, 1, 1, 0]);
 
   function handleDragEnd(_, info) {
     if (info.offset.x > 100) onSwipe("maybe");
@@ -36,7 +35,7 @@ export default function RestaurantCard({ restaurant, onSwipe, onBlock, isTop }) 
 
   return (
     <motion.div
-      style={{ x, rotate, opacity: cardOpacity }}
+      style={{ x, rotate }}
       drag={isTop ? "x" : false}
       dragConstraints={{ left: 0, right: 0 }}
       onDragEnd={handleDragEnd}
