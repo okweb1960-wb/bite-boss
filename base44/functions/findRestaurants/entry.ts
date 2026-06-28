@@ -31,6 +31,8 @@ const CUISINE_TYPE_MAP = {
   'desserts':      ['ice_cream_shop', 'dessert_shop', 'bakery'],
   'bars':          ['bar', 'pub'],
   'sports bar':    ['bar', 'pub'],
+  'vegan':         ['vegan_restaurant'],
+  'vegetarian':    ['vegetarian_restaurant'],
 };
 
 const PRIMARY_TYPE_LABEL = {
@@ -60,6 +62,8 @@ const PRIMARY_TYPE_LABEL = {
   'restaurant':               'Restaurant',
   'bar':                      'Bar & Pub',
   'pub':                      'Bar & Pub',
+  'vegan_restaurant':         'Vegan',
+  'vegetarian_restaurant':   'Vegetarian',
 };
 
 const PRICE_MAP = {
@@ -281,6 +285,22 @@ Deno.serve(async (req) => {
               searchNearby(['bar', 'pub'], searchRadius, lat, lng, open_now, false),
             ]);
             return [...textSports1, ...textSports2, ...nearbyBars];
+          }
+          if (key === 'vegan') {
+            const [nearbyVegan, textVegan1, textVegan2] = await Promise.all([
+              searchNearby(['vegan_restaurant'], searchRadius, lat, lng, open_now),
+              searchText('vegan restaurant plant based food', searchRadius, lat, lng, open_now),
+              searchText('vegan options menu', searchRadius, lat, lng, open_now),
+            ]);
+            return [...nearbyVegan, ...textVegan1, ...textVegan2];
+          }
+          if (key === 'vegetarian') {
+            const [nearbyVeg, textVeg1, textVeg2] = await Promise.all([
+              searchNearby(['vegetarian_restaurant'], searchRadius, lat, lng, open_now),
+              searchText('vegetarian restaurant meatless food', searchRadius, lat, lng, open_now),
+              searchText('vegetarian options menu', searchRadius, lat, lng, open_now),
+            ]);
+            return [...nearbyVeg, ...textVeg1, ...textVeg2];
           }
           const types = CUISINE_TYPE_MAP[key] || ['restaurant'];
           return searchNearby(types, searchRadius, lat, lng, open_now);

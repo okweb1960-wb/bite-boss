@@ -31,6 +31,8 @@ const CUISINE_GROUPS = [
       { value: 'sports bar', label: '📺 Sports Bar' },
       { value: 'Cafe', label: '☕ Cafe' },
       { value: 'Desserts', label: '🍦 Desserts' },
+      { value: 'Vegan', label: '🌱 Vegan' },
+      { value: 'Vegetarian', label: '🥗 Vegetarian' },
     ]
   },
 ];
